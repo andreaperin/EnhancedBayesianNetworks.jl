@@ -136,7 +136,7 @@ path_to_store_cpds_table = joinpath(model_input_folder, "CPDs_table", datetime)
 if ispath(path_to_store_cpds_table) == false
     mkpath(path_to_store_cpds_table)
 end
-parentsnames = join([string("_" * string(i)) for i in node_name.(th_node.parents)])
+parentsnames = join([string("_" * string(i)) for i in name.(th_node.parents)])
 
 spec_string = string(typeof(th_node.sim)) * parentsnames
 @save joinpath(path_to_store_cpds_table, "sim$(spec_string).jld2") prob
@@ -156,7 +156,7 @@ graphplot(ordered_dag,
     dim=2,
     curves=false,
     root=:top,
-    names=node_name.(ordered_nodes),
+    names=name.(ordered_nodes),
     nodeshape=:ellipse,
     marker_color=2)
 
