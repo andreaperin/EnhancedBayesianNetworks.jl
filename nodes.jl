@@ -5,35 +5,34 @@ using Graphs
 using ProgressMeter
 include("CPDs.jl")
 
-abstract type Node end
-
+abstract type AbstractNode end
+abstract type Node <: AbstractNode end
 mutable struct StdNode <: Node
-    ##TODO add check on normalization of cpds
     cpd::CPD
-    parents::Vector{Node}
+    parents::Vector{T} where {T<:AbstractNode}
     type::String
     model_input::Dict{Symbol,Dict{String,Vector}}
-    function Node(cpd::CPD)
-        parents = Vector{Node}()
+    function StdNode(cpd::CPD)
+        parents = Vector{AbstractNode}()
         type = isa(cpd, CPD{Distribution}) ? "continuous" : "discrete"
         model_input = Dict{Symbol,Dict{String,Vector}}()
         new(cpd, parents, type, model_input)
     end
-    function Node(cpd::CPD, parents::Vector{Node})
+    function StdNode(cpd::CPD, parents::Vector{T}) where {T<:AbstractNode}
         type = isa(cpd, CPD{Distribution}) ? "continuous" : "discrete"
         model_input = Dict{Symbol,Dict{String,Vector}}()
         new(cpd, parents, type, model_input)
     end
-    function Node(cpd::CPD, parents::Vector{Node}, model_input::Dict{Symbol,Dict{String,Vector}})
+    function StdNode(cpd::CPD, parents::Vector{T}, model_input::Dict{Symbol,Dict{String,Vector}}) where {T<:AbstractNode}
         ## TODO Add check for dictionary coherence
         type = isa(cpd, CPD{Distribution}) ? "continuous" : "discrete"
         new(cpd, parents, type, model_input)
     end
 end
 
-struct ModelNode
+struct ModelNode <: AbstractNode
     name::Symbol
-    parents::Vector{Node}
+    parents::Vector{T} where {T<:AbstractNode}
     default_inputs::Dict{String,Vector}
     sourcedir::String
     source_file::String
@@ -46,7 +45,7 @@ struct ModelNode
     updated_inputs::Dict{Any,Vector{<:UQInput}}
     sim::AbstractMonteCarlo
     function ModelNode(name::Symbol,
-        parents::Vector{Node},
+        parents::Vector{T} where {T<:AbstractNode},
         default_inputs::Dict{String,Vector},
         sourcedir::String,
         source_file::String,
@@ -61,7 +60,7 @@ struct ModelNode
         new(name, parents, default_inputs, sourcedir, source_file, extras, solvername, output_parameters, performances, cleanup, inputs_states_mapping_dict, updated_inputs, sim)
     end
     function ModelNode(name::Symbol,
-        parents::Vector{Node},
+        parents::Vector{T} where {T<:AbstractNode},
         default_inputs::Dict{String,Vector},
         sourcedir::String,
         source_file::String,
@@ -100,15 +99,15 @@ function evaluate_cpd_from_model(node::ModelNode, model_inputs_mapping_dict::Dic
     cpd_ordered = sort(map_state_to_integer(cpd, node))
     new_ordered_parents = get_new_ordered_parents(node)
     CPD = CategoricalCPD(node.name, name.(new_ordered_parents), [length(states(i)) for i in new_ordered_parents], Vector{NamedCategorical}(collect(values(cpd_ordered))))
-    node = Node(CPD, new_ordered_parents)
+    node = StdNode(CPD, new_ordered_parents)
     return cond_probs_dict, cpd, CPD, node
 end
 
-function name(node::Node)
+function name(node::T) where {T<:AbstractNode}
     return node.cpd.target
 end
 
-function states(node::Node)
+function states(node::AbstractNode)
     if node.cpd isa StaticCPD
         return node.type == "discrete" ? node.cpd.d.map.n2d : "this is a continuous node"
     else
@@ -116,7 +115,7 @@ function states(node::Node)
     end
 end
 
-function get_discrete_parents(node::Union{Node,ModelNode})
+function get_discrete_parents(node::T) where {T<:AbstractNode}
     # discrete_parents = Vector{Node}()
     discrete_parents_dict = Dict{Symbol,Node}()
     for parent in node.parents
@@ -128,7 +127,7 @@ function get_discrete_parents(node::Union{Node,ModelNode})
     return discrete_parents_dict
 end
 
-function get_continuous_parents(node::Union{Node,ModelNode})
+function get_continuous_parents(node::T) where {T<:AbstractNode}
     continuous_parents = Vector{Node}()
     for parent in node.parents
         if parent.type == "continuous"
@@ -138,7 +137,7 @@ function get_continuous_parents(node::Union{Node,ModelNode})
     return continuous_parents
 end
 
-function get_discreteparents_states_combinations(node::Union{Node,ModelNode})
+function get_discreteparents_states_combinations(node::T) where {T<:AbstractNode}
     discrete_parents = get_discrete_parents(node)
     all_discreteparents_states = Dict()
     combinations = Vector{Tuple{Symbol}}()
@@ -153,14 +152,14 @@ function get_discreteparents_states_combinations(node::Union{Node,ModelNode})
     return all_discreteparents_states, combinations
 end
 
-function get_new_ordered_parents(node::Union{NodeNameUnion,ModelNode})
+function get_new_ordered_parents(node::T) where {T<:AbstractNode}
     new_ordered_parents = [get_discrete_parents(node)[i] for i in collect(keys(get_discreteparents_states_combinations(node)[1]))]
     return new_ordered_parents
 end
 
-function get_discreteparents_states_mapping_dict(node::Union{Node,ModelNode})
+function get_discreteparents_states_mapping_dict(node::T) where {T<:AbstractNode}
     parents = get_discrete_parents(node)
-    mapping = Dict{EbnNode,Dict{}}()
+    mapping = Dict{AbstractNode,Dict{}}()
     for parent_node in collect(values(parents))
         if parent_node.cpd isa StaticCPD
             mapping[parent_node] = parent_node.cpd.d.map.n2d
@@ -171,7 +170,7 @@ function get_discreteparents_states_mapping_dict(node::Union{Node,ModelNode})
     return mapping
 end
 
-function map_state_to_integer(dict_to_be_mapped::Dict, node::Union{Node,ModelNode})
+function map_state_to_integer(dict_to_be_mapped::Dict, node::T) where {T<:AbstractNode}
     new_dict = Dict()
     discrete_parents = get_discrete_parents(node)
     mapping = get_discreteparents_states_mapping_dict(node)
@@ -187,7 +186,7 @@ function map_state_to_integer(dict_to_be_mapped::Dict, node::Union{Node,ModelNod
     return new_dict
 end
 
-function map_state_to_integer(vector_to_be_mapped::Vector, node::Union{Node,ModelNode})
+function map_state_to_integer(vector_to_be_mapped::Vector, node::T) where {T<:AbstractNode}
     new_dict = Dict()
     discrete_parents = get_discrete_parents(node)
     mapping = get_discreteparents_states_mapping_dict(node)
@@ -203,7 +202,7 @@ function map_state_to_integer(vector_to_be_mapped::Vector, node::Union{Node,Mode
     return new_dict
 end
 
-function get_common_parents(nodes::Vector{Node})
+function get_common_parents(nodes::Vector{T}) where {T<:AbstractNode}
     all_parents_dict = Dict{Any,Vector{Any}}()
     all_parents_vector = Vector{Any}()
     for node in nodes

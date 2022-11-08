@@ -50,7 +50,11 @@ end
 
 Distributions.ncategories(s::MappedAliasTable) = Distributions.ncategories(s.alias)
 
+## TODO Add this to logs
 function NamedCategorical(items::AbstractVector{N}, probs::Vector{Float64}) where {N<:MapableTypes}
+    if sum(probs) != 1
+        println("Not normalized probabilities => automatically normalized")
+    end
     cat = Categorical(probs ./ sum(probs))
     map = CategoricalDiscretizer(items)
     NamedCategorical{N}(cat, map)
@@ -73,6 +77,7 @@ mutable struct StaticCPD{D} <: CPD{D}
     parents::NodeNames
     distributions::D
 end
+
 StaticCPD(target::NodeName, distributions::Distribution) = StaticCPD(target, NodeName[], distributions)
 
 name(cpd::StaticCPD) = cpd.target

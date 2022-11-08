@@ -23,38 +23,6 @@ function get_default_inputs_and_format(input_file::String)
     )
 end
 
-# function get_all_th_mustaches(input_file::String)
-#     regex = r"(?<=\{{{\s:)(.*?)(?=\s}}})"
-#     text = open(input_file) do f
-#         read(f, String)
-#     end
-#     inputs = Vector{Symbol}()
-#     for match in eachmatch(regex, text)
-#         # @show(Symbol(String(match.match)))
-#         push!(inputs, (Symbol(match.match)))
-#     end
-#     return unique(inputs)
-# end
-
-# ```Create all inputs template and a mapping dictionary that maps each state to its xlsx file```
-# function create_all_input_template(node::NodeToBe, model_input_folder::String, default_value_filename::String)
-#     datetime = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS")
-#     template_folder = joinpath(pwd(), model_input_folder, datetime)
-#     default_value_filename_path = joinpath(pwd(), model_input_folder, default_value_filename)
-#     if isdir(template_folder) == false
-#         mkpath(template_folder)
-#     end
-#     states_comb = get_discreteparents_states_combinations(node)[2]
-#     inputs_mapping_default_dict = Dict()
-#     for comb in states_comb
-#         states_string = string.(string.(comb) .* "_"...)
-#         path_xlsx = joinpath(template_folder, states_string * ".xlsx")
-#         cp(default_value_filename_path, path_xlsx)
-#         inputs_mapping_default_dict[comb] = path_xlsx
-#     end
-#     return inputs_mapping_default_dict
-# end
-
 function update_input_list(inputs_list::Vector{UQInput}, to_be_update::Vector{UQInput})
     to_be_update_names = [i.name for i in to_be_update]
     for input in inputs_list
@@ -73,7 +41,6 @@ function update_input_list(inputs_list::Vector{Dict{Symbol,FormatSpec}}, to_be_u
     end
     return to_be_update
 end
-
 
 function get_workdir(input_file::String, sourcedir::String)
     total_list = readxlsxinput(input_file)[4]
@@ -96,7 +63,6 @@ function get_workdir(input_file::String, sourcedir::String)
     workdir = workdir[1]
     return workdir
 end
-
 function get_workdir(input_file::Vector{UQInput}, sourcedir::String)
     workdir = []
     sim_days = []
@@ -178,7 +144,6 @@ function build_performances(model_input_folder::String)
         return nothing
     end
 end
-
 function build_performances(output_parameters::Dict)
     thresholds = Vector()
     for (key, val) in output_parameters
@@ -241,3 +206,34 @@ function get_inputs_mapping_dict1(node::ModelNode,)
     return inputs_mapping_dict, updated_inputs
 end
 
+# function get_all_th_mustaches(input_file::String)
+#     regex = r"(?<=\{{{\s:)(.*?)(?=\s}}})"
+#     text = open(input_file) do f
+#         read(f, String)
+#     end
+#     inputs = Vector{Symbol}()
+#     for match in eachmatch(regex, text)
+#         # @show(Symbol(String(match.match)))
+#         push!(inputs, (Symbol(match.match)))
+#     end
+#     return unique(inputs)
+# end
+
+# ```Create all inputs template and a mapping dictionary that maps each state to its xlsx file```
+# function create_all_input_template(node::NodeToBe, model_input_folder::String, default_value_filename::String)
+#     datetime = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS")
+#     template_folder = joinpath(pwd(), model_input_folder, datetime)
+#     default_value_filename_path = joinpath(pwd(), model_input_folder, default_value_filename)
+#     if isdir(template_folder) == false
+#         mkpath(template_folder)
+#     end
+#     states_comb = get_discreteparents_states_combinations(node)[2]
+#     inputs_mapping_default_dict = Dict()
+#     for comb in states_comb
+#         states_string = string.(string.(comb) .* "_"...)
+#         path_xlsx = joinpath(template_folder, states_string * ".xlsx")
+#         cp(default_value_filename_path, path_xlsx)
+#         inputs_mapping_default_dict[comb] = path_xlsx
+#     end
+#     return inputs_mapping_default_dict
+# end

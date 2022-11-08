@@ -9,9 +9,7 @@ include("CPDs.jl")
 abstract type ProbabilisticGraphicalModel end
 
 
-function _build_DiAGraph_from_nodes(
-    nodes::Vector{Node}
-)
+function _build_DiAGraph_from_nodes(nodes::Vector{F}) where {F<:Node}
     cpds = [i.cpd for i in nodes]
     name_to_index = Dict{NodeName,Int}()
     for (i, cpd) in enumerate(cpds)
@@ -46,9 +44,7 @@ function _build_DiAGraph_from_nodes(
     return dag
 end
 
-function _topological_ordered_dag(
-    nodes::Vector{Node}
-)
+function _topological_ordered_dag(nodes::Vector{F}) where {F<:Node}
     dag = _build_DiAGraph_from_nodes(nodes)
     topological_ordered_vect = topological_sort_by_dfs(dag)
     cpds = [i.cpd for i in nodes]
@@ -68,12 +64,12 @@ end
 mutable struct StdBayesNet <: ProbabilisticGraphicalModel
     ## TODO: Add chech or all discrete or no continuous with children (=>EBN)
     dag::DiGraph
-    nodes::Vector{Node}
+    nodes::Vector{F} where {F<:Node}
     cpds::Vector{CPD} ## TODO in EBN Struct will become VectorUnion{CPD, Vector{SRP}}
     name_to_index::Dict{NodeName,Int}
 end
 
-function StdBayesNet(nodes::Vector{Node})
+function StdBayesNet(nodes::Vector{F}) where {F<:Node}
     dag = _build_DiAGraph_from_nodes(nodes)
     !is_cyclic(dag) || error("BayesNet graph is non-acyclic!")
     ordered_cpds, ordered_nodes, ordered_name_to_index, ordered_dag = _topological_ordered_dag(nodes)
@@ -271,33 +267,6 @@ function evaluate_nodecpd_with_evidence(bn::StdBayesNet, nodename::NodeName, evi
     end
     return new_cond_dic
 end
-
-# """
-# The pdf of a evidence assignment after conditioning on the values (Works for Continuous nodes only)
-# """
-# ## TODO review this considering the evaluate_node_conditioning function
-# function CPDs.pdf(bn::StdBayesNet, assignment::Assignment)
-#     retval = 1.0
-#     for cpd in bn.cpds # NOTE: guaranteed in topological order
-#         if isa(cpd, CPD{Distribution})
-#             retval *= pdf(cpd, assignment)
-#         else
-#             retval *= cpd(assignment)
-#         end
-#     end
-#     retval
-# end
-
-# """
-# The logpdf of a given assignment after conditioning on the values (Works for Continuous nodes only)
-# """
-# function CPDs.logpdf(bn::StdBayesNet, assignment::Assignment)
-#     retval = 0.0
-#     for cpd in bn.cpds # NOTE: guaranteed in topological order
-#         retval += logpdf(cpd, assignment)
-#     end
-#     retval
-# end
 
 
 

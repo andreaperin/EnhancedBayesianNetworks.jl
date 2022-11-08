@@ -1,18 +1,17 @@
-using GraphRecipes
-using Plots
+using GraphPlot
 include("CPDs.jl")
 include("nodes.jl")
 include("buildmodel_TH.jl")
 include("models_probabilities.jl")
 include("bn.jl")
 
-a = NamedCategorical([:first, :second, :third], [0.34, 0.33, 0.33])
+a = NamedCategorical([:first, :second, :third], [1.34, 1.33, 1.33])
 CPDa = StaticCPD(:time_scenario, a)
-timescenario = Node(CPDa)
+timescenario = StdNode(CPDa)
 
 c1 = NamedCategorical([:low, :medium, :high], [0.5, 0.3, 0.2])
 CPDc = StaticCPD(:grandparent, c1)
-grandparent = Node(CPDc)
+grandparent = StdNode(CPDc)
 
 parents_dispersivitivy_longv = [timescenario, grandparent]
 dispersivitivy_longv1 = truncated(Normal(1, 1), lower=0)
@@ -29,7 +28,7 @@ CPDd = CategoricalCPD{Distribution}(:dispersivity, [:time_scenario, :grandparent
         dispersivitivy_longv5,
         dispersivitivy_longv6]
 )
-dispersivitivy_longv = Node(CPDd, parents_dispersivitivy_longv)
+dispersivitivy_longv = StdNode(CPDd, parents_dispersivitivy_longv)
 
 flow1 = NamedCategorical([:small, :notsmall], [0.1, 0.9])
 flow2 = NamedCategorical([:small, :notsmall], [0.2, 0.8])
@@ -46,7 +45,7 @@ pumpflowrate_dict = Dict{Symbol,Dict{String,Vector}}(
         "FormatSpec" => [Dict(:flow => FormatSpec(".8e"))]
     )
 )
-pumpflowrate = Node(CPDb, parents_b, pumpflowrate_dict)
+pumpflowrate = StdNode(CPDb, parents_b, pumpflowrate_dict)
 
 
 parents_Kz = [timescenario, grandparent]
@@ -70,7 +69,7 @@ kz_dict = Dict{Symbol,Dict{String,Vector}}(
         "FormatSpec" => [Dict(:Kz => FormatSpec(".8e"))]
     )
 )
-Kz = Node(CPDKz, parents_Kz, kz_dict)
+Kz = StdNode(CPDKz, parents_Kz, kz_dict)
 
 ######################################################################
 #####                  simulation day node                      ######
@@ -94,7 +93,7 @@ simulation_days_dict = Dict{Symbol,Dict{String,Vector}}(
     ),
 )
 parents_day = [timescenario]
-simulation_days = Node(CPDdays, parents_day, simulation_days_dict)
+simulation_days = StdNode(CPDdays, parents_day, simulation_days_dict)
 
 
 ######################################################################
@@ -152,13 +151,12 @@ th_bn = StdBayesNet(ordered_nodes)
 
 ## TODO Check with Jasper how to plot BN in the proper way
 
-graphplot(ordered_dag,
-    dim=2,
-    curves=false,
-    root=:top,
-    names=name.(ordered_nodes),
-    nodeshape=:ellipse,
-    marker_color=2)
+gplot(ordered_dag,
+    nodelabel=name.(ordered_nodes),
+    layout=stressmajorize_layout,
+    nodefillc="lightgray",
+    edgestrokec="black",
+    EDGELINEWIDTH=0.3)
 
 ## TODO Check with Jasper Node Eliminatio Algo in MatLab [/Users/andreaperin_macos/Documents/PhD/3_Academic/Code/Matlab/OpenCossan/+opencossan/+bayesiannetworks]
 
