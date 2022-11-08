@@ -5,9 +5,9 @@ using Graphs
 using ProgressMeter
 include("CPDs.jl")
 
-abstract type EbnNode end
+abstract type Node end
 
-mutable struct Node <: EbnNode
+mutable struct StdNode <: Node
     ##TODO add check on normalization of cpds
     cpd::CPD
     parents::Vector{Node}
@@ -31,7 +31,7 @@ mutable struct Node <: EbnNode
     end
 end
 
-struct ModelNode <: EbnNode
+struct ModelNode
     name::Symbol
     parents::Vector{Node}
     default_inputs::Dict{String,Vector}
@@ -116,7 +116,7 @@ function states(node::Node)
     end
 end
 
-function get_discrete_parents(node::Union{EbnNode,ModelNode})
+function get_discrete_parents(node::Union{Node,ModelNode})
     # discrete_parents = Vector{Node}()
     discrete_parents_dict = Dict{Symbol,Node}()
     for parent in node.parents
@@ -128,7 +128,7 @@ function get_discrete_parents(node::Union{EbnNode,ModelNode})
     return discrete_parents_dict
 end
 
-function get_continuous_parents(node::Union{EbnNode,ModelNode})
+function get_continuous_parents(node::Union{Node,ModelNode})
     continuous_parents = Vector{Node}()
     for parent in node.parents
         if parent.type == "continuous"
@@ -138,7 +138,7 @@ function get_continuous_parents(node::Union{EbnNode,ModelNode})
     return continuous_parents
 end
 
-function get_discreteparents_states_combinations(node::Union{EbnNode,ModelNode})
+function get_discreteparents_states_combinations(node::Union{Node,ModelNode})
     discrete_parents = get_discrete_parents(node)
     all_discreteparents_states = Dict()
     combinations = Vector{Tuple{Symbol}}()
@@ -153,12 +153,12 @@ function get_discreteparents_states_combinations(node::Union{EbnNode,ModelNode})
     return all_discreteparents_states, combinations
 end
 
-function get_new_ordered_parents(node::Union{EbnNode,ModelNode})
+function get_new_ordered_parents(node::Union{NodeNameUnion,ModelNode})
     new_ordered_parents = [get_discrete_parents(node)[i] for i in collect(keys(get_discreteparents_states_combinations(node)[1]))]
     return new_ordered_parents
 end
 
-function get_discreteparents_states_mapping_dict(node::Union{EbnNode,ModelNode})
+function get_discreteparents_states_mapping_dict(node::Union{Node,ModelNode})
     parents = get_discrete_parents(node)
     mapping = Dict{EbnNode,Dict{}}()
     for parent_node in collect(values(parents))
@@ -171,7 +171,7 @@ function get_discreteparents_states_mapping_dict(node::Union{EbnNode,ModelNode})
     return mapping
 end
 
-function map_state_to_integer(dict_to_be_mapped::Dict, node::Union{EbnNode,ModelNode})
+function map_state_to_integer(dict_to_be_mapped::Dict, node::Union{Node,ModelNode})
     new_dict = Dict()
     discrete_parents = get_discrete_parents(node)
     mapping = get_discreteparents_states_mapping_dict(node)
@@ -187,7 +187,7 @@ function map_state_to_integer(dict_to_be_mapped::Dict, node::Union{EbnNode,Model
     return new_dict
 end
 
-function map_state_to_integer(vector_to_be_mapped::Vector, node::Union{EbnNode,ModelNode})
+function map_state_to_integer(vector_to_be_mapped::Vector, node::Union{Node,ModelNode})
     new_dict = Dict()
     discrete_parents = get_discrete_parents(node)
     mapping = get_discreteparents_states_mapping_dict(node)
