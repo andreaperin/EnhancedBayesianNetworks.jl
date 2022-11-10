@@ -53,7 +53,7 @@ Distributions.ncategories(s::MappedAliasTable) = Distributions.ncategories(s.ali
 ## TODO Add this to logs
 function NamedCategorical(items::AbstractVector{N}, probs::Vector{Float64}) where {N<:MapableTypes}
     if sum(probs) != 1
-        println("Not normalized probabilities => automatically normalized")
+        println("$items => Not normalized probabilities => automatically normalized")
     end
     cat = Categorical(probs ./ sum(probs))
     map = CategoricalDiscretizer(items)
@@ -70,24 +70,24 @@ A CPD for which the distribution never changes.
     target: name of the CPD's variable
     parents: list of parent variables.
     distributions: a Distributions.jl distribution
-While a StaticCPD can have parents, their assignments will not affect the distribution.
+While a RootCPD can have parents, their assignments will not affect the distribution.
 """
-mutable struct StaticCPD{D} <: CPD{D}
+mutable struct RootCPD{D} <: CPD{D}
     target::NodeName
     parents::NodeNames
     distributions::D
 end
 
-StaticCPD(target::NodeName, distributions::Distribution) = StaticCPD(target, NodeName[], distributions)
+RootCPD(target::NodeName, distributions::Distribution) = RootCPD(target, NodeName[], distributions)
 
-name(cpd::StaticCPD) = cpd.target
+name(cpd::RootCPD) = cpd.target
 
-parents(cpd::StaticCPD) = cpd.parents
+parents(cpd::RootCPD) = cpd.parents
 
-(cpd::StaticCPD)(a::Assignment) = cpd.distributions # no update
-(cpd::StaticCPD)() = (cpd)(Assignment()) # cpd()
-(cpd::StaticCPD)(pair::Pair{NodeName}...) = (cpd)(Assignment(pair)) # cpd(:A=>1)
-nparams(cpd::StaticCPD) = paramcount(params(cpd.d))
+(cpd::RootCPD)(a::Assignment) = cpd.distributions # no update
+(cpd::RootCPD)() = (cpd)(Assignment()) # cpd()
+(cpd::RootCPD)(pair::Pair{NodeName}...) = (cpd)(Assignment(pair)) # cpd(:A=>1)
+nparams(cpd::RootCPD) = paramcount(params(cpd.distributions))
 
 """
 A categorical distribution, P(x|parents(x)) where all parents are discrete integers 1:N.

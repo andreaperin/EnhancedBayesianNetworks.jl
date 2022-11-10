@@ -1,9 +1,9 @@
 using GraphPlot
-include("CPDs.jl")
-include("nodes.jl")
-include("buildmodel_TH.jl")
-include("models_probabilities.jl")
-include("bn.jl")
+include("../CPDs.jl")
+include("../nodes.jl")
+include("../buildmodel_TH.jl")
+include("../models_probabilities.jl")
+include("../bn.jl")
 
 a = NamedCategorical([:first, :second, :third], [1.34, 1.33, 1.33])
 CPDa = StaticCPD(:time_scenario, a)

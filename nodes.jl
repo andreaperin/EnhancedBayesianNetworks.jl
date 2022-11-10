@@ -108,63 +108,56 @@ function name(node::T) where {T<:AbstractNode}
 end
 
 function states(node::AbstractNode)
-    if node.cpd isa StaticCPD
-        return node.type == "discrete" ? node.cpd.d.map.n2d : "this is a continuous node"
+    if node.cpd isa RootCPD
+        return node.type == "discrete" ? node.cpd.distributions.map.n2d : "this is a continuous node"
     else
         return node.type == "discrete" ? node.cpd.distributions[1].map.n2d : "this is a continuous node"
     end
 end
 
 function get_discrete_parents(node::T) where {T<:AbstractNode}
-    # discrete_parents = Vector{Node}()
-    discrete_parents_dict = Dict{Symbol,Node}()
-    for parent in node.parents
-        if parent.type == "discrete"
-            # push!(discrete_parents, parent)
-            discrete_parents_dict[parent.cpd.target] = parent
-        end
-    end
+    discrete_parents_dict = copy(node.parents)
+    filter(x -> x.type == "discrete", discrete_parents_dict)
     return discrete_parents_dict
 end
 
 function get_continuous_parents(node::T) where {T<:AbstractNode}
-    continuous_parents = Vector{Node}()
-    for parent in node.parents
-        if parent.type == "continuous"
-            push!(continuous_parents, parent)
-        end
-    end
+    continuous_parents = copy(node.parent)
+    filter(x -> x.type == "continuous", discrete_parents_dict)
     return continuous_parents
 end
 
 function get_discreteparents_states_combinations(node::T) where {T<:AbstractNode}
     discrete_parents = get_discrete_parents(node)
-    all_discreteparents_states = Dict()
+    all_discreteparents_states = Vector{Dict{Symbol,Vector}}()
+    to_combine = []
     combinations = Vector{Tuple{Symbol}}()
-    for (parent_name, parent) in discrete_parents
-        if parent.cpd isa StaticCPD
-            all_discreteparents_states[parent_name] = collect(values(parent.cpd.d.map.d2n))
+    for parent in discrete_parents
+        if parent.cpd isa RootCPD
+            push!(all_discreteparents_states, Dict(name(parent) => collect(values(parent.cpd.distributions.map.d2n))))
+            push!(to_combine, collect(values(parent.cpd.distributions.map.d2n)))
         else
-            all_discreteparents_states[parent_name] = collect(values(parent.cpd.distributions[1].map.d2n))
+            push!(all_discreteparents_states, Dict(name(parent) => collect(values(parent.cpd.distributions[1].map.d2n))))
+            push!(to_combine, collect(values(parent.cpd.distributions[1].map.d2n)))
         end
     end
-    combinations = collect(Iterators.product(collect(values(all_discreteparents_states))...))
+    combinations = collect(Iterators.product(to_combine...))
     return all_discreteparents_states, combinations
 end
 
-function get_new_ordered_parents(node::T) where {T<:AbstractNode}
-    new_ordered_parents = [get_discrete_parents(node)[i] for i in collect(keys(get_discreteparents_states_combinations(node)[1]))]
-    return new_ordered_parents
-end
+# function get_new_ordered_parents(node::T) where {T<:AbstractNode}
+#     new_ordered_parents = [get_discrete_parents(node)[i] for i in collect(keys(get_discreteparents_states_combinations(node)[1]))]
+#     return new_ordered_parents
+# end
 
 function get_discreteparents_states_mapping_dict(node::T) where {T<:AbstractNode}
-    parents = get_discrete_parents(node)
+    discrete_parents = get_discrete_parents(node)
     mapping = Dict{AbstractNode,Dict{}}()
-    for parent_node in collect(values(parents))
-        if parent_node.cpd isa StaticCPD
-            mapping[parent_node] = parent_node.cpd.d.map.n2d
+    for parent in discrete_parents
+        if parent.cpd isa RootCPD
+            mapping[parent] = parent.cpd.distributions.map.n2d
         else
-            mapping[parent_node] = parent_node.cpd.distributions[1].map.n2d
+            mapping[parent] = parent.cpd.distributions[1].map.n2d
         end
     end
     return mapping
@@ -237,6 +230,6 @@ function get_cpd_dict(node::Node)
         end
         return sort(cpds_dict)
     else
-        return Dict(tuple(undef) => node.cpd.d)
+        return Dict(tuple(undef) => node.cpd.distributions)
     end
 end

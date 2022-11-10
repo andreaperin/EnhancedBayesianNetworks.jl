@@ -1,6 +1,6 @@
-include("ebnprova.jl")
-include("buildmodel_TH.jl")
-include("models_probabilities.jl")
+include("../bn.jl")
+include("../buildmodel_TH.jl")
+include("../models_probabilities.jl")
 
 a = NamedCategorical([:first, :second, :third], [0.34, 0.33, 0.33])
 CPDa = StaticCPD(:time_scenario, a)

@@ -246,15 +246,19 @@ function evaluate_nodecpd_with_evidence(bn::StdBayesNet, nodename::NodeName, evi
     assignment_index = nodename_parents .∈ [assignment_parents]
     undefined_assignmets = nodename_parents[nodename_parents.∉[assignment_parents]]
     useless_assignmets = assignment_parents[assignment_parents.∉[nodename_parents]]
-    println("Evidences on $useless_assignmets should be treated with join pdf")
-    println("Following cpds are defined for each value of $undefined_assignmets")
+    if ~isempty(useless_assignmets)
+        println("Evidences on $useless_assignmets should be treated with join pdf")
+    end
+    if ~isempty(undefined_assignmets)
+        println("Following cpds are defined for each value of $undefined_assignmets")
+    end
     vec_keys = Vector()
     for i in range(1, length(assignment_index))
         if assignment_index[i]
             push!(vec_keys, [evidence[nodename_parents[i]]])
         else
-            if isa(bn.cpds[bn.name_to_index[nodename_parents[i]]], StaticCPD)
-                push!(vec_keys, [1:length(bn.cpds[bn.name_to_index[nodename_parents[i]]].d);])
+            if isa(bn.cpds[bn.name_to_index[nodename_parents[i]]], RootCPD)
+                push!(vec_keys, [1:length(bn.cpds[bn.name_to_index[nodename_parents[i]]].distributions);])
             else
                 push!(vec_keys, [1:length(bn.cpds[bn.name_to_index[nodename_parents[i]]].distributions);])
             end
