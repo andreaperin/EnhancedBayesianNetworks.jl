@@ -25,3 +25,4 @@ Manifest.toml
 
 # Mine
 model_TH/inputs/*
+old/*
