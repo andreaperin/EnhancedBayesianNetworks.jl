@@ -1,3 +1,5 @@
+using Plots
+using GraphRecipes
 using Graphs: DiGraph, SimpleEdge, add_edge!, rem_edge!,
     add_vertex!, rem_vertex!,
     edges, topological_sort_by_dfs, inneighbors,
@@ -75,6 +77,19 @@ function StdBayesNet(nodes::Vector{F}) where {F<:Node}
     ordered_cpds, ordered_nodes, ordered_name_to_index, ordered_dag = _topological_ordered_dag(nodes)
     return StdBayesNet(ordered_dag, ordered_nodes, ordered_cpds, ordered_name_to_index)
 end
+
+function show(bn::StdBayesNet)
+    graphplot(
+        bn.dag,
+        method=:tree,
+        names=name.(bn.nodes),
+        fontsize=9,
+        nodeshape=:ellipse,
+        markercolor=map(x -> x.type == "discrete" ? "red" : "blue", bn.nodes),
+        linecolor=:darkgrey,
+    )
+end
+
 
 Base.get(bn::StdBayesNet, i::Int) = bn.cpds[i]
 Base.get(bn::StdBayesNet, nodename::NodeName) = bn.cpds[bn.name_to_index[nodename]]
