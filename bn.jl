@@ -61,8 +61,6 @@ function _topological_ordered_dag(nodes::Vector{F}) where {F<:Node}
     new_dag = _build_DiAGraph_from_nodes(new_cpds)
     return new_cpds, new_nodes, new_name_to_index, new_dag
 end
-
-
 mutable struct StdBayesNet <: ProbabilisticGraphicalModel
     ## TODO: Add chech or all discrete or no continuous with children (=>EBN)
     dag::DiGraph
@@ -85,7 +83,7 @@ function show(bn::StdBayesNet)
         names=name.(bn.nodes),
         fontsize=9,
         nodeshape=:ellipse,
-        markercolor=map(x -> x.type == "discrete" ? "red" : "blue", bn.nodes),
+        markercolor=map(x -> x.type == "discrete" ? "lightgreen" : "orange", bn.nodes),
         linecolor=:darkgrey,
     )
 end

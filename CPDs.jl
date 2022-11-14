@@ -30,7 +30,6 @@ end
 """
     Definition of the CPD AbstractType
 """
-## TODO: CPD should accept as argument also a SRP
 abstract type CPD{D<:Distribution} end
 
 """
@@ -90,7 +89,7 @@ parents(cpd::RootCPD) = cpd.parents
 nparams(cpd::RootCPD) = paramcount(params(cpd.distributions))
 
 """
-A categorical distribution, P(x|parents(x)) where all parents are discrete integers 1:N.
+A categorical CPD, P(x|parents(x)) where all parents are discrete integers 1:N.
 The ordering of `distributions` array follows the sequence: 
 X,Y,Z
 1,1,1
@@ -103,8 +102,8 @@ X,Y,Z
 struct CategoricalCPD{D} <: CPD{D}
     target::NodeName
     parents::NodeNames
-    parental_ncategories::Vector{Int} # list of instantiation counts for each parent, in same order as parents
-    distributions::Vector{D}  # a vector of distributions in DMU order
+    parental_ncategories::Vector{Int}
+    distributions::Vector{D}
 end
 
 CategoricalCPD(target::NodeName, d::D) where {D<:Distribution} = CategoricalCPD(target, NodeName[], Int[], D[d])
@@ -126,3 +125,4 @@ function (cpd::CategoricalCPD)(a::Assignment=Assignment())
 end
 (cpd::CategoricalCPD)(pair::Pair{NodeName}...) = (cpd)(Assignment(pair))
 Distributions.ncategories(cpd::CategoricalCPD) = ncategories(first(cpd.distributions))
+

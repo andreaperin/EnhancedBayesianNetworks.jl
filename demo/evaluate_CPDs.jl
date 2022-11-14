@@ -1,4 +1,3 @@
-using GraphPlot
 include("../CPDs.jl")
 include("../nodes.jl")
 include("../buildmodel_TH.jl")
@@ -6,11 +5,11 @@ include("../models_probabilities.jl")
 include("../bn.jl")
 
 a = NamedCategorical([:first, :second, :third], [1.34, 1.33, 1.33])
-CPDa = StaticCPD(:time_scenario, a)
+CPDa = RootCPD(:time_scenario, a)
 timescenario = StdNode(CPDa)
 
 c1 = NamedCategorical([:low, :medium, :high], [0.5, 0.3, 0.2])
-CPDc = StaticCPD(:grandparent, c1)
+CPDc = RootCPD(:grandparent, c1)
 grandparent = StdNode(CPDc)
 
 parents_dispersivitivy_longv = [timescenario, grandparent]
@@ -109,7 +108,6 @@ else
 end
 
 model_input_folder = joinpath(system_model, "inputs")
-
 sim_th = MonteCarlo(100)
 parents_th = [simulation_days, pumpflowrate, Kz]
 default_file = joinpath(model_input_folder, "default_th_values.xlsx")
@@ -120,43 +118,35 @@ extras = String[]
 solvername = "smokerV3TC"
 output_parameters = xlsx2output_parameter(default_file)
 performances = build_performances(output_parameters)
-th_node = ModelNode(:th_node, parents_th, default_inputs_th, sourcedir, source_file, extras, solvername, output_parameters, performances, true, sim_th)
+inputs_mapping_dict, updated_inputs = _get_discrete_inputs_mapping_dict(parents_th, default_file, sourcedir, source_file, extras, solvername, true)
+models = _get_externalmodels_vector(inputs_mapping_dict)
+cpd_th = collect(values(sort(map_state_to_integer(models, parents_th))))
+th_node = NewModelNode(:node_th, parents_th, models, updated_inputs, performances)
 
-inputs_mapping_dict, updated_inputs = get_inputs_mapping_dict1(th_node)
-new_ordered_parents = get_new_ordered_parents(th_node)
+
+
+
 
 # map_state_to_integer(updated_inputs, th_node)
-th_node = ModelNode(:th_node, new_ordered_parents, default_inputs_th, sourcedir, source_file, extras, solvername, output_parameters, performances, true, inputs_mapping_dict, updated_inputs, sim_th)
+# th_node = ModelNode(:th_node, new_ordered_parents, default_inputs_th, sourcedir, source_file, extras, solvername, output_parameters, performances, true, inputs_mapping_dict, updated_inputs, sim_th)
 
-prob, cpd, CPDth, th_node_final = evaluate_cpd_from_model(th_node, inputs_mapping_dict, performances, updated_inputs)
+# prob, cpd, CPDth, th_node_final = evaluate_cpd_from_model(th_node, inputs_mapping_dict, performances, updated_inputs)
 
-datetime = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS")
-path_to_store_cpds_table = joinpath(model_input_folder, "CPDs_table", datetime)
-if ispath(path_to_store_cpds_table) == false
-    mkpath(path_to_store_cpds_table)
-end
-parentsnames = join([string("_" * string(i)) for i in name.(th_node.parents)])
+# datetime = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS")
+# path_to_store_cpds_table = joinpath(model_input_folder, "CPDs_table", datetime)
+# if ispath(path_to_store_cpds_table) == false
+#     mkpath(path_to_store_cpds_table)
+# end
+# parentsnames = join([string("_" * string(i)) for i in name.(th_node.parents)])
 
-spec_string = string(typeof(th_node.sim)) * parentsnames
-@save joinpath(path_to_store_cpds_table, "sim$(spec_string).jld2") prob
+# spec_string = string(typeof(th_node.sim)) * parentsnames
+# @save joinpath(path_to_store_cpds_table, "sim$(spec_string).jld2") prob
 
-# f = jldopen(joinpath(path_to_store_cpds_table, "sim$(spec_string).jld2"), "r")
-# cond_probs_dict = f["cond_probs_dict"]
+# # f = jldopen(joinpath(path_to_store_cpds_table, "sim$(spec_string).jld2"), "r")
+# # cond_probs_dict = f["cond_probs_dict"]
 
-nodes = [timescenario, grandparent, pumpflowrate, Kz, simulation_days, th_node_final, dispersivitivy_longv]
-dag = _build_DiAGraph_from_nodes(nodes)
-ordered_cpds, ordered_nodes, ordered_name_to_index, ordered_dag = _topological_ordered_dag(nodes)
+# nodes = [timescenario, grandparent, pumpflowrate, Kz, simulation_days, th_node_final, dispersivitivy_longv]
+# dag = _build_DiAGraph_from_nodes(nodes)
+# ordered_cpds, ordered_nodes, ordered_name_to_index, ordered_dag = _topological_ordered_dag(nodes)
 
-th_bn = StdBayesNet(ordered_nodes)
-
-## TODO Check with Jasper how to plot BN in the proper way
-
-gplot(ordered_dag,
-    nodelabel=name.(ordered_nodes),
-    layout=stressmajorize_layout,
-    nodefillc="lightgray",
-    edgestrokec="black",
-    EDGELINEWIDTH=0.3)
-
-## TODO Check with Jasper Node Eliminatio Algo in MatLab [/Users/andreaperin_macos/Documents/PhD/3_Academic/Code/Matlab/OpenCossan/+opencossan/+bayesiannetworks]
-
+# th_bn = StdBayesNet(ordered_nodes)
