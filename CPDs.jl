@@ -4,28 +4,29 @@ using Discretizers
 """
     Definition of the NodeName constant
 """
-const NodeName = Symbol
+const global NodeName = Symbol
 
-const NodeNames = AbstractVector{NodeName}
-const NodeNameUnion = Union{NodeName,NodeNames}
+const global NodeNames = AbstractVector{NodeName}
+const global NodeNameUnion = Union{NodeName,NodeNames}
 
-nodeconvert(::Type{NodeNames}, names::NodeNameUnion) = names
-nodeconvert(::Type{NodeNames}, name::NodeName) = [name]
+# nodeconvert(::Type{NodeNames}, names::NodeNameUnion) = names
+# nodeconvert(::Type{NodeNames}, name::NodeName) = [name]
 
 """
     Definition of the Assignment constant as Dict{NodeName, Any}
 """
-const Assignment = Dict{NodeName,Any}
-nodenames(a::Assignment) = collect(keys(a))
+const global Assignment = Dict{NodeName,Any}
 
-function consistent(a::Assignment, b::Assignment)
-    for key in keys(a)
-        if haskey(b, key) && b[key] != a[key]
-            return false
-        end
-    end
-    return true
-end
+# nodenames(a::Assignment) = collect(keys(a))
+
+# function consistent(a::Assignment, b::Assignment)
+#     for key in keys(a)
+#         if haskey(b, key) && b[key] != a[key]
+#             return false
+#         end
+#     end
+#     return true
+# end
 
 """
     Definition of the CPD AbstractType
@@ -35,8 +36,7 @@ abstract type CPD{D<:Distribution} end
 """
     An Object for mapping each distribution to a MapableTypes::Union{AbstractString, Symbol}
 """
-const MapableTypes = Union{AbstractString,Symbol}
-
+const global MapableTypes = Union{AbstractString,Symbol}
 struct MappedAliasTable <: Sampleable{Univariate,Discrete}
     alias::Distributions.AliasTable
     map::CategoricalDiscretizer
@@ -45,6 +45,7 @@ end
 struct NamedCategorical{N<:MapableTypes} <: DiscreteUnivariateDistribution
     cat::Categorical
     map::CategoricalDiscretizer{N,Int}
+    prob_dict::Dict{Symbol,Float64}
 end
 
 Distributions.ncategories(s::MappedAliasTable) = Distributions.ncategories(s.alias)
@@ -56,7 +57,8 @@ function NamedCategorical(items::AbstractVector{N}, probs::Vector{Float64}) wher
     end
     cat = Categorical(probs ./ sum(probs))
     map = CategoricalDiscretizer(items)
-    NamedCategorical{N}(cat, map)
+    prob_dict = Dict(items .=> probs ./ sum(probs))
+    NamedCategorical{N}(cat, map, prob_dict)
 end
 
 Distributions.ncategories(d::NamedCategorical) = Distributions.ncategories(d.cat)
@@ -71,18 +73,26 @@ A CPD for which the distribution never changes.
     distributions: a Distributions.jl distribution
 While a RootCPD can have parents, their assignments will not affect the distribution.
 """
-mutable struct RootCPD{D} <: CPD{D}
+mutable struct RootCPD{D<:Distribution} <: CPD{D}
     target::NodeName
     parents::NodeNames
     distributions::D
+    prob_dict::Union{Dict{Symbol,D},Dict{Symbol,Float64}}
 end
 
-RootCPD(target::NodeName, distributions::Distribution) = RootCPD(target, NodeName[], distributions)
+function RootCPD(target::NodeName, distributions::D) where {D<:Distribution}
+    if isa(distributions, NamedCategorical)
+        prob_dict = distributions.prob_dict
+    else
+        prob_dict = Dict{Symbol,D}(:nothing => distributions)
+    end
+    RootCPD(target, NodeName[], distributions, prob_dict)
+end
+
+
 
 name(cpd::RootCPD) = cpd.target
-
 parents(cpd::RootCPD) = cpd.parents
-
 (cpd::RootCPD)(a::Assignment) = cpd.distributions # no update
 (cpd::RootCPD)() = (cpd)(Assignment()) # cpd()
 (cpd::RootCPD)(pair::Pair{NodeName}...) = (cpd)(Assignment(pair)) # cpd(:A=>1)
@@ -99,14 +109,16 @@ X,Y,Z
 1,1,2
 ...
 """
-struct CategoricalCPD{D} <: CPD{D}
+struct CategoricalCPD{D<:Distribution} <: CPD{D}
     target::NodeName
     parents::NodeNames
     parental_ncategories::Vector{Int}
     distributions::Vector{D}
 end
 
-CategoricalCPD(target::NodeName, d::D) where {D<:Distribution} = CategoricalCPD(target, NodeName[], Int[], D[d])
+function CategoricalCPD(target::NodeName, d::D) where {D<:Distribution}
+    CategoricalCPD(target, NodeName[], Int[], D[d])
+end
 
 name(cpd::CategoricalCPD) = cpd.target
 parents(cpd::CategoricalCPD) = cpd.parents

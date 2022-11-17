@@ -4,6 +4,11 @@ include("../buildmodel_TH.jl")
 include("../models_probabilities.jl")
 include("../bn.jl")
 
+
+distributions = truncated(Normal(1, 1), lower=0)
+e = RootCPD(:c, distributions)
+
+"""Root Nodes"""
 a = NamedCategorical([:first, :second, :third], [1.34, 1.33, 1.33])
 CPDa = RootCPD(:time_scenario, a)
 timescenario = StdNode(CPDa)
@@ -12,6 +17,7 @@ c1 = NamedCategorical([:low, :medium, :high], [0.5, 0.3, 0.2])
 CPDc = RootCPD(:grandparent, c1)
 grandparent = StdNode(CPDc)
 
+"""Other Nodes"""
 parents_dispersivitivy_longv = [timescenario, grandparent]
 dispersivitivy_longv1 = truncated(Normal(1, 1), lower=0)
 dispersivitivy_longv2 = truncated(Normal(2, 1), lower=0)
@@ -121,7 +127,7 @@ performances = build_performances(output_parameters)
 inputs_mapping_dict, updated_inputs = _get_discrete_inputs_mapping_dict(parents_th, default_file, sourcedir, source_file, extras, solvername, true)
 models = _get_externalmodels_vector(inputs_mapping_dict)
 cpd_th = collect(values(sort(map_state_to_integer(models, parents_th))))
-th_node = NewModelNode(:node_th, parents_th, models, updated_inputs, performances)
+th_node = NewModelNode(parents_th, models, updated_inputs, performances)
 
 
 
