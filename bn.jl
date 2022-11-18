@@ -7,6 +7,7 @@ using Graphs: DiGraph, SimpleEdge, add_edge!, rem_edge!,
     outdegree, bfs_tree, dst
 
 include("CPDs.jl")
+include("nodes.jl")
 
 abstract type ProbabilisticGraphicalModel end
 
