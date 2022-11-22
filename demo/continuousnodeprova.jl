@@ -3,27 +3,32 @@ include("../buildmodel_TH.jl")
 include("../models_probabilities.jl")
 
 a = NamedCategorical([:first, :second, :third], [0.34, 0.33, 0.33])
-CPDa = StaticCPD(:time_scenario, a)
-timescenario = Node(CPDa)
+CPDa = RootCPD(:time_scenario, a)
+timescenario = StdNode(CPDa)
 
 b = NamedCategorical([:happen, :nothappen], [0.5, 0.5])
-CPDprova = StaticCPD(:prova, b)
-prova = Node(CPDprova)
+CPDprova = RootCPD(:prova, b)
+prova = StdNode(CPDprova)
 
 c1 = NamedCategorical([:low, :medium, :high], [0.5, 0.3, 0.2])
-CPDc = StaticCPD(:grandparent, c1)
-grandparent = Node(CPDc)
+CPDc = RootCPD(:grandparent, c1)
+grandparent = StdNode(CPDc)
 
 
 parents_dispersivitivy_longv = [timescenario, grandparent]
 dispersivitivy_longv1 = truncated(Normal(1, 1), lower=0)
 dispersivitivy_longv2 = truncated(Normal(2, 1), lower=0)
 dispersivitivy_longv3 = truncated(Normal(2, 2), lower=0.1)
-dispersivitivy_longv1 = truncated(Normal(10, 1), lower=0)
-dispersivitivy_longv2 = truncated(Normal(20, 1), lower=0)
-dispersivitivy_longv3 = truncated(Normal(22, 2), lower=0.1)
-CPDd = CategoricalCPD{Distribution}(:flow, [:time_scenario, :grandparent], [3, 3], [dispersivitivy_longv1, dispersivitivy_longv2, dispersivitivy_longv3])
-dispersivitivy_longv = Node(CPDd, parents_dispersivitivy_longv)
+dispersivitivy_longv4 = truncated(Normal(10, 1), lower=0)
+dispersivitivy_longv5 = truncated(Normal(20, 1), lower=0)
+dispersivitivy_longv6 = truncated(Normal(22, 2), lower=0.1)
+dispersivitivy_longv7 = truncated(Normal(22, 2), lower=0.1)
+dispersivitivy_longv8 = truncated(Normal(22, 2), lower=0.1)
+dispersivitivy_longv9 = truncated(Normal(22, 2), lower=0.1)
+
+dist = [dispersivitivy_longv1, dispersivitivy_longv2, dispersivitivy_longv3, dispersivitivy_longv4, dispersivitivy_longv5, dispersivitivy_longv6, dispersivitivy_longv7, dispersivitivy_longv8, dispersivitivy_longv2]
+CPDd = CategoricalCPD(:flow, [:time_scenario, :grandparent], [3, 3], dist)
+dispersivitivy_longv = StdNode(CPDd, parents_dispersivitivy_longv)
 
 
 parents_Kz = [timescenario, grandparent, prova]
@@ -65,7 +70,7 @@ Kz_cpd = [
 ]
 
 CPDKz = CategoricalCPD{Distribution}(:Kz, [:time_scenario, :grandparent], [3, 3, 2], Kz_cpd)
-Kz = Node(CPDKz, parents_Kz)
+Kz = StdNode(CPDKz, parents_Kz)
 
 parents_th = [dispersivitivy_longv, Kz]
 sim_th = MonteCarlo(2)

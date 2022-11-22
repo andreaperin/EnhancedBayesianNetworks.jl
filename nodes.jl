@@ -3,6 +3,7 @@ using JLD2
 using Formatting
 using Graphs
 using ProgressMeter
+
 include("CPDs.jl")
 
 abstract type AbstractNode end
@@ -205,6 +206,22 @@ function map_state_to_integer(vector_to_be_mapped::Vector, nodes::Vector{T}) whe
     end
     return new_dict
 end
+
+function map_integer_to_state(vector_to_be_mapped::Vector, nodes::Vector{T}) where {T<:AbstractNode}
+    new_dict = Dict()
+    mapping = get_states_mapping_dict(nodes)
+    for key in vector_to_be_mapped
+        new_key = []
+        for i in range(1, length(key))
+            rmapping = Dict(values(mapping[nodes[collect(keys(nodes))[i]]]) .=> keys(mapping[nodes[collect(keys(nodes))[i]]]))
+            push!(new_key, rmapping[key[i]])
+        end
+        new_key = tuple(new_key...)
+        new_dict[new_key] = undef
+    end
+    return new_dict
+end
+
 
 function get_discreteparents_states_combinations(node::T) where {T<:AbstractNode}
     discrete_parents = get_discrete_parents(node)

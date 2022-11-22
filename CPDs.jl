@@ -1,6 +1,7 @@
 using Distributions
 using Discretizers
 
+
 """
     Definition of the NodeName constant
 """
@@ -114,11 +115,25 @@ struct CategoricalCPD{D<:Distribution} <: CPD{D}
     parents::NodeNames
     parental_ncategories::Vector{Int}
     distributions::Vector{D}
+    prob_dict::Dict{Tuple,D}
 end
 
-function CategoricalCPD(target::NodeName, d::D) where {D<:Distribution}
-    CategoricalCPD(target, NodeName[], Int[], D[d])
+function CategoricalCPD(target::NodeName, parents::NodeNames, parental_ncategories::Vector{Int}, distributions::Vector{D}) where {D<:Distribution}
+    f = x -> collect(1:1:x)
+    combinations = sort(vec(collect(Iterators.product(f.(parental_ncategories)...))))
+    prob_dict = Dict{Tuple,D}(combinations .=> distributions)
+    CategoricalCPD(target, parents, parental_ncategories, distributions, prob_dict)
 end
+
+## Second way to define the CategoricalCPD trought a dict::(1,1) => [NamedCategorical1, NamedCategorical2]
+function CategoricalCPD(target::NodeName, parents::NodeNames, prob_dict::Dict{Tuple,D}) where {D<:Distribution}
+    distributions = Vector{D}(collect(values(sort(prob_dict))))
+    f = x -> collect(x)
+    combinations = mapreduce(permutedims, vcat, f.(collect(keys(prob_dict))))
+    parental_ncategories = findmax(combinations, dims=1)[1]
+    CategoricalCPD(target, parents, parental_ncategories, distributions, prob_dict)
+end
+
 
 name(cpd::CategoricalCPD) = cpd.target
 parents(cpd::CategoricalCPD) = cpd.parents
