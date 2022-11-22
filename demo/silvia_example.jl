@@ -31,20 +31,15 @@ CPD_extremeprecipitation = CategoricalCPD(
 node_extremeprecipitation = StdNode(CPD_extremeprecipitation, parents_extremeprecipitation)
 
 
-waterleve1 = NamedCategorical([:low, :high], [0.9, 0.1])
-waterleve2 = NamedCategorical([:low, :high], [0.8, 0.2])
-waterleve3 = NamedCategorical([:low, :high], [0.6, 0.4])
-waterleve4 = NamedCategorical([:low, :high], [0.2, 0.8])
-waterleve5 = NamedCategorical([:low, :high], [0.1, 0.9])
-parents_waterlevel = [node_extremeprecipitation]
-CPD_waterlevel = CategoricalCPD(
-    :waterlevel, name.(parents_waterlevel), [5],
-    [waterleve1,
-        waterleve2,
-        waterleve3,
-        waterleve4,
-        waterleve5]
+prob_dict_waterlevel = Dict{Tuple,Distribution}(
+    Tuple(1) => NamedCategorical([:low, :high], [0.9, 0.1]),
+    Tuple(2) => NamedCategorical([:low, :high], [0.8, 0.2]),
+    Tuple(3) => NamedCategorical([:low, :high], [0.6, 0.4]),
+    Tuple(4) => NamedCategorical([:low, :high], [0.2, 0.8]),
+    Tuple(5) => NamedCategorical([:low, :high], [0.1, 0.9])
 )
+parents_waterlevel = [node_extremeprecipitation]
+CPD_waterlevel = CategoricalCPD(:waterlevel, name.(parents_waterlevel), prob_dict_waterlevel)
 node_waterlevel = StdNode(CPD_waterlevel, parents_waterlevel)
 
 debrisflow1 = NamedCategorical([:state1, :state2, :state3, :state4], [0.444, 0.519, 0.027, 0.01])

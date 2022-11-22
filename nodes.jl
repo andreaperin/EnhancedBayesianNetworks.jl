@@ -14,6 +14,7 @@ mutable struct StdNode <: Node
     type::String
     model_input::Dict{Symbol,Dict{String,Vector}}
     function StdNode(cpd::CPD)
+        ```Function for Root Node only```
         parents = Vector{AbstractNode}()
         type = isa(cpd, CPD{Distribution}) ? "continuous" : "discrete"
         model_input = Dict{Symbol,Dict{String,Vector}}()
@@ -22,12 +23,29 @@ mutable struct StdNode <: Node
     function StdNode(cpd::CPD, parents::Vector{T}) where {T<:AbstractNode}
         type = isa(cpd, CPD{Distribution}) ? "continuous" : "discrete"
         model_input = Dict{Symbol,Dict{String,Vector}}()
-        new(cpd, parents, type, model_input)
+        ##TODO add to log
+        f = x -> findmax(collect(values(x)), dims=1)[1][1]
+        parental_ncategories = f.(states.(parents))
+        if parental_ncategories != cps.parental_ncategories
+            parents_name = names.(parents)
+            node_name = cpd.target
+            println("mismatch in $node_name:  assigned cpds are not equal to parental categories $parental_ncategories")
+        else
+            new(cpd, parents, type, model_input)
+        end
     end
     function StdNode(cpd::CPD, parents::Vector{T}, model_input::Dict{Symbol,Dict{String,Vector}}) where {T<:AbstractNode}
-        ## TODO Add check for dictionary coherence
         type = isa(cpd, CPD{Distribution}) ? "continuous" : "discrete"
-        new(cpd, parents, type, model_input)
+        ##TODO add to log
+        f = x -> findmax(collect(values(x)), dims=1)[1][1]
+        parental_ncategories = f.(states.(parents))
+        if parental_ncategories != cps.parental_ncategories
+            parents_name = names.(parents)
+            node_name = cpd.target
+            println("mismatch in $node_name:  assigned cpds are not equal to parental categories $parental_ncategories")
+        else
+            new(cpd, parents, type, model_input)
+        end
     end
 end
 
@@ -203,6 +221,21 @@ function map_state_to_integer(vector_to_be_mapped::Vector, nodes::Vector{T}) whe
         end
         new_key = tuple(new_key...)
         new_dict[new_key] = undef
+    end
+    return new_dict
+end
+
+function map_integer_to_state(dict_to_be_mapped::Dict, nodes::Vector{T}) where {T<:AbstractNode}
+    new_dict = Dict()
+    mapping = get_states_mapping_dict(nodes)
+    for (key, val) in dict_to_be_mapped
+        new_key = []
+        for i in range(1, length(key))
+            rmapping = Dict(values(mapping[nodes[collect(keys(nodes))[i]]]) .=> keys(mapping[nodes[collect(keys(nodes))[i]]]))
+            push!(new_key, rmapping[key[i]])
+        end
+        new_key = tuple(new_key...)
+        new_dict[new_key] = val
     end
     return new_dict
 end

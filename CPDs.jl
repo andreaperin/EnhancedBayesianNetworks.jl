@@ -130,7 +130,7 @@ function CategoricalCPD(target::NodeName, parents::NodeNames, prob_dict::Dict{Tu
     distributions = Vector{D}(collect(values(sort(prob_dict))))
     f = x -> collect(x)
     combinations = mapreduce(permutedims, vcat, f.(collect(keys(prob_dict))))
-    parental_ncategories = findmax(combinations, dims=1)[1]
+    parental_ncategories = vec(findmax(combinations, dims=1)[1])
     CategoricalCPD(target, parents, parental_ncategories, distributions, prob_dict)
 end
 
