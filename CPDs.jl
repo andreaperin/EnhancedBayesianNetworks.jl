@@ -51,8 +51,8 @@ end
 
 Distributions.ncategories(s::MappedAliasTable) = Distributions.ncategories(s.alias)
 
-## TODO Add this to logs
 function NamedCategorical(items::AbstractVector{N}, probs::Vector{Float64}) where {N<:MapableTypes}
+    ## TODO Add this to logs
     if sum(probs) != 1
         println("$items => Not normalized probabilities => automatically normalized")
     end
