@@ -8,25 +8,31 @@ include("CPDs.jl")
 
 abstract type AbstractNode end
 abstract type Node <: AbstractNode end
+const global ModelInput = Union{Vector{Tuple{Symbol,FormatSpec}},Dict{Symbol,Tuple{Symbol,Float64,FormatSpec}}}
+
 mutable struct StdNode <: Node
     cpd::CPD
     parents::Vector{T} where {T<:AbstractNode}
     type::String
-    model_input::Dict{Symbol,Dict{String,Vector}}
+    model_input::I where {I<:ModelInput}
     ##TODO add to log
-    StdNode(cpd, parents, type, model_input) = cpd.parents == name.(parents) ? new(cpd, parents, type, model_input) : error("parents mismatch between CPD and node")
-    StdNode(cpd, parents, type, model_input) = length(filter(x -> x.type == "discrete", parents)) == lenght(cpd.parental_ncategories) ? new(cpd, parents, type, model_input) : error("parents mismatch in CPD for discrete parents and parental_ncategories")
+    function StdNode(cpd::CPD, parents::Vector{T}, type::String, model_input::I) where {T<:AbstractNode,I<:ModelInput}
+        cpd.parents == name.(parents) ? new(cpd, parents, type, model_input) : error("parents mismatch between CPD and node")
+    end
+    function StdNode(cpd::CPD, parents::Vector{T}, type::String, model_input::I) where {T<:AbstractNode,I<:ModelInput}
+        length(filter(x -> x.type == "discrete", parents)) == lenght(cpd.parental_ncategories) ? new(cpd, parents, type, model_input) : error("parents mismatch in CPD for discrete parents and parental_ncategories")
+    end
 
     function StdNode(cpd::CPD)
         ```Function for Root Node only```
         parents = Vector{AbstractNode}()
         type = isa(cpd.distributions, Union{Vector{NamedCategorical{Symbol}},NamedCategorical}) ? "discrete" : "continuous"
-        model_input = Dict{Symbol,Dict{String,Vector}}()
+        model_input = type == "discrete" ? Vector{Tuple{Symbol,FormatSpec}}() : Dict{Symbol,Tuple}()
         new(cpd, parents, type, model_input)
     end
     function StdNode(cpd::CPD, parents::Vector{T}) where {T<:AbstractNode}
         type = isa(cpd.distributions, Union{Vector{NamedCategorical{Symbol}},NamedCategorical}) ? "discrete" : "continuous"
-        model_input = Dict{Symbol,Dict{String,Vector}}()
+        model_input = type == "discrete" ? Vector{Tuple{Symbol,FormatSpec}}() : Dict{Symbol,Tuple}()
         ##TODO add to log
         f = x -> findmax(collect(values(x)), dims=1)[1][1]
         parental_ncategories = f.(states.(parents))
@@ -38,7 +44,7 @@ mutable struct StdNode <: Node
             new(cpd, parents, type, model_input)
         end
     end
-    function StdNode(cpd::CPD, parents::Vector{T}, model_input::Dict{Symbol,Dict{String,Vector}}) where {T<:AbstractNode}
+    function StdNode(cpd::CPD, parents::Vector{T}, model_input::I) where {T<:AbstractNode,I<:ModelInput}
         type = isa(cpd.distributions, Union{Vector{NamedCategorical{Symbol}},NamedCategorical}) ? "discrete" : "continuous"
         ##TODO add to log
         f = x -> findmax(collect(values(x)), dims=1)[1][1]
