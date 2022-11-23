@@ -13,6 +13,10 @@ mutable struct StdNode <: Node
     parents::Vector{T} where {T<:AbstractNode}
     type::String
     model_input::Dict{Symbol,Dict{String,Vector}}
+    ##TODO add to log
+    StdNode(cpd, parents, type, model_input) = cpd.parents == name.(parents) ? new(cpd, parents, type, model_input) : error("parents mismatch between CPD and node")
+    StdNode(cpd, parents, type, model_input) = length(filter(x -> x.type == "discrete", parents)) == lenght(cpd.parental_ncategories) ? new(cpd, parents, type, model_input) : error("parents mismatch in CPD for discrete parents and parental_ncategories")
+
     function StdNode(cpd::CPD)
         ```Function for Root Node only```
         parents = Vector{AbstractNode}()
