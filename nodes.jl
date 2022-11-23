@@ -26,7 +26,7 @@ mutable struct StdNode <: Node
         ##TODO add to log
         f = x -> findmax(collect(values(x)), dims=1)[1][1]
         parental_ncategories = f.(states.(parents))
-        if parental_ncategories != cps.parental_ncategories
+        if parental_ncategories != cpd.parental_ncategories
             parents_name = names.(parents)
             node_name = cpd.target
             println("mismatch in $node_name:  assigned cpds are not equal to parental categories $parental_ncategories")
@@ -39,7 +39,7 @@ mutable struct StdNode <: Node
         ##TODO add to log
         f = x -> findmax(collect(values(x)), dims=1)[1][1]
         parental_ncategories = f.(states.(parents))
-        if parental_ncategories != cps.parental_ncategories
+        if parental_ncategories != cpd.parental_ncategories
             parents_name = names.(parents)
             node_name = cpd.target
             println("mismatch in $node_name:  assigned cpds are not equal to parental categories $parental_ncategories")
