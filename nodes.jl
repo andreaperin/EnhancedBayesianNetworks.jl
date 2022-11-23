@@ -20,18 +20,18 @@ mutable struct StdNode <: Node
     function StdNode(cpd::CPD)
         ```Function for Root Node only```
         parents = Vector{AbstractNode}()
-        type = isa(cpd, CPD{Distribution}) ? "continuous" : "discrete"
+        type = isa(cpd.distributions, Union{Vector{NamedCategorical{Symbol}},NamedCategorical}) ? "discrete" : "continuous"
         model_input = Dict{Symbol,Dict{String,Vector}}()
         new(cpd, parents, type, model_input)
     end
     function StdNode(cpd::CPD, parents::Vector{T}) where {T<:AbstractNode}
-        type = isa(cpd, CPD{Distribution}) ? "continuous" : "discrete"
+        type = isa(cpd.distributions, Union{Vector{NamedCategorical{Symbol}},NamedCategorical}) ? "discrete" : "continuous"
         model_input = Dict{Symbol,Dict{String,Vector}}()
         ##TODO add to log
         f = x -> findmax(collect(values(x)), dims=1)[1][1]
         parental_ncategories = f.(states.(parents))
         if parental_ncategories != cpd.parental_ncategories
-            parents_name = names.(parents)
+            parents_name = name.(parents)
             node_name = cpd.target
             println("mismatch in $node_name:  assigned cpds are not equal to parental categories $parental_ncategories")
         else
@@ -39,12 +39,12 @@ mutable struct StdNode <: Node
         end
     end
     function StdNode(cpd::CPD, parents::Vector{T}, model_input::Dict{Symbol,Dict{String,Vector}}) where {T<:AbstractNode}
-        type = isa(cpd, CPD{Distribution}) ? "continuous" : "discrete"
+        type = isa(cpd.distributions, Union{Vector{NamedCategorical{Symbol}},NamedCategorical}) ? "discrete" : "continuous"
         ##TODO add to log
         f = x -> findmax(collect(values(x)), dims=1)[1][1]
         parental_ncategories = f.(states.(parents))
         if parental_ncategories != cpd.parental_ncategories
-            parents_name = names.(parents)
+            parents_name = name.(parents)
             node_name = cpd.target
             println("mismatch in $node_name:  assigned cpds are not equal to parental categories $parental_ncategories")
         else
