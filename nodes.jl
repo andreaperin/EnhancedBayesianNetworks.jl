@@ -8,31 +8,49 @@ include("CPDs.jl")
 
 abstract type AbstractNode end
 abstract type Node <: AbstractNode end
-const global ModelInput = Union{Vector{Tuple{Symbol,FormatSpec}},Dict{Symbol,Tuple{Symbol,Float64,FormatSpec}}}
+abstract type ModelInput end
+# const global ModelInput = Union{Vector{Tuple{Symbol,FormatSpec}},Dict{Symbol,Vector{Tuple{UQInput,FormatSpec}}}}
+struct DiscreteModelInput <: ModelInput
+    node_state::Symbol
+    definition::Union{Parameter,Nothing}
+    format::Union{FormatSpec,Nothing}
+    ## TODO add check of coherence on node state
+end
+DiscreteModelInput() = DiscreteModelInput(Symbol(), nothing, nothing)
+
+struct ContinuousModelInput <: ModelInput
+    mustache::Symbol
+    format::Union{FormatSpec,Nothing}
+end
+ContinuousModelInput() = ContinuousModelInput(Symbol(), nothing)
+
 
 mutable struct StdNode <: Node
     cpd::CPD
     parents::Vector{T} where {T<:AbstractNode}
     type::String
-    model_input::I where {I<:ModelInput}
+    model_input::Vector{I} where {I<:ModelInput}
+    output_parameters::Dict{Any,Any}
     ##TODO add to log
-    function StdNode(cpd::CPD, parents::Vector{T}, type::String, model_input::I) where {T<:AbstractNode,I<:ModelInput}
-        cpd.parents == name.(parents) ? new(cpd, parents, type, model_input) : error("parents mismatch between CPD and node")
+    function StdNode(cpd::CPD, parents::Vector{T}, type::String, model_input::Vector{I}, output_parameters::Dict{Any,Any}) where {T<:AbstractNode,I<:ModelInput}
+        cpd.parents == name.(parents) ? new(cpd, parents, type, model_input, output_parameters) : error("parents mismatch between CPD and node")
     end
-    function StdNode(cpd::CPD, parents::Vector{T}, type::String, model_input::I) where {T<:AbstractNode,I<:ModelInput}
-        length(filter(x -> x.type == "discrete", parents)) == lenght(cpd.parental_ncategories) ? new(cpd, parents, type, model_input) : error("parents mismatch in CPD for discrete parents and parental_ncategories")
+    function StdNode(cpd::CPD, parents::Vector{T}, type::String, model_input::Vector{I}, output_parameters::Dict{Any,Any}) where {T<:AbstractNode,I<:ModelInput}
+        length(filter(x -> x.type == "discrete", parents)) == lenght(cpd.parental_ncategories) ? new(cpd, parents, type, model_input, output_parameters) : error("parents mismatch in CPD for discrete parents and parental_ncategories")
     end
 
     function StdNode(cpd::CPD)
         ```Function for Root Node only```
+        output_parameters = Dict{Any,Any}()
         parents = Vector{AbstractNode}()
         type = isa(cpd.distributions, Union{Vector{NamedCategorical{Symbol}},NamedCategorical}) ? "discrete" : "continuous"
-        model_input = type == "discrete" ? Vector{Tuple{Symbol,FormatSpec}}() : Dict{Symbol,Tuple}()
-        new(cpd, parents, type, model_input)
+        model_input = type == "discrete" ? [DiscreteModelInput()] : [ContinuousModelInput()]
+        new(cpd, parents, type, model_input, output_parameters)
     end
     function StdNode(cpd::CPD, parents::Vector{T}) where {T<:AbstractNode}
         type = isa(cpd.distributions, Union{Vector{NamedCategorical{Symbol}},NamedCategorical}) ? "discrete" : "continuous"
-        model_input = type == "discrete" ? Vector{Tuple{Symbol,FormatSpec}}() : Dict{Symbol,Tuple}()
+        model_input = type == "discrete" ? [DiscreteModelInput()] : [ContinuousModelInput()]
+        output_parameters = Dict{Any,Any}()
         ##TODO add to log
         f = x -> findmax(collect(values(x)), dims=1)[1][1]
         parental_ncategories = f.(states.(parents))
@@ -41,37 +59,40 @@ mutable struct StdNode <: Node
             node_name = cpd.target
             println("mismatch in $node_name:  assigned cpds are not equal to parental categories $parental_ncategories")
         else
-            new(cpd, parents, type, model_input)
+            new(cpd, parents, type, model_input, output_parameters)
         end
     end
-    function StdNode(cpd::CPD, parents::Vector{T}, model_input::I) where {T<:AbstractNode,I<:ModelInput}
+    function StdNode(cpd::CPD, parents::Vector{T}, model_input::Vector{I}) where {T<:AbstractNode,I<:ModelInput}
         type = isa(cpd.distributions, Union{Vector{NamedCategorical{Symbol}},NamedCategorical}) ? "discrete" : "continuous"
         ##TODO add to log
         f = x -> findmax(collect(values(x)), dims=1)[1][1]
         parental_ncategories = f.(states.(parents))
+        output_parameters = Dict{Any,Any}()
         if parental_ncategories != cpd.parental_ncategories
             parents_name = name.(parents)
             node_name = cpd.target
             println("mismatch in $node_name:  assigned cpds are not equal to parental categories $parental_ncategories")
         else
-            new(cpd, parents, type, model_input)
+            new(cpd, parents, type, model_input, output_parameters)
         end
     end
 end
 
-struct NewModelNode <: AbstractNode
-    parents::Vector{T} where {T<:AbstractNode}
-    models::Dict{Any,<:UQModel}
-    uqinputs::Dict{Any,Vector{<:UQInput}}
-    performances::Dict{Symbol,Function}
-    function NewModelNode(parents::Vector{<:AbstractNode}, models::Dict{Any,<:UQModel}, uqinputs::Dict{Any,Vector{<:UQInput}}, performances::Dict{Symbol,Function})
-        new(parents, models, uqinputs, performances)
-    end
-    function NewModelNode(parents::Vector{<:AbstractNode}, models::Dict{Any,<:UQModel}, uqinputs::Dict{Any,Vector{<:UQInput}})
-        performances = Dict{Symbol,Function}()
-        new(parents, models, uqinputs, performances)
-    end
-end
+# struct NewModelNode <: AbstractNode
+#     parents::Vector{T} where {T<:AbstractNode}
+#     models::Dict{Any,<:UQModel}
+#     uqinputs::Dict{Any,Vector{<:UQInput}}
+#     performances::Dict{Symbol,Function}
+#     function NewModelNode(parents::Vector{T}) where {T<:AbstractNode}
+#         ## Only discrete_parents
+#         new_uqinputs = Vector{UQInput}()
+#         new_format_dict = Dict{Symbol,FormatSpec}()
+#         new_outputparameter = Dict{Any,Any}()
+#         for p in parents_th 
+
+
+#     end
+# end
 
 # struct ModelNode <: AbstractNode
 #     name::Symbol

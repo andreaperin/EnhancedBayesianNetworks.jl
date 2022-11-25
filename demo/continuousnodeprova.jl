@@ -28,11 +28,22 @@ dispersivitivy_longv9 = NamedCategorical([:disp1, :disp2], [0.1, 0.9])
 dist = [dispersivitivy_longv1, dispersivitivy_longv2, dispersivitivy_longv3, dispersivitivy_longv4, dispersivitivy_longv5, dispersivitivy_longv6, dispersivitivy_longv7, dispersivitivy_longv8, dispersivitivy_longv2]
 CPDd = CategoricalCPD(:dispersivity, [:time_scenario, :grandparent], [3, 3], dist)
 model_input_disp = Dict(
-    :disp1 => (:disp_longv, 2.0, FormatSpec(".8e")),
-    :disp2 => (:disp_longv, 9.0, FormatSpec(".8e"))
+    :disp1 => [(Parameter(2.0, :disp_longv), FormatSpec(".8e"))],
+    :disp2 => [(Parameter(2.0, :disp_longv), FormatSpec(".8e"))]
 )
 dispersivitivy_longv = StdNode(CPDd, parents_dispersivitivy_longv, model_input_disp)
 
+parents_simduration = [timescenario]
+duration1 = NamedCategorical([:day1, :day10, :day100], [1.0, 0.0, 0.0])
+duration2 = NamedCategorical([:day1, :day10, :day100], [0.0, 1.0, 0.0])
+duration3 = NamedCategorical([:day1, :day10, :day100], [0.0, 0.0, 1.0])
+CPDduration = CategoricalCPD(:simduration, name.(parents_simduration), [3], [duration1, duration2, duration3])
+model_input_duration = Dict(
+    :day1 => [(Parameter(1, :sim_duration), FormatSpec("d"))],
+    :day10 => [(Parameter(10, :sim_duration), FormatSpec("d"))],
+    :day100 => [(Parameter(100, :sim_duration), FormatSpec("d"))],
+)
+node_simduration = StdNode(CPDduration, parents_simduration, model_input_duration)
 
 parents_Kz = [timescenario, grandparent, prova]
 Kz1_1_1 = truncated(Normal(1, 1), lower=0)
@@ -62,19 +73,49 @@ bn = StdBayesNet([timescenario, grandparent, prova, Kz, dispersivitivy_longv])
 show(bn)
 
 
-
-parents_th = [dispersivitivy_longv, Kz]
-sim_th = MonteCarlo(2)
-default_file = "model_TH/inputs/default_th_values.xlsx"
-default_inputs_th = get_default_inputs_and_format(default_file)
-sourcedir = joinpath(pwd(), "model_TH")
-source_file = "smoker.data"
-extras = String[]
-solvername = "smokerV3TC"
+default_file = "model_TH_macos/inputs/default_th_values.xlsx"
+sourcedir = Sys.isapple() ? "model_TH_macos" : "model_TH_win"
+sourcedir = joinpath(pwd(), sourcedir)
+format_dict = readxlsxinput(default_file)[3]
+uqinputs = readxlsxinput(default_file)[4]
 output_parameters = xlsx2output_parameter(default_file)
-performances = build_performances(output_parameters)
+extractor = build_specific_extractor(
+    output_parameters["output_filename"],
+    [output_parameters["x_min"], output_parameters["x_max"]],
+    [output_parameters["z_min"], output_parameters["z_max"]],
+    output_parameters["quantity_of_interest"]
+)
+default_model = _get_th_model(sourcedir, format_dict, uqinputs, extractor, true)
+
+parents_th = [node_simduration, dispersivitivy_longv, Kz]
 
 
+
+# default_model = _get_default_th_model(default_file, true)
+
+# sim_th = MonteCarlo(2)
+# default_inputs_th = get_default_inputs_and_format(default_file)
+# sourcedir = joinpath(pwd(), "model_TH_macos")
+# source_file = "smoker.data"
+# extras = String[]
+# solvername = "smokerV3TC"
+# output_parameters = xlsx2output_parameter(default_file)
+# performances = build_performances(output_parameters)
+# workdir = get_workdir(default_inputs_th["UQInputs"], sourcedir)
+# extractor = build_specific_extractor(
+#     output_parameters["output_filename"],
+#     [output_parameters["x_min"], output_parameters["x_max"]],
+#     [output_parameters["z_min"], output_parameters["z_max"]],
+#     output_parameters["quantity_of_interest"]
+# )
+# solver = Solver(joinpath(sourcedir, solvername), "", source_file)
+# format_dict = Dict{Symbol,FormatSpec}()
+# for el in default_inputs_th["FormatSpec"]
+#     for (k, v) in el
+#         format_dict[k] = v
+#     end
+# end
+# default_model = ExternalModel(sourcedir, [source_file], extras, format_dict, workdir, extractor, solver, true)
 
 
 # th_node = ModelNode(:th_node, parents_th, default_inputs_th, sourcedir, source_file, extras, solvername, output_parameters, performances, true, sim_th)

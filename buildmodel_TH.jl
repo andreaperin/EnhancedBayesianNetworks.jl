@@ -18,7 +18,7 @@ end
 
 function get_default_inputs_and_format(input_file::String)
     return Dict{String,Vector}(
-        "UQInputs" => readxlsxinput(input_file)[2],
+        "UQInputs" => readxlsxinput(input_file)[4],
         "FormatSpec" => [Dict(k => v) for (k, v) in readxlsxinput(input_file)[3]]
     )
 end
@@ -42,16 +42,15 @@ function update_input_list(inputs_list::Vector{Dict{Symbol,FormatSpec}}, to_be_u
     return to_be_update
 end
 
-function get_workdir(input_file::String, sourcedir::String)
-    total_list = readxlsxinput(input_file)[4]
+function get_workdir(uqinputs::Vector{UQInput}, sourcedir::String)
     workdir = []
     sim_days = []
-    for element in total_list
+    for element in uqinputs
         if element.name == :sim_duration
             push!(sim_days, element.value[1])
         end
     end
-    for element in total_list
+    for element in uqinputs
         if element.name == :specstorage && element.value == 0
             val = sim_days[1]
             push!(workdir, joinpath(sourcedir, "SteadyState_GWflow", "$(val)_days"))
@@ -167,6 +166,21 @@ function build_performances(output_parameters::Dict)
     return performances
 end
 
+function _get_th_model(sourcedir::String, format_dict::Dict{Symbol,FormatSpec}, uqinputs::Vector{UQInput}, extractor::Vector{Extractor}, cleanup::Bool)
+    sourcefile = "smoker.data"
+    extras = String[]
+    workdir = get_workdir(uqinputs, sourcedir)
+    solvername = "smokerV3TC"
+    solver = Solver(joinpath(sourcedir, solvername), "", sourcefile)
+    return ExternalModel(sourcedir, [sourcefile], extras, format_dict, workdir, extractor, solver, cleanup)
+end
+
+function _update_th_model(default_th_model::ExternalModel, new_format_dict::Dict{FormatSpec}, new_uqinputs::Vector{UQInput}, new_extractor::Extractor)
+    ## Here write the code to update format, inputs, and output_parameters
+    ## TODO probably not needed, (everything should be handled by _get_th_model function)
+end
+
+
 function _get_discrete_inputs_mapping_dict(
     parent_vector::Vector{T} where {T<:AbstractNode},
     default_inputs::String,
@@ -223,6 +237,8 @@ function _get_externalmodels_vector(inputs_mapping_dict::Dict{Any,Vector})
     end
     return extmodels_vector
 end
+
+
 
 # function get_inputs_mapping_dict1(node::ModelNode,)
 #     inputs_mapping_dict = Dict{Any,Vector}()
