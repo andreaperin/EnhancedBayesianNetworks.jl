@@ -14,7 +14,6 @@ struct DiscreteModelInput <: ModelInput
     node_state::Symbol
     definition::Union{Parameter,Nothing}
     format::Union{FormatSpec,Nothing}
-    ## TODO add check of coherence on node state
 end
 DiscreteModelInput() = DiscreteModelInput(Symbol(), nothing, nothing)
 
@@ -24,8 +23,11 @@ struct ContinuousModelInput <: ModelInput
 end
 ContinuousModelInput() = ContinuousModelInput(Symbol(), nothing)
 
+struct OutputModelParameter <: ModelInput
 
-mutable struct StdNode <: Node
+end
+
+struct StdNode <: Node
     cpd::CPD
     parents::Vector{T} where {T<:AbstractNode}
     type::String
@@ -33,10 +35,18 @@ mutable struct StdNode <: Node
     output_parameters::Dict{Any,Any}
     ##TODO add to log
     function StdNode(cpd::CPD, parents::Vector{T}, type::String, model_input::Vector{I}, output_parameters::Dict{Any,Any}) where {T<:AbstractNode,I<:ModelInput}
-        cpd.parents == name.(parents) ? new(cpd, parents, type, model_input, output_parameters) : error("parents mismatch between CPD and node")
-    end
-    function StdNode(cpd::CPD, parents::Vector{T}, type::String, model_input::Vector{I}, output_parameters::Dict{Any,Any}) where {T<:AbstractNode,I<:ModelInput}
-        length(filter(x -> x.type == "discrete", parents)) == lenght(cpd.parental_ncategories) ? new(cpd, parents, type, model_input, output_parameters) : error("parents mismatch in CPD for discrete parents and parental_ncategories")
+        node_name = cpd.target
+        if ~isa(cpd, RootCPD)
+            cpd.parents == name.(parents) ? new(cpd, parents, type, model_input, output_parameters) : error("parents mismatch between CPD and node in $node_name")
+            length(filter(x -> x.type == "discrete", parents)) == length(cpd.parental_ncategories) ? new(cpd, parents, type, model_input, output_parameters) : error("parents mismatch in CPD for discrete parents and parental_ncategories in $node_name")
+        else
+            new(cpd, parents, type, model_input, output_parameters)
+        end
+        if model_input != [DiscreteModelInput()] && model_input != [ContinuousModelInput()]
+            collect(values(cpd.distributions[1].map.d2n)) == map(x -> x.node_state, model_input) ? new(cpd, parents, type, model_input, output_parameters) : error("node categories missmatch with model_inputs in $node_name")
+        else
+            new(cpd, parents, type, model_input, output_parameters)
+        end
     end
 
     function StdNode(cpd::CPD)
@@ -45,7 +55,7 @@ mutable struct StdNode <: Node
         parents = Vector{AbstractNode}()
         type = isa(cpd.distributions, Union{Vector{NamedCategorical{Symbol}},NamedCategorical}) ? "discrete" : "continuous"
         model_input = type == "discrete" ? [DiscreteModelInput()] : [ContinuousModelInput()]
-        new(cpd, parents, type, model_input, output_parameters)
+        StdNode(cpd, parents, type, model_input, output_parameters)
     end
     function StdNode(cpd::CPD, parents::Vector{T}) where {T<:AbstractNode}
         type = isa(cpd.distributions, Union{Vector{NamedCategorical{Symbol}},NamedCategorical}) ? "discrete" : "continuous"
@@ -59,7 +69,7 @@ mutable struct StdNode <: Node
             node_name = cpd.target
             println("mismatch in $node_name:  assigned cpds are not equal to parental categories $parental_ncategories")
         else
-            new(cpd, parents, type, model_input, output_parameters)
+            StdNode(cpd, parents, type, model_input, output_parameters)
         end
     end
     function StdNode(cpd::CPD, parents::Vector{T}, model_input::Vector{I}) where {T<:AbstractNode,I<:ModelInput}
@@ -73,7 +83,7 @@ mutable struct StdNode <: Node
             node_name = cpd.target
             println("mismatch in $node_name:  assigned cpds are not equal to parental categories $parental_ncategories")
         else
-            new(cpd, parents, type, model_input, output_parameters)
+            StdNode(cpd, parents, type, model_input, output_parameters)
         end
     end
 end
