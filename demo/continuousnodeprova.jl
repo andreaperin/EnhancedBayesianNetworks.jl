@@ -1,5 +1,5 @@
 include("../bn.jl")
-include("../buildmodel_TH.jl")
+include("../model_TH_macos/buildmodel_TH.jl")
 include("../models_probabilities.jl")
 
 a = NamedCategorical([:first, :second, :third], [0.34, 0.33, 0.33])
@@ -27,13 +27,9 @@ dispersivitivy_longv8 = NamedCategorical([:disp1, :disp2], [0.2, 0.8])
 dispersivitivy_longv9 = NamedCategorical([:disp1, :disp2], [0.1, 0.9])
 dist = [dispersivitivy_longv1, dispersivitivy_longv2, dispersivitivy_longv3, dispersivitivy_longv4, dispersivitivy_longv5, dispersivitivy_longv6, dispersivitivy_longv7, dispersivitivy_longv8, dispersivitivy_longv2]
 CPDd = CategoricalCPD(:dispersivity, [:time_scenario, :grandparent], [3, 3], dist)
-# model_input_disp = Dict(
-#     :disp1 => [(Parameter(2.0, :disp_longv), FormatSpec(".8e"))],
-#     :disp2 => [(Parameter(2.0, :disp_longv), FormatSpec(".8e"))]
-# )
 model_input_disp = [
-    DiscreteModelInput(:disp2, Parameter(2.0, :disp_longv), FormatSpec(".8e")),
-    DiscreteModelInput(:disp1, Parameter(5.0, :disp_longv), FormatSpec(".8e"))
+    DiscreteModelInput(:disp1, Parameter(2.0, :disp_longv), FormatSpec(".8e")),
+    DiscreteModelInput(:disp2, Parameter(5.0, :disp_longv), FormatSpec(".8e"))
 ]
 dispersivitivy_longv = StdNode(CPDd, parents_dispersivitivy_longv, model_input_disp)
 
@@ -42,11 +38,11 @@ duration1 = NamedCategorical([:day1, :day10, :day100], [1.0, 0.0, 0.0])
 duration2 = NamedCategorical([:day1, :day10, :day100], [0.0, 1.0, 0.0])
 duration3 = NamedCategorical([:day1, :day10, :day100], [0.0, 0.0, 1.0])
 CPDduration = CategoricalCPD(:simduration, name.(parents_simduration), [3], [duration1, duration2, duration3])
-model_input_duration = Dict(
-    :day1 => [(Parameter(1, :sim_duration), FormatSpec("d"))],
-    :day10 => [(Parameter(10, :sim_duration), FormatSpec("d"))],
-    :day100 => [(Parameter(100, :sim_duration), FormatSpec("d"))],
-)
+model_input_duration = [
+    DiscreteModelInput(:day1, Parameter(1, :sim_duration), FormatSpec("d")),
+    DiscreteModelInput(:day10, Parameter(10, :sim_duration), FormatSpec("d")),
+    DiscreteModelInput(:day100, Parameter(100, :sim_duration), FormatSpec("d"))
+]
 node_simduration = StdNode(CPDduration, parents_simduration, model_input_duration)
 
 parents_Kz = [timescenario, grandparent, prova]
@@ -70,7 +66,9 @@ Kz3_3_1 = truncated(Normal(1, 1), lower=0)
 Kz3_3_2 = truncated(Normal(4, 2), lower=0.1)
 Kz_cpd = [Kz1_1_1, Kz1_1_2, Kz1_2_1, Kz1_2_2, Kz1_3_1, Kz1_3_2, Kz2_1_1, Kz2_1_2, Kz2_2_1, Kz2_2_2, kz2_3_1, Kz2_3_2, Kz3_1_1, Kz3_1_2, Kz3_2_1, Kz3_2_2, Kz3_3_1, Kz3_3_2]
 CPDKz = CategoricalCPD(:Kz, name.(parents_Kz), [3, 3, 2], Kz_cpd)
-model_input_Kz = [(:K_z, FormatSpec(".8e"))]
+model_input_Kz = [
+    ContinuousModelInput(:K_z, FormatSpec(".8e"))
+]
 Kz = StdNode(CPDKz, parents_Kz, model_input_Kz)
 
 bn = StdBayesNet([timescenario, grandparent, prova, Kz, dispersivitivy_longv])
@@ -83,13 +81,38 @@ sourcedir = joinpath(pwd(), sourcedir)
 format_dict = readxlsxinput(default_file)[3]
 uqinputs = readxlsxinput(default_file)[4]
 output_parameters = xlsx2output_parameter(default_file)
-extractor = build_specific_extractor(
-    output_parameters["output_filename"],
+outputmodel = []
+for (k, v) in output_parameters
+    push!(outputmodel, OutputModelParameter(k, v))
+end
+performances_par = filter(i -> typeof(i.definition) == Tuple{Float64,String}, outputmodel)
+
+## TODO This Extractor builder do not work properly (Check with 'build_specific_extractor')
+extractor = _build_concentration_extractor2D(
+    df2criticalvalue_maximum2D,
+    [output_parameters["x_min"], output_parameters["x_max"]],
+    [output_parameters["z_min"], output_parameters["z_max"]])
+
+extractor2 = build_specific_extractor(output_parameters["output_filename"],
     [output_parameters["x_min"], output_parameters["x_max"]],
     [output_parameters["z_min"], output_parameters["z_max"]],
-    output_parameters["quantity_of_interest"]
-)
-default_model = _get_th_model(sourcedir, format_dict, uqinputs, extractor, true)
+    output_parameters["quantity_of_interest"])
+default_model = _get_th_model(sourcedir, format_dict, uqinputs, extractor, false)
+default_model2 = _get_th_model(sourcedir, format_dict, uqinputs, extractor2, true)
+
+samples = UncertaintyQuantification.sample(uqinputs, 4)
+
+
+
+
+
+
+
+# evaluate!(default_model, samples)
+
+
+
+
 
 parents_th = [node_simduration, dispersivitivy_longv, Kz]
 

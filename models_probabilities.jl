@@ -1,5 +1,6 @@
 using UncertaintyQuantification
 
+
 function probabilities_of_events(
     models::Union{Array{<:UQModel},UQModel},
     performances::Dict{Symbol,Function},
@@ -22,4 +23,3 @@ function probabilities_of_events(
     end
     return probs, variances, covs, samples
 end
-

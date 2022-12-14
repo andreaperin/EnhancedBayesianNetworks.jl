@@ -24,7 +24,8 @@ end
 ContinuousModelInput() = ContinuousModelInput(Symbol(), nothing)
 
 struct OutputModelParameter <: ModelInput
-
+    name::String
+    definition::Union{Tuple{Float64,String},Number,String}
 end
 
 struct StdNode <: Node
@@ -42,8 +43,8 @@ struct StdNode <: Node
         else
             new(cpd, parents, type, model_input, output_parameters)
         end
-        if model_input != [DiscreteModelInput()] && model_input != [ContinuousModelInput()]
-            collect(values(cpd.distributions[1].map.d2n)) == map(x -> x.node_state, model_input) ? new(cpd, parents, type, model_input, output_parameters) : error("node categories missmatch with model_inputs in $node_name")
+        if model_input != [DiscreteModelInput()] && model_input != [ContinuousModelInput()] && ~isa(model_input, Vector{ContinuousModelInput})
+            issetequal(collect(values(cpd.distributions[1].map.d2n)), map(x -> x.node_state, model_input)) ? new(cpd, parents, type, model_input, output_parameters) : error("node categories missmatch with model_inputs in $node_name")
         else
             new(cpd, parents, type, model_input, output_parameters)
         end
