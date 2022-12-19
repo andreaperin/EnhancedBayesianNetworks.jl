@@ -36,6 +36,7 @@ function update_input_list(inputs_list::Union{Array{<:UQInput},UQInput}, to_be_u
     end
     return to_be_update
 end
+
 function update_input_list(inputs_list::Vector{Dict{Symbol,FormatSpec}}, to_be_update::Vector{Dict{Symbol,FormatSpec}})
     to_be_update_names = [collect(keys(to_be_update[i]))[1] for i in range(1, length(to_be_update))]
     for format in inputs_list
@@ -78,23 +79,19 @@ function _build_concentration_extractor2D(critical_value::Function, x_range::Vec
     extractors = Extractor(
         base -> begin
             file = joinpath(base, output_file)
-            data = readdlm(file, '\t'; skipstart=0)
-            df, var, x, z = plt2df(
-                data,
+            result, var, x, z = concentrationplt2dict(
+                file,
                 regexs["variable_regex"],
                 regexs["day_regex"],
                 regexs["x_regex"],
                 regexs["z_regex"],
             )
-            maxs, crit_value = critical_value(df, x_range, z_range)
-            # return crit_value
-            return [df]
+            return [result]
         end,
         Symbol("concentration"),
     )
     return [extractors]
 end
-
 
 function build_specific_extractor(outputfile::String, x_range::Vector{Int64}, z_range::Vector{Int64}, qtyofinterest::String)
     regexs = Dict(
@@ -106,16 +103,14 @@ function build_specific_extractor(outputfile::String, x_range::Vector{Int64}, z_
     extractors = Extractor(
         base -> begin
             file = joinpath(base, outputfile)
-            data = readdlm(file, '\t'; skipstart=0)
-            df, var, x, z = plt2df(
-                data,
+            result, var, x, z = concentrationplt2dict(
+                file,
                 regexs["variable_regex"],
                 regexs["day_regex"],
                 regexs["x_regex"],
                 regexs["z_regex"],
             )
-            maxs, critical_value = df2criticalvalue_maximum2D(df, x_range, z_range)
-            return critical_value
+            return [result]
         end,
         Symbol("$qtyofinterest"),
     )
@@ -218,7 +213,7 @@ function _get_externalmodels_vector(inputs_mapping_dict::Dict{Any,Vector})
     return extmodels_vector
 end
 
-function evalute_general!(m::ExternalModel, df::DataFrame)
+function evaluate_gen!(m::ExternalModel, df::DataFrame)
     datetime = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS")
 
     n = size(df, 1)
@@ -228,7 +223,7 @@ function evalute_general!(m::ExternalModel, df::DataFrame)
         path = joinpath(m.workdir, datetime, "sample-$(lpad(i, digits, "0"))")
         mkpath(path)
 
-        row = UncertaintyQuantification.formatinputs(df[i, :], m.formats)
+        row = formatinputs(df[i, :], m.formats)
 
         for file in m.sources
             tokens = Mustache.load(joinpath(m.sourcedir, file))
@@ -257,4 +252,19 @@ function evalute_general!(m::ExternalModel, df::DataFrame)
     for (i, name) in enumerate(names(m.extractors))
         df[!, name] = results[:, i]
     end
+end
+
+function formatinputs(row::DataFrameRow, formats::Dict{Symbol,FormatSpec})
+    names = propertynames(row)
+    values = []
+    for symbol in names
+        if haskey(formats, symbol)
+            push!(values, fmt(formats[symbol], row[symbol]))
+        elseif haskey(formats, :*)
+            push!(values, fmt(formats[:*], row[symbol]))
+        else
+            push!(values, row[symbol])
+        end
+    end
+    return (; zip(names, values)...)
 end

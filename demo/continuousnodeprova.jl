@@ -69,14 +69,15 @@ CPDKz = CategoricalCPD(:Kz, name.(parents_Kz), [3, 3, 2], Kz_cpd)
 model_input_Kz = [
     ContinuousModelInput(:K_z, FormatSpec(".8e"))
 ]
+
 Kz = StdNode(CPDKz, parents_Kz, model_input_Kz)
 
 bn = StdBayesNet([timescenario, grandparent, prova, Kz, dispersivitivy_longv])
 show(bn)
 
 
-default_file = "model_TH_macos/inputs/default_th_values.xlsx"
 sourcedir = Sys.isapple() ? "model_TH_macos" : "model_TH_win"
+default_file = joinpath(pwd(), sourcedir, "inputs", "default_th_values.xlsx")
 sourcedir = joinpath(pwd(), sourcedir)
 format_dict = readxlsxinput(default_file)[3]
 uqinputs = readxlsxinput(default_file)[4]
@@ -87,7 +88,6 @@ for (k, v) in output_parameters
 end
 performances_par = filter(i -> typeof(i.definition) == Tuple{Float64,String}, outputmodel)
 
-## TODO This Extractor builder do not work properly (Check with 'build_specific_extractor')
 extractor = _build_concentration_extractor2D(
     df2criticalvalue_maximum2D,
     [output_parameters["x_min"], output_parameters["x_max"]],
@@ -100,23 +100,27 @@ extractor2 = build_specific_extractor(output_parameters["output_filename"],
 default_model = _get_th_model(sourcedir, format_dict, uqinputs, extractor, false)
 default_model2 = _get_th_model(sourcedir, format_dict, uqinputs, extractor2, true)
 
-samples = UncertaintyQuantification.sample(uqinputs, 4)
+samples = UncertaintyQuantification.sample(uqinputs, 1)
+
+#### PROVA Parse output files
+
+file_path = joinpath(pwd(), "outputfile_examples\\multiple\\smoker_cxz.plt")
+regexs_concentration = Dict(
+    "variable_regex" => r"(?<=\")[^,]*?(?=\")",
+    "day_regex" => r"\d*\.\d{2,5}",
+    "x_regex" => r"(?<=i=).*?(?=[,j=])",
+    "z_regex" => r"(?<=j=).*?(?=,)",
+)
+
+var_regex = r"(?<=\")[^,]*?(?=\")"
+day_regex = r"\d*\.\d{2,5}"
+x_regex = r"(?<=i=).*?(?=[,j=])"
+z_regex = r"(?<=j=).*?(?=,)"
 
 
-
-
-
-
-
-# evaluate!(default_model, samples)
-
-
-
-
-
+result, x, z = concentrationplt2dict(file_path, var_regex, day_regex, x_regex, z_regex)
+evaluate_gen!(default_model, samples)
 parents_th = [node_simduration, dispersivitivy_longv, Kz]
-
-
 
 # default_model = _get_default_th_model(default_file, true)
 
