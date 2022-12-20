@@ -67,14 +67,13 @@ function get_workdir(input_file::Union{Array{<:UQInput},UQInput}, sourcedir::Str
     return workdir
 end
 
-function _build_concentration_extractor2D(critical_value::Function, x_range::Vector{Int64}, z_range::Vector{Int64})
+function _build_concentration_extractor2D(output_file::String)
     regexs = Dict(
         "variable_regex" => r"(?<=\")[^,]*?(?=\")",
         "day_regex" => r"\d*\.\d{2,5}",
         "x_regex" => r"(?<=i=).*?(?=[,j=])",
         "z_regex" => r"(?<=j=).*?(?=,)",
     )
-    output_file = "smoker_cxz.plt"
     extractors = Extractor(
         base -> begin
             file = joinpath(base, output_file)
@@ -92,29 +91,29 @@ function _build_concentration_extractor2D(critical_value::Function, x_range::Vec
     return [extractors]
 end
 
-function build_specific_extractor(outputfile::String, x_range::Vector{Int64}, z_range::Vector{Int64}, qtyofinterest::String)
-    regexs = Dict(
-        "variable_regex" => r"(?<=\")[^,]*?(?=\")",
-        "day_regex" => r"\d*\.\d{2,5}",
-        "x_regex" => r"(?<=i=).*?(?=[,j=])",
-        "z_regex" => r"(?<=j=).*?(?=,)",
-    )
-    extractors = Extractor(
-        base -> begin
-            file = joinpath(base, outputfile)
-            result, var, x, z = concentrationplt2dict(
-                file,
-                regexs["variable_regex"],
-                regexs["day_regex"],
-                regexs["x_regex"],
-                regexs["z_regex"],
-            )
-            return [result]
-        end,
-        Symbol("$qtyofinterest"),
-    )
-    return [extractors]
-end
+# function build_specific_extractor(outputfile::String, x_range::Vector{Int64}, z_range::Vector{Int64}, qtyofinterest::String)
+#     regexs = Dict(
+#         "variable_regex" => r"(?<=\")[^,]*?(?=\")",
+#         "day_regex" => r"\d*\.\d{2,5}",
+#         "x_regex" => r"(?<=i=).*?(?=[,j=])",
+#         "z_regex" => r"(?<=j=).*?(?=,)",
+#     )
+#     extractors = Extractor(
+#         base -> begin
+#             file = joinpath(base, outputfile)
+#             result, var, x, z = concentrationplt2dict(
+#                 file,
+#                 regexs["variable_regex"],
+#                 regexs["day_regex"],
+#                 regexs["x_regex"],
+#                 regexs["z_regex"],
+#             )
+#             return [result]
+#         end,
+#         Symbol("$qtyofinterest"),
+#     )
+#     return [extractors]
+# end
 
 
 ## TODO add 3D concentration and 2/3D Temperature
