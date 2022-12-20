@@ -5,7 +5,6 @@ using Distributed
 using Formatting
 using Mustache
 
-
 include("./inputsProcessing.jl")
 include("./outputProcessing.jl")
 
@@ -68,14 +67,13 @@ function get_workdir(input_file::Union{Array{<:UQInput},UQInput}, sourcedir::Str
     return workdir
 end
 
-function _build_concentration_extractor2D(critical_value::Function, x_range::Vector{Int64}, z_range::Vector{Int64})
+function _build_concentration_extractor2D(output_file::String)
     regexs = Dict(
         "variable_regex" => r"(?<=\")[^,]*?(?=\")",
         "day_regex" => r"\d*\.\d{2,5}",
         "x_regex" => r"(?<=i=).*?(?=[,j=])",
         "z_regex" => r"(?<=j=).*?(?=,)",
     )
-    output_file = "smoker_cxz.plt"
     extractors = Extractor(
         base -> begin
             file = joinpath(base, output_file)
@@ -86,36 +84,36 @@ function _build_concentration_extractor2D(critical_value::Function, x_range::Vec
                 regexs["x_regex"],
                 regexs["z_regex"],
             )
-            return [result]
+            return result
         end,
         Symbol("concentration"),
     )
     return [extractors]
 end
 
-function build_specific_extractor(outputfile::String, x_range::Vector{Int64}, z_range::Vector{Int64}, qtyofinterest::String)
-    regexs = Dict(
-        "variable_regex" => r"(?<=\")[^,]*?(?=\")",
-        "day_regex" => r"\d*\.\d{2,5}",
-        "x_regex" => r"(?<=i=).*?(?=[,j=])",
-        "z_regex" => r"(?<=j=).*?(?=,)",
-    )
-    extractors = Extractor(
-        base -> begin
-            file = joinpath(base, outputfile)
-            result, var, x, z = concentrationplt2dict(
-                file,
-                regexs["variable_regex"],
-                regexs["day_regex"],
-                regexs["x_regex"],
-                regexs["z_regex"],
-            )
-            return [result]
-        end,
-        Symbol("$qtyofinterest"),
-    )
-    return [extractors]
-end
+# function build_specific_extractor(outputfile::String, x_range::Vector{Int64}, z_range::Vector{Int64}, qtyofinterest::String)
+#     regexs = Dict(
+#         "variable_regex" => r"(?<=\")[^,]*?(?=\")",
+#         "day_regex" => r"\d*\.\d{2,5}",
+#         "x_regex" => r"(?<=i=).*?(?=[,j=])",
+#         "z_regex" => r"(?<=j=).*?(?=,)",
+#     )
+#     extractors = Extractor(
+#         base -> begin
+#             file = joinpath(base, outputfile)
+#             result, var, x, z = concentrationplt2dict(
+#                 file,
+#                 regexs["variable_regex"],
+#                 regexs["day_regex"],
+#                 regexs["x_regex"],
+#                 regexs["z_regex"],
+#             )
+#             return [result]
+#         end,
+#         Symbol("$qtyofinterest"),
+#     )
+#     return [extractors]
+# end
 
 ## TODO add 3D concentration and 2/3D Temperature
 function build_performances(output_parameters::Dict)
@@ -209,40 +207,28 @@ end
 
 function evaluate_gen!(m::ExternalModel, df::DataFrame)
     datetime = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS")
-
     n = size(df, 1)
     digits = ndigits(n)
-
     results = pmap(1:n) do i
         path = joinpath(m.workdir, datetime, "sample-$(lpad(i, digits, "0"))")
         mkpath(path)
-
         row = formatinputs(df[i, :], m.formats)
-
         for file in m.sources
             tokens = Mustache.load(joinpath(m.sourcedir, file))
-
             open(joinpath(path, file), "w") do io
                 render(io, tokens, row)
             end
         end
-
         for file in m.extras
             cp(joinpath(m.sourcedir, file), joinpath(path, file))
         end
-
         run(m.solver, path)
-
         result = map(e -> e.f(path), m.extractors)
         if m.cleanup
             rm(path; recursive=true)
         end
         return result
     end
-
-    results = transpose(hcat(results...))
-    vars = names(m.extractors)
-
     for (i, name) in enumerate(names(m.extractors))
         df[!, name] = results[:, i]
     end

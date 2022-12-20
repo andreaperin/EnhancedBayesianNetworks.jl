@@ -1,5 +1,5 @@
 include("../bn.jl")
-include("../model_TH_macos/buildmodel_TH.jl")
+Sys.isapple() ? include("../model_TH_macos/buildmodel_TH.jl") : include("../model_TH_win/buildmodel_TH.jl")
 include("../models_probabilities.jl")
 
 a = NamedCategorical([:first, :second, :third], [0.34, 0.33, 0.33])
@@ -91,56 +91,20 @@ performances_par = filter(i -> typeof(i.definition) == Tuple{Float64,String}, ou
 output_file = "smoker_cxz.plt"
 extractor = _build_concentration_extractor2D(output_file)
 
-default_model = _get_th_model(sourcedir, format_dict, uqinputs, extractor, true)
+default_model2 = _get_th_model(sourcedir, format_dict, uqinputs, extractor, true)
 
 samples = UncertaintyQuantification.sample(uqinputs, 1)
 
 evaluate_gen!(default_model, samples)
-#### PROVA Parse output files
 
-# file_path = joinpath(pwd(), "outputfile_examples\\multiple\\smoker_cxz.plt")
-# regexs_concentration = Dict(
-#     "variable_regex" => r"(?<=\")[^,]*?(?=\")",
-#     "day_regex" => r"\d*\.\d{2,5}",
-#     "x_regex" => r"(?<=i=).*?(?=[,j=])",
-#     "z_regex" => r"(?<=j=).*?(?=,)",
-# )
 
+# #### PROVA Parse output files
+# file_path = joinpath(pwd(), "model_TH_win\\SteadyState_GWflow\\1_days\\2022-12-20-15-49-38\\sample-1\\smoker_cxz.plt")
 # var_regex = r"(?<=\")[^,]*?(?=\")"
 # day_regex = r"\d*\.\d{2,5}"
 # x_regex = r"(?<=i=).*?(?=[,j=])"
 # z_regex = r"(?<=j=).*?(?=,)"
-
-
 # result, x, z = concentrationplt2dict(file_path, var_regex, day_regex, x_regex, z_regex)
-# evaluate_gen!(default_model, samples)
-# parents_th = [node_simduration, dispersivitivy_longv, Kz]
-
-# default_model = _get_default_th_model(default_file, true)
-
-# sim_th = MonteCarlo(2)
-# default_inputs_th = get_default_inputs_and_format(default_file)
-# sourcedir = joinpath(pwd(), "model_TH_macos")
-# source_file = "smoker.data"
-# extras = String[]
-# solvername = "smokerV3TC"
-# output_parameters = xlsx2output_parameter(default_file)
-# performances = build_performances(output_parameters)
-# workdir = get_workdir(default_inputs_th["UQInputs"], sourcedir)
-# extractor = build_specific_extractor(
-#     output_parameters["output_filename"],
-#     [output_parameters["x_min"], output_parameters["x_max"]],
-#     [output_parameters["z_min"], output_parameters["z_max"]],
-#     output_parameters["quantity_of_interest"]
-# )
-# solver = Solver(joinpath(sourcedir, solvername), "", source_file)
-# format_dict = Dict{Symbol,FormatSpec}()
-# for el in default_inputs_th["FormatSpec"]
-#     for (k, v) in el
-#         format_dict[k] = v
-#     end
-# end
-# default_model = ExternalModel(sourcedir, [source_file], extras, format_dict, workdir, extractor, solver, true)
 
 
 # th_node = ModelNode(:th_node, parents_th, default_inputs_th, sourcedir, source_file, extras, solvername, output_parameters, performances, true, sim_th)

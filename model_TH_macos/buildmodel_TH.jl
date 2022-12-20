@@ -84,7 +84,7 @@ function _build_concentration_extractor2D(output_file::String)
                 regexs["x_regex"],
                 regexs["z_regex"],
             )
-            return [result]
+            return result
         end,
         Symbol("concentration"),
     )
@@ -232,8 +232,8 @@ function evaluate_gen!(m::ExternalModel, df::DataFrame)
         end
         return result
     end
-    results = transpose(hcat(results...))
-    vars = names(m.extractors)
+    # results = transpose(hcat(results...))
+    # vars = names(m.extractors)
     for (i, name) in enumerate(names(m.extractors))
         df[!, name] = results[:, i]
     end
