@@ -117,10 +117,7 @@ function build_specific_extractor(outputfile::String, x_range::Vector{Int64}, z_
     return [extractors]
 end
 
-
 ## TODO add 3D concentration and 2/3D Temperature
-
-
 function build_performances(output_parameters::Dict)
     thresholds = Vector()
     for (key, val) in output_parameters
@@ -142,9 +139,6 @@ function build_performances(output_parameters::Dict)
     end
     performances[Symbol("safe")] = df -> df[!, :concentration] .- thresholds[1][1]
     return performances
-end
-
-function build_performances(outputs::Vector{O}) where {O<:OutputModelParameter}
 end
 
 function _get_th_model(sourcedir::String, format_dict::Dict{Symbol,FormatSpec}, uqinputs::Vector{UQInput}, extractor::Vector{Extractor}, cleanup::Bool)

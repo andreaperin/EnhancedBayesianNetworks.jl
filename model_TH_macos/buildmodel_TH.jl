@@ -5,7 +5,6 @@ using Distributed
 using Formatting
 using Mustache
 
-
 include("./inputsProcessing.jl")
 include("./outputProcessing.jl")
 
@@ -144,9 +143,6 @@ function build_performances(output_parameters::Dict)
     return performances
 end
 
-function build_performances(outputs::Vector{O}) where {O<:OutputModelParameter}
-end
-
 function _get_th_model(sourcedir::String, format_dict::Dict{Symbol,FormatSpec}, uqinputs::Vector{UQInput}, extractor::Vector{Extractor}, cleanup::Bool)
     sourcefile = "smoker.data"
     extras = String[]
@@ -215,40 +211,30 @@ end
 
 function evaluate_gen!(m::ExternalModel, df::DataFrame)
     datetime = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS")
-
     n = size(df, 1)
     digits = ndigits(n)
-
     results = pmap(1:n) do i
         path = joinpath(m.workdir, datetime, "sample-$(lpad(i, digits, "0"))")
         mkpath(path)
-
         row = formatinputs(df[i, :], m.formats)
-
         for file in m.sources
             tokens = Mustache.load(joinpath(m.sourcedir, file))
-
             open(joinpath(path, file), "w") do io
                 render(io, tokens, row)
             end
         end
-
         for file in m.extras
             cp(joinpath(m.sourcedir, file), joinpath(path, file))
         end
-
         run(m.solver, path)
-
         result = map(e -> e.f(path), m.extractors)
         if m.cleanup
             rm(path; recursive=true)
         end
         return result
     end
-
     results = transpose(hcat(results...))
     vars = names(m.extractors)
-
     for (i, name) in enumerate(names(m.extractors))
         df[!, name] = results[:, i]
     end

@@ -1,0 +1,269 @@
+          ************************************************************
+
+          heatflow/smoker
+          john.molson@ggl.ulaval.ca
+
+          3-d density-dependent flow and thermal transport model
+          linear isoparametric elements
+
+          ************************************************************
+
+          smokerV3TC from SALT FLOW MODEL: 2D transport Hydrocoin                         
+
+          100 x 2 x 51 TOTAL TRANSPORT NODES                                              
+          March 2022 - test simulation                                                    
+          ************************************************************
+
+          ************************************************************
+
+          heatflow/smoker
+          john.molson@ggl.ulaval.ca
+
+          3-d density-dependent flow and thermal transport model
+          linear isoparametric elements
+
+          ************************************************************
+
+          smokerV3TC from SALT FLOW MODEL: 2D transport Hydrocoin                         
+
+          100 x 2 x 51 TOTAL TRANSPORT NODES                                              
+          March 2022 - test simulation                                                    
+          ************************************************************
+
+
+          run-time options ...
+          kprt,kcntrl,kwt,kint,kintv,kgo,ksat,kmass,ktair,krk,kdz,ksubtr,kr1top,kfreec
+            1  0  0  0  0  0  1  1  0  0  0  1  0  0
+
+          mass transport option in effect
+
+
+          conjugate gradient solver for flow
+
+
+          direct integration for element matrices
+
+          direct derivatives for velocities
+
+          transport: advective term lagged, augmentation
+                     matrix at midpoint in time
+
+
+          weighting for physical dispersion   1.000
+
+          weighting for augmentation term     0.500
+          weighting for cauchy boundary       0.000
+
+
+          saturated domain only
+
+
+          using transport formulation v1 for latent heat
+
+          grid definition:
+          ----------------
+          ngx,ngy,ngz: 
+               1     1     1
+
+          Global grid intervals for element spacing:
+          ------------------------------------------
+          x-dimension grid intervals: 
+              400.00
+          y-dimension grid intervals: 
+                1.00
+          z-dimension grid intervals: 
+               50.00
+
+          element distribution (nlx,nly,nlz): 
+
+          x-dimension:       4
+          y-dimension:       1
+          z-dimension:       5
+
+
+          flow grid size, elements (nex,ney,nez):    4    1    5
+          estimated bandwidth (nb,nbb):        15   15
+
+          flow grid size, nx,ny,nz:       5    2    6
+          total nodes in flow grid           60
+          total elements in flow grid        20
+
+
+          number of deformable layers:     0
+          grid datum:                    0.0000
+          conc./density coefficient:     0.2000
+
+          this is a nonlinear mass transport run
+          well index data for breakthrough well:    0    0    0    0
+
+          number of monitor wells ...      0
+
+          vertical strip at (x,y)=(0,0) x,y,z coords:
+        1 0.000E+00 0.000E+00 0.000E+00        2 0.000E+00 0.000E+00 0.100E+02
+        3 0.000E+00 0.000E+00 0.200E+02        4 0.000E+00 0.000E+00 0.300E+02
+        5 0.000E+00 0.000E+00 0.400E+02        6 0.000E+00 0.000E+00 0.500E+02
+
+          vertical strip at (x,y)=(xl,yl) x,y,z coords:
+       55 0.400E+03 0.100E+01 0.000E+00       56 0.400E+03 0.100E+01 0.100E+02
+       57 0.400E+03 0.100E+01 0.200E+02       58 0.400E+03 0.100E+01 0.300E+02
+       59 0.400E+03 0.100E+01 0.400E+02       60 0.400E+03 0.100E+01 0.500E+02
+
+          found        0 duplicate fracture elements
+
+          number of fracture elements ...       0
+
+          summary: listing of first 100 fracture elements:
+          l       ck      xarea       lvert    ifracl    ifdim
+                 (m/s)    (m^2)       (face)   (3D #)       
+
+
+
+          mindex routine ... flow boundary arrays ...
+
+          boundary codes       0    0    0    0    0    1    0
+
+
+          Flow: Dirichlet patch source on surface:   6
+          indeces: x1,x2, y/z 1, y/z 2 ...    1   1   1   2  head:    0.0000
+
+          Flow: Dirichlet patch source on surface:   6
+          indeces: x1,x2, y/z 1, y/z 2 ...    5   5   1   2  head:    0.0000
+
+
+          number of dirichlet nodes:     4
+          number of degrees of freedom:        56
+          final bandwidth    11
+          vector length       416
+
+          specified hydraulic conductivity @ 0 celsius:
+          ---------------------------------------------
+          element range        ckx          cky          ckz        tcx(sol)     cps(sol)    ps(sol)   porosity   saturation
+              1      20   0.500E-04    0.500E-04    0.500E-04           2.00      800.00     2630.00        0.20        1.00
+
+          indexed hydraulic k:
+
+              1    1    1    1    1    1
+                          0.100E-04    0.100E-04    0.100E-04           2.00      800.00     2630.00        0.20        1.00
+
+          hydraulic conductivities are all positive ... 
+          continuing ... 
+
+          porosities all positive, continuing ... 
+
+          storage term ...   0.0000E+00
+
+          uniform initial condition for flow; h0=   0.0000E+00
+
+
+          transport grid ...
+          ------------------
+          number of nodes in vertical (z) direction  (nzt) =         6
+          number of z-elements in transport grid:   (nezt) =         5
+          total number of nodes in transport grid:   (nnt) =        60
+          total number of elements in transport grid:(net) =        20
+
+
+          mindex  ... mass transport boundary arrays ...
+
+          boundary codes       0    0    0    0    0    0    5
+
+
+          internal fixed mass transport nodes: 
+          icx1,icx2,icy,icy2,icz1,icz2,conc:    1   2   1   2   1   2    0.10000E+01
+
+
+          number of dirichlet nodes:     8
+          number of degrees of freedom:        52
+          final bandwidth    11
+          vector length       374
+          total domain volume ...                 0.200E+05
+
+          top surface not thermally leaky
+
+          surface T cosine: max number of sets allowed :     2
+
+          top surface air temperature variation
+          x-indices: ix1-ix2:    .......... .    0    0
+          minimum air temperature (C)  .....      -1.5000
+          cosine curve 1/2 amplitude (C) ...      12.0000
+          cosine curve period (days)  ......     365.0000
+          phase shift (days)     ...........       0.0000
+          temperature cutoff  ..............      -0.0000
+          temperature gradient over time (degC/day) ..      0.00000
+          temperature gradient over x dist. (degC/m) ..      0.00000
+
+          conductance layer thickness variation
+          minimum thickness (m)   ........       0.0010
+          cosine curve amplitude  (C) ......       0.0000
+          cosine curve period (days)  ......     365.0000
+          phase shift (days)     .........       0.0000
+          thickness cutoff  ..............      -0.0000
+          thickness gradient over time (m/day) ....       0.0000
+          thickness gradient over x dist. (degC/m) ..       0.0000
+
+          conductance layer saturation variation
+          minimum saturation    ..........       0.5000
+          cosine curve amplitude  (C) ......       0.0000
+          cosine curve period (days)  ......     365.0000
+          phase shift (days)     .........       0.0000
+          saturation cutoff  .............      -0.0000
+          thickness gradient over time (m/day) ....       0.0000
+          thickness gradient over x dist. (degC/m) ..       0.0000
+
+          tidal variation parameters
+          minimum tide elevation  ..........       0.0000
+          cosine curve amplitude  (C) ......       0.0000
+          cosine curve period (days)  ......     365.0000
+          phase shift (days)     .........       0.0000
+          elevation cutoff   .............    -999.0000
+          head gradient over time (m/day) ......       0.0000
+          head gradient over x dist. (degC/m) ..       0.0000
+
+          no hbdy.data file found ... continuing
+
+          no bzin.data file found ... ok, continuing
+
+          Original Burnett-Frind dispersion tensor
+
+
+          longitudinal dispersivity (m):                 0.00000
+          longitudinal transverse dispersivity (Lichtner):      0.20000
+          transverse horizontal dispersivity:            0.20000
+          transverse vertical   dispersivity:            0.20000
+          molecular diffusion coef. (m^2/s):         0.10000E-08
+          retardation for mass transport:                1.00000
+          decay coef. for transport: (sec^-1)            0.00000
+          agefx age growth term: (-):                    0.00000
+
+          specified thermal parameters:
+          ------------------------------
+          fluid specific heat (J/kg/C):      0.419E+04
+          fluid density (kg/m3):             0.100E+04
+          ice specific heat:                 0.211E+04
+          ice density                        0.920E+03
+          water thermal conductivity (J/m/s/C):  0.580E+00
+          ice thermal conductivity:              0.214E+01
+          latent heat of water (J/kg):           0.000E+00
+
+          parameters for functions Wu and kr in porous media:
+          ---------------------------------------------------
+          terminal unfrozen moisture content(p):    0.100E+00
+          unfrozen moisture content curvature(q):   0.300E+01
+          freezing front temperature (Ts):          0.000E+00
+          relative permeability exponent omega:     0.100E+02
+          unfrozen moisture content model# wu:          1
+          relative permeability function model# kr:     2
+
+          parameters for functions Wu and kr in fractures:
+          ------------------------------------------------
+          terminal unfrozen moisture content(p):    0.100E+00
+          unfrozen moisture content curvature(q):   0.500E+01
+          freezing front temperature (Ts):          0.000E+00
+          relative permeability exponent omega:     0.000E+00
+          unfrozen moisture content model# wu:          1
+          relative permeability function model# kr:     2
+              1  101    1    2    1   26  0.0000E+00  0.0000E+00   -1
+
+          error in initial conditions for T transport ...
+          nx,ny,nzt ...       5       2       6
+          program stopping ...
