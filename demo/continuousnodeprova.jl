@@ -88,10 +88,13 @@ for (k, v) in output_parameters
 end
 performances_par = filter(i -> typeof(i.definition) == Tuple{Float64,String}, outputmodel)
 
-output_file = "smoker_cxz.plt"
-extractor = _build_concentration_extractor2D(output_file)
+output_file_conc = "smoker_cxz.plt"
+output_file_temp = "smoker_txz.plt"
+output_file_head = "smoker_hxz.plt"
 
-default_model2 = _get_th_model(sourcedir, format_dict, uqinputs, extractor, true)
+extractor = [_build_temperature_extractor2D(output_file_temp), _build_concentration_extractor2D(output_file_conc), _build_head_extractor2D(output_file_head)]
+
+default_model = _get_th_model(sourcedir, format_dict, uqinputs, extractor, true)
 
 samples = UncertaintyQuantification.sample(uqinputs, 1)
 

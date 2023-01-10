@@ -83,12 +83,64 @@ function _build_concentration_extractor2D(output_file::String)
                 regexs["day_regex"],
                 regexs["x_regex"],
                 regexs["z_regex"],
+                Symbol("concentration")
             )
             return result
         end,
         Symbol("concentration"),
     )
-    return [extractors]
+    return extractors
+end
+
+function _build_temperature_extractor2D(output_file::String)
+    regexs = Dict(
+        "variable_regex" => r"(?<=\")[^,]*?(?=\")",
+        "day_regex" => r"\d*\.\d{2,5}",
+        "x_regex" => r"(?<=i=).*?(?=[,j=])",
+        "z_regex" => r"(?<=j=).*?(?=,)",
+    )
+    extractors = Extractor(
+        base -> begin
+            file = joinpath(base, output_file)
+            result, var, x, z = tempertatureplt2dict(
+                file,
+                regexs["variable_regex"],
+                regexs["day_regex"],
+                regexs["x_regex"],
+                regexs["z_regex"],
+                Symbol("temperature")
+            )
+            return result
+        end,
+        Symbol("temperature"),
+    )
+    return extractors
+end
+
+
+function _build_head_extractor2D(output_file::String)
+    regexs = Dict(
+        "variable_regex" => r"(?<=\")[^,]*?(?=\")",
+        "day_regex" => r"\d*\.\d{2,5}",
+        "x_regex" => r"(?<=i=).*?(?=[,j=])",
+        "z_regex" => r"(?<=j=).*?(?=,)",
+    )
+    extractors = Extractor(
+        base -> begin
+            file = joinpath(base, output_file)
+            result, var, x, z = headplt2dict(
+                file,
+                regexs["variable_regex"],
+                regexs["day_regex"],
+                regexs["x_regex"],
+                regexs["z_regex"],
+                Symbol("head")
+            )
+            return result
+        end,
+        Symbol("head"),
+    )
+    return extractors
 end
 
 # function build_specific_extractor(outputfile::String, x_range::Vector{Int64}, z_range::Vector{Int64}, qtyofinterest::String)
@@ -115,7 +167,10 @@ end
 #     return [extractors]
 # end
 
+
 ## TODO add 3D concentration and 2/3D Temperature
+
+
 function build_performances(output_parameters::Dict)
     thresholds = Vector()
     for (key, val) in output_parameters
@@ -229,8 +284,9 @@ function evaluate_gen!(m::ExternalModel, df::DataFrame)
         end
         return result
     end
+    results = hcat(results...)
     for (i, name) in enumerate(names(m.extractors))
-        df[!, name] = results[:, i]
+        df[!, name] = results[i, :]
     end
 end
 

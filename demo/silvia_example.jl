@@ -1,6 +1,5 @@
 include("../CPDs.jl")
 include("../nodes.jl")
-include("../buildmodel_TH.jl")
 include("../models_probabilities.jl")
 include("../bn.jl")
 
