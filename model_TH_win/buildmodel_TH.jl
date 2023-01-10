@@ -143,33 +143,7 @@ function _build_head_extractor2D(output_file::String)
     return extractors
 end
 
-# function build_specific_extractor(outputfile::String, x_range::Vector{Int64}, z_range::Vector{Int64}, qtyofinterest::String)
-#     regexs = Dict(
-#         "variable_regex" => r"(?<=\")[^,]*?(?=\")",
-#         "day_regex" => r"\d*\.\d{2,5}",
-#         "x_regex" => r"(?<=i=).*?(?=[,j=])",
-#         "z_regex" => r"(?<=j=).*?(?=,)",
-#     )
-#     extractors = Extractor(
-#         base -> begin
-#             file = joinpath(base, outputfile)
-#             result, var, x, z = concentrationplt2dict(
-#                 file,
-#                 regexs["variable_regex"],
-#                 regexs["day_regex"],
-#                 regexs["x_regex"],
-#                 regexs["z_regex"],
-#             )
-#             return [result]
-#         end,
-#         Symbol("$qtyofinterest"),
-#     )
-#     return [extractors]
-# end
-
-
 ## TODO add 3D concentration and 2/3D Temperature
-
 
 function build_performances(output_parameters::Dict)
     thresholds = Vector()
@@ -258,49 +232,4 @@ function _get_externalmodels_vector(inputs_mapping_dict::Dict{Any,Vector})
         extmodels_vector[state] = ExternalModel(inputs_mapping_dict[state]...)
     end
     return extmodels_vector
-end
-
-function evaluate_gen!(m::ExternalModel, df::DataFrame)
-    datetime = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS")
-    n = size(df, 1)
-    digits = ndigits(n)
-    results = pmap(1:n) do i
-        path = joinpath(m.workdir, datetime, "sample-$(lpad(i, digits, "0"))")
-        mkpath(path)
-        row = formatinputs(df[i, :], m.formats)
-        for file in m.sources
-            tokens = Mustache.load(joinpath(m.sourcedir, file))
-            open(joinpath(path, file), "w") do io
-                render(io, tokens, row)
-            end
-        end
-        for file in m.extras
-            cp(joinpath(m.sourcedir, file), joinpath(path, file))
-        end
-        run(m.solver, path)
-        result = map(e -> e.f(path), m.extractors)
-        if m.cleanup
-            rm(path; recursive=true)
-        end
-        return result
-    end
-    results = hcat(results...)
-    for (i, name) in enumerate(names(m.extractors))
-        df[!, name] = results[i, :]
-    end
-end
-
-function formatinputs(row::DataFrameRow, formats::Dict{Symbol,FormatSpec})
-    names = propertynames(row)
-    values = []
-    for symbol in names
-        if haskey(formats, symbol)
-            push!(values, fmt(formats[symbol], row[symbol]))
-        elseif haskey(formats, :*)
-            push!(values, fmt(formats[:*], row[symbol]))
-        else
-            push!(values, row[symbol])
-        end
-    end
-    return (; zip(names, values)...)
 end

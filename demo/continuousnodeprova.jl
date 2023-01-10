@@ -98,7 +98,7 @@ default_model = _get_th_model(sourcedir, format_dict, uqinputs, extractor, true)
 
 samples = UncertaintyQuantification.sample(uqinputs, 1)
 
-evaluate_gen!(default_model, samples)
+evaluate!(default_model, samples)
 
 
 # #### PROVA Parse output files
