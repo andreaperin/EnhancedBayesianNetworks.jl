@@ -1,3 +1,4 @@
+using DataFrames
 include("../CPDs.jl")
 include("../nodes.jl")
 include("../models_probabilities.jl")
@@ -60,16 +61,16 @@ node_debrisflow = StdNode(CPD_debrisflow, parents_debrisflow)
 windvelocity = NamedCategorical([:slow, :fast], [0.8, 0.2])
 CPD_windvelocity = RootCPD(:windvelocity, windvelocity)
 node_windvelocity = StdNode(CPD_windvelocity)
-dict_windvelocity = Dict{Symbol,Dict{String,Vector}}(
-    :slow => Dict(
-        "UQInputs" => [Parameter(1, :windvelocity)],
-        "FormatSpec" => [Dict(:windvelocity => FormatSpec(".8e"))]
-    ),
-    :fast => Dict(
-        "UQInputs" => [Parameter(2, :windvelocity)],
-        "FormatSpec" => [Dict(:windvelocity => FormatSpec(".8e"))]
-    )
-)
+# dict_windvelocity = Dict{Symbol,Dict{String,Vector}}(
+#     :slow => Dict(
+#         "UQInputs" => [Parameter(1, :windvelocity)],
+#         "FormatSpec" => [Dict(:windvelocity => FormatSpec(".8e"))]
+#     ),
+#     :fast => Dict(
+#         "UQInputs" => [Parameter(2, :windvelocity)],
+#         "FormatSpec" => [Dict(:windvelocity => FormatSpec(".8e"))]
+#     )
+# )
 
 waveraising1 = Rayleigh(0.387)
 waveraising2 = Rayleigh(2.068)
@@ -79,7 +80,7 @@ node_waveraising = StdNode(CPD_waveraising, parents_waveraising)
 
 ## TODO Overtopping new type of node that accept functional relationship as CPD
 
-parents_child = [node_windvelocity, node_waveraising, node_emission]
+parents_child = [node_windvelocity, node_waveraising]
 child1 = Model(df -> df.waverising .+ df.windvelocity, :child1)
 child2 = Model(df -> df.waverising .- df.windvelocity, :child2)
 child_model = [child1, child2]
@@ -87,27 +88,27 @@ node_child = ModelNode(parents_child, "continuous", child_model)
 
 
 
-nodes = [node_windvelocity, node_waveraising, node_emission]
+nodes = [node_windvelocity, node_waveraising, node_emission, node_debrisflow, node_extremeprecipitation, node_timescenario, node_waterlevel]
 dag = _build_DiAGraph_from_nodes(nodes)
 ordered_cpds, ordered_nodes, ordered_name_to_index, ordered_dag = _topological_ordered_dag(nodes)
 bn = StdBayesNet(ordered_nodes)
 show(bn)
 
 ##TODO Review with Jasper, i want just a map function
-discreteparents_states = vec(get_discreteparents_states_combinations(node_child)[2])
-df_dict = Dict()
-for state in discreteparents_states
-    df_dict[state] = DataFrame()
-    evidence = Dict{Symbol,Any}()
-    for i in range(1, length(state))
-        evidence[collect(keys(get_discreteparents_states_combinations(node_child)[1][i]))[1]] = state[i]
-        df_dict[state][!, collect(keys(get_discreteparents_states_combinations(node_child)[1][i]))[1]] = [state[i]]
-    end
-    for continuous_parent in get_continuous_parents(node_child)
-        distribution = evaluate_nodecpd_with_evidence(bn, name(continuous_parent), evidence)
-        df_dict[state][!, name(continuous_parent)] = [collect(values(distribution))[1]]
-    end
-end
+# discreteparents_states = vec(get_discreteparents_states_combinations(node_child)[2])
+# df_dict = Dict()
+# for state in discreteparents_states
+#     df_dict[state] = DataFrame()
+#     evidence = Dict{Symbol,Any}()
+#     for i in range(1, length(state))
+#         evidence[collect(keys(get_discreteparents_states_combinations(node_child)[1][i]))[1]] = state[i]
+#         df_dict[state][!, collect(keys(get_discreteparents_states_combinations(node_child)[1][i]))[1]] = [state[i]]
+#     end
+#     for continuous_parent in get_continuous_parents(node_child)
+#         distribution = evaluate_nodecpd_with_evidence(bn, name(continuous_parent), evidence)
+#         df_dict[state][!, name(continuous_parent)] = [collect(values(distribution))[1]]
+#     end
+# end
 
 
 ## to evaluate the pdf of child node, sample from wave rising dist and evaluate model

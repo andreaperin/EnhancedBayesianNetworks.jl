@@ -9,24 +9,6 @@ include("CPDs.jl")
 abstract type AbstractNode end
 abstract type Node <: AbstractNode end
 abstract type ModelInput end
-# const global ModelInput = Union{Vector{Tuple{Symbol,FormatSpec}},Dict{Symbol,Vector{Tuple{UQInput,FormatSpec}}}}
-struct DiscreteModelInput <: ModelInput
-    node_state::Symbol
-    definition::Union{Parameter,Nothing}
-    format::Union{FormatSpec,Nothing}
-end
-DiscreteModelInput() = DiscreteModelInput(Symbol(), nothing, nothing)
-
-struct ContinuousModelInput <: ModelInput
-    mustache::Symbol
-    format::Union{FormatSpec,Nothing}
-end
-ContinuousModelInput() = ContinuousModelInput(Symbol(), nothing)
-
-struct OutputModelParameter <: ModelInput
-    name::String
-    definition::Union{Tuple{Float64,String},Number,String}
-end
 
 struct ModelNode <: Node
     parents::Vector{T} where {T<:AbstractNode}
@@ -34,34 +16,18 @@ struct ModelNode <: Node
     model::Vector{UQModel}
 end
 
-# function ModelNode(parents::Vector{T}, type::String, model::Vector{UQModel})
-#     if type == "continuous"
-#         evaluate!(model)
-#     end
-
-# end
-
-
-
 struct StdNode <: Node
     cpd::CPD
     parents::Vector{T} where {T<:AbstractNode}
     type::String
-    model_input::Vector{I} where {I<:ModelInput}
-    output_parameters::Dict{Any,Any}
     ##TODO add to log
-    function StdNode(cpd::CPD, parents::Vector{T}, type::String, model_input::Vector{I}, output_parameters::Dict{Any,Any}) where {T<:AbstractNode,I<:ModelInput}
+    function StdNode(cpd::CPD, parents::Vector{T}, type::String) where {T<:AbstractNode}
         node_name = cpd.target
         if ~isa(cpd, RootCPD)
-            cpd.parents == name.(parents) ? new(cpd, parents, type, model_input, output_parameters) : error("parents mismatch between CPD and node in $node_name")
-            length(filter(x -> x.type == "discrete", parents)) == length(cpd.parental_ncategories) ? new(cpd, parents, type, model_input, output_parameters) : error("parents mismatch in CPD for discrete parents and parental_ncategories in $node_name")
+            cpd.parents == name.(parents) ? new(cpd, parents, type) : error("parents mismatch between CPD and node in $node_name")
+            length(filter(x -> x.type == "discrete", parents)) == length(cpd.parental_ncategories) ? new(cpd, parents, type) : error("parents mismatch in CPD for discrete parents and parental_ncategories in $node_name")
         else
-            new(cpd, parents, type, model_input, output_parameters)
-        end
-        if model_input != [DiscreteModelInput()] && model_input != [ContinuousModelInput()] && ~isa(model_input, Vector{ContinuousModelInput})
-            issetequal(collect(values(cpd.distributions[1].map.d2n)), map(x -> x.node_state, model_input)) ? new(cpd, parents, type, model_input, output_parameters) : error("node categories missmatch with model_inputs in $node_name")
-        else
-            new(cpd, parents, type, model_input, output_parameters)
+            new(cpd, parents, type)
         end
     end
 
@@ -69,131 +35,34 @@ struct StdNode <: Node
         ```Function for Root Node only```
         output_parameters = Dict{Any,Any}()
         parents = Vector{AbstractNode}()
-        type = isa(cpd.distributions, Union{Vector{NamedCategorical{Symbol}},NamedCategorical}) ? "discrete" : "continuous"
-        model_input = type == "discrete" ? [DiscreteModelInput()] : [ContinuousModelInput()]
-        StdNode(cpd, parents, type, model_input, output_parameters)
+        if isa(cpd, RootCPD)
+            type = isa(cpd.distributions, NamedCategorical) ? "discrete" : "continuous"
+        elseif isa(cpd, CategoricalCPD)
+            type = isa(cpd.distributions[1], NamedCategorical) ? "discrete" : "continuous"
+        end
+        StdNode(cpd, parents, type)
     end
     function StdNode(cpd::CPD, parents::Vector{T}) where {T<:AbstractNode}
-        type = isa(cpd.distributions, Union{Vector{NamedCategorical{Symbol}},NamedCategorical}) ? "discrete" : "continuous"
-        model_input = type == "discrete" ? [DiscreteModelInput()] : [ContinuousModelInput()]
-        output_parameters = Dict{Any,Any}()
-        ##TODO add to log
-        f = x -> findmax(collect(values(x)), dims=1)[1][1]
-        parental_ncategories = f.(states.(parents))
-        if parental_ncategories != cpd.parental_ncategories
-            parents_name = name.(parents)
-            node_name = cpd.target
-            println("mismatch in $node_name:  assigned cpds are not equal to parental categories $parental_ncategories")
-        else
-            StdNode(cpd, parents, type, model_input, output_parameters)
+        if isa(cpd, RootCPD)
+            type = isa(cpd.distributions, NamedCategorical) ? "discrete" : "continuous"
+        elseif isa(cpd, CategoricalCPD)
+            type = isa(cpd.distributions[1], NamedCategorical) ? "discrete" : "continuous"
         end
-    end
-    function StdNode(cpd::CPD, parents::Vector{T}, model_input::Vector{I}) where {T<:AbstractNode,I<:ModelInput}
-        type = isa(cpd.distributions, Union{Vector{NamedCategorical{Symbol}},NamedCategorical}) ? "discrete" : "continuous"
         ##TODO add to log
         f = x -> findmax(collect(values(x)), dims=1)[1][1]
         parental_ncategories = f.(states.(parents))
-        output_parameters = Dict{Any,Any}()
         if parental_ncategories != cpd.parental_ncategories
             parents_name = name.(parents)
             node_name = cpd.target
             println("mismatch in $node_name:  assigned cpds are not equal to parental categories $parental_ncategories")
         else
-            StdNode(cpd, parents, type, model_input, output_parameters)
+            StdNode(cpd, parents, type)
         end
     end
 end
 
-# struct NewModelNode <: AbstractNode
-#     parents::Vector{T} where {T<:AbstractNode}
-#     models::Dict{Any,<:UQModel}
-#     uqinputs::Dict{Any,Vector{<:UQInput}}
-#     performances::Dict{Symbol,Function}
-#     function NewModelNode(parents::Vector{T}) where {T<:AbstractNode}
-#         ## Only discrete_parents
-#         new_uqinputs = Vector{UQInput}()
-#         new_format_dict = Dict{Symbol,FormatSpec}()
-#         new_outputparameter = Dict{Any,Any}()
-#         for p in parents_th 
 
-
-#     end
-# end
-
-# struct ModelNode <: AbstractNode
-#     name::Symbol
-#     parents::Vector{T} where {T<:AbstractNode}
-#     default_inputs::Dict{String,Vector}
-#     sourcedir::String
-#     source_file::String
-#     extras::Vector{String}
-#     solvername::String
-#     output_parameters::Dict
-#     performances::Dict{Symbol,Function}
-#     cleanup::Bool
-#     inputs_states_mapping_dict::Dict{Any,Vector}
-#     updated_inputs::Dict{Any,Vector{<:UQInput}}
-#     sim::AbstractMonteCarlo
-#     function ModelNode(name::Symbol,
-#         parents::Vector{T} where {T<:AbstractNode},
-#         default_inputs::Dict{String,Vector},
-#         sourcedir::String,
-#         source_file::String,
-#         extras::Vector{String},
-#         solvername::String,
-#         output_parameters::Dict,
-#         performances::Dict{Symbol,Function},
-#         cleanup::Bool,
-#         sim::AbstractMonteCarlo)
-
-#         inputs_states_mapping_dict = Dict{Any,Vector}()
-#         updated_inputs = Dict{Any,Vector{<:UQInput}}()
-#         new(name, parents, default_inputs, sourcedir, source_file, extras, solvername, output_parameters, performances, cleanup, inputs_states_mapping_dict, updated_inputs, sim)
-#     end
-#     function ModelNode(name::Symbol,
-#         parents::Vector{T} where {T<:AbstractNode},
-#         default_inputs::Dict{String,Vector},
-#         sourcedir::String,
-#         source_file::String,
-#         extras::Vector{String},
-#         solvername::String,
-#         output_parameters::Dict,
-#         performances::Dict{Symbol,Function},
-#         cleanup::Bool,
-#         inputs_states_mapping_dict::Dict{Any,Vector},
-#         updated_inputs::Dict{Any,Vector{<:UQInput}},
-#         sim::AbstractMonteCarlo)
-
-#         new(name, parents, default_inputs, sourcedir, source_file, extras, solvername, output_parameters, performances, cleanup, inputs_states_mapping_dict, updated_inputs, sim)
-#     end
-# end
-
-# function evaluate_cpd_from_model(node::ModelNode, model_inputs_mapping_dict::Dict, performances::Dict{Symbol,Function}, uqinputs::Dict{Any,Vector{<:UQInput}})
-#     states_comb = get_discreteparents_states_combinations(node)[2]
-#     if length(collect(keys(model_inputs_mapping_dict))[collect(keys(model_inputs_mapping_dict)).∉Ref(vec(states_comb))]) != 0
-#         @show("parents states mismatch")
-#     else
-#         cond_probs_dict = Dict()
-#         cpd = Dict{Tuple,NamedCategorical}()
-#         if length(get_continuous_parents(node)) == 0
-#             sim = MonteCarlo(1)
-#             @showprogress 1 "Evaluating Model..." for combination in collect(keys(model_inputs_mapping_dict))
-#                 th_single_state_model = ExternalModel(th_node.inputs_states_mapping_dict[combination]...)
-#                 probs, variances, covs, samples = probabilities_of_events(th_single_state_model, performances, uqinputs[combination], sim)
-#                 cond_probs_dict[combination] = Dict(
-#                     "prob" => probs,
-#                     "cov" => covs
-#                 )
-#                 cpd[combination] = NamedCategorical(Vector{Symbol}(collect(keys(probs))), Vector{Float64}(collect(values(probs))))
-#             end
-#         end
-#     end
-#     cpd_ordered = sort(map_state_to_integer(cpd, node))
-#     new_ordered_parents = get_new_ordered_parents(node)
-#     CPD = CategoricalCPD(node.name, name.(new_ordered_parents), [length(states(i)) for i in new_ordered_parents], Vector{NamedCategorical}(collect(values(cpd_ordered))))
-#     node = StdNode(CPD, new_ordered_parents)
-#     return cond_probs_dict, cpd, CPD, node
-# end
+#####
 
 function name(node::T) where {T<:AbstractNode}
     return node.cpd.target
@@ -208,13 +77,13 @@ function states(node::AbstractNode)
 end
 
 function get_discrete_parents(node::T) where {T<:AbstractNode}
-    discrete_parents_dict = copy(node.parents)
-    return filter(x -> x.type == "discrete", discrete_parents_dict)
+    discrete_parents = copy(node.parents)
+    return filter(x -> x.type == "discrete", discrete_parents)
 end
 
 function get_continuous_parents(node::T) where {T<:AbstractNode}
     continuous_parents = copy(node.parents)
-    return filter(x -> x.type == "continuous", discrete_parents_dict)
+    return filter(x -> x.type == "continuous", continuous_parents)
 end
 
 function get_states_combination(nodes::Vector{T}) where {T<:AbstractNode}

@@ -253,8 +253,9 @@ end
 """
 The cpd of a node given an assignment (Works for Discrete Parents nodes only)
 """
+
+## This function works with StdNodes only
 function evaluate_nodecpd_with_evidence(bn::StdBayesNet, nodename::NodeName, evidence::Assignment)
-    # cpd_dict = get_cpd_dict(bn.nodes[bn.name_to_index[nodename]])
     # convert symbolic evicences to numerical evidences
     convertedevidence = Assignment()
     for (key, val) in evidence
