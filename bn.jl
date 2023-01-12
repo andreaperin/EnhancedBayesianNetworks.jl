@@ -254,9 +254,21 @@ end
 The cpd of a node given an assignment (Works for Discrete Parents nodes only)
 """
 function evaluate_nodecpd_with_evidence(bn::StdBayesNet, nodename::NodeName, evidence::Assignment)
-    cpd_dict = get_cpd_dict(bn.nodes[bn.name_to_index[nodename]])
+    # cpd_dict = get_cpd_dict(bn.nodes[bn.name_to_index[nodename]])
+    # convert symbolic evicences to numerical evidences
+    convertedevidence = Assignment()
+    for (key, val) in evidence
+        node = bn.nodes[bn.name_to_index[key]]
+        if ~isa(val, Number)
+            convertedevidence[key] = get_states_mapping_dict([node])[node][val]
+        else
+            convertedevidence[key] = val
+        end
+    end
+
+    cpd_dict = bn.nodes[bn.name_to_index[nodename]].cpd.prob_dict
     nodename_parents = bn.cpds[bn.name_to_index[nodename]].parents
-    assignment_parents = collect(keys(evidence))
+    assignment_parents = collect(keys(convertedevidence))
     assignment_index = nodename_parents .∈ [assignment_parents]
     undefined_assignmets = nodename_parents[nodename_parents.∉[assignment_parents]]
     useless_assignmets = assignment_parents[assignment_parents.∉[nodename_parents]]
@@ -269,7 +281,7 @@ function evaluate_nodecpd_with_evidence(bn::StdBayesNet, nodename::NodeName, evi
     vec_keys = Vector()
     for i in range(1, length(assignment_index))
         if assignment_index[i]
-            push!(vec_keys, [evidence[nodename_parents[i]]])
+            push!(vec_keys, [convertedevidence[nodename_parents[i]]])
         else
             if isa(bn.cpds[bn.name_to_index[nodename_parents[i]]], RootCPD)
                 push!(vec_keys, [1:length(bn.cpds[bn.name_to_index[nodename_parents[i]]].distributions);])

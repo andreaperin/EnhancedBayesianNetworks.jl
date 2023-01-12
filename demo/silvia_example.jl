@@ -57,7 +57,7 @@ CPD_debrisflow = CategoricalCPD(
 )
 node_debrisflow = StdNode(CPD_debrisflow, parents_debrisflow)
 
-windvelocity = NamedCategorical([:slow, :fast], [1.0, 0.0])
+windvelocity = NamedCategorical([:slow, :fast], [0.8, 0.2])
 CPD_windvelocity = RootCPD(:windvelocity, windvelocity)
 node_windvelocity = StdNode(CPD_windvelocity)
 dict_windvelocity = Dict{Symbol,Dict{String,Vector}}(
@@ -71,29 +71,53 @@ dict_windvelocity = Dict{Symbol,Dict{String,Vector}}(
     )
 )
 
-
-
 waveraising1 = Rayleigh(0.387)
 waveraising2 = Rayleigh(2.068)
 parents_waveraising = [node_windvelocity]
-CPD_waveraising = CategoricalCPD{Distribution}(:waveraising, name.(parents_waveraising), [2], [waveraising1, waveraising2])
+CPD_waveraising = CategoricalCPD(:waveraising, name.(parents_waveraising), [2], [waveraising1, waveraising2])
 node_waveraising = StdNode(CPD_waveraising, parents_waveraising)
 
 ## TODO Overtopping new type of node that accept functional relationship as CPD
 
-parents_child = [node_windvelocity, node_waveraising]
+parents_child = [node_windvelocity, node_waveraising, node_emission]
 child1 = Model(df -> df.waverising .+ df.windvelocity, :child1)
 child2 = Model(df -> df.waverising .- df.windvelocity, :child2)
+child_model = [child1, child2]
+node_child = ModelNode(parents_child, "continuous", child_model)
 
 
 
-
-
-nodes = [node_emission, node_timescenario, node_debrisflow, node_extremeprecipitation, node_waterlevel, node_windvelocity, node_waveraising]
+nodes = [node_windvelocity, node_waveraising, node_emission]
 dag = _build_DiAGraph_from_nodes(nodes)
 ordered_cpds, ordered_nodes, ordered_name_to_index, ordered_dag = _topological_ordered_dag(nodes)
 bn = StdBayesNet(ordered_nodes)
 show(bn)
 
-evidence = Assignment(:emission => 1)
-a = evaluate_nodecpd_with_evidence(bn, name(node_extremeprecipitation), evidence)
+##TODO Review with Jasper, i want just a map function
+discreteparents_states = vec(get_discreteparents_states_combinations(node_child)[2])
+df_dict = Dict()
+for state in discreteparents_states
+    df_dict[state] = DataFrame()
+    evidence = Dict{Symbol,Any}()
+    for i in range(1, length(state))
+        evidence[collect(keys(get_discreteparents_states_combinations(node_child)[1][i]))[1]] = state[i]
+        df_dict[state][!, collect(keys(get_discreteparents_states_combinations(node_child)[1][i]))[1]] = [state[i]]
+    end
+    for continuous_parent in get_continuous_parents(node_child)
+        distribution = evaluate_nodecpd_with_evidence(bn, name(continuous_parent), evidence)
+        df_dict[state][!, name(continuous_parent)] = [collect(values(distribution))[1]]
+    end
+end
+
+
+## to evaluate the pdf of child node, sample from wave rising dist and evaluate model
+
+
+# nodes = [node_emission, node_timescenario, node_debrisflow, node_extremeprecipitation, node_waterlevel, node_windvelocity, node_waveraising]
+# dag = _build_DiAGraph_from_nodes(nodes)
+# ordered_cpds, ordered_nodes, ordered_name_to_index, ordered_dag = _topological_ordered_dag(nodes)
+# bn = StdBayesNet(ordered_nodes)
+# show(bn)
+
+evidence = Assignment(:windvelocity => :fast, :emission => :happen)
+a = evaluate_nodecpd_with_evidence(bn, name(node_waveraising), evidence)

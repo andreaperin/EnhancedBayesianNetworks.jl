@@ -28,6 +28,21 @@ struct OutputModelParameter <: ModelInput
     definition::Union{Tuple{Float64,String},Number,String}
 end
 
+struct ModelNode <: Node
+    parents::Vector{T} where {T<:AbstractNode}
+    type::String
+    model::Vector{UQModel}
+end
+
+# function ModelNode(parents::Vector{T}, type::String, model::Vector{UQModel})
+#     if type == "continuous"
+#         evaluate!(model)
+#     end
+
+# end
+
+
+
 struct StdNode <: Node
     cpd::CPD
     parents::Vector{T} where {T<:AbstractNode}
@@ -194,14 +209,12 @@ end
 
 function get_discrete_parents(node::T) where {T<:AbstractNode}
     discrete_parents_dict = copy(node.parents)
-    filter(x -> x.type == "discrete", discrete_parents_dict)
-    return discrete_parents_dict
+    return filter(x -> x.type == "discrete", discrete_parents_dict)
 end
 
 function get_continuous_parents(node::T) where {T<:AbstractNode}
-    continuous_parents = copy(node.parent)
-    filter(x -> x.type == "continuous", discrete_parents_dict)
-    return continuous_parents
+    continuous_parents = copy(node.parents)
+    return filter(x -> x.type == "continuous", discrete_parents_dict)
 end
 
 function get_states_combination(nodes::Vector{T}) where {T<:AbstractNode}
