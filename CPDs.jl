@@ -1,6 +1,6 @@
 using Distributions
 using Discretizers
-
+using UncertaintyQuantification
 
 """
     Definition of the NodeName constant
@@ -19,9 +19,8 @@ const global Assignment = Dict{NodeName,Any}
 """
     Definition of the CPD AbstractType
 """
-abstract type AbstractCPD end
-abstract type CPD <: AbstractCPD end
-# abstract type ModelCPD <: AbstractCPD end
+abstract type CPD end
+
 
 """
     An Object for mapping each distribution to a MapableTypes::Union{AbstractString, Symbol}
@@ -139,15 +138,32 @@ nparams(cpd::CategoricalCPD) = sum(d -> paramcount(params(d)), cpd.distributions
 # Distributions.ncategories(cpd::CategoricalCPD) = ncategories(first(cpd.distributions))
 
 """
-A CPD for which the distribution never changes.
-    target: name of the CPD's variable
-    parents: list of parent variables.
-    distributions: a Distributions.jl distribution
-While a RootCPD can have parents, their assignments will not affect the distribution.
+ModelCPD
 """
+struct ModelCPD <: CPD
+    target::NodeName
+    parents::NodeNames
+    parental_ncategories::Vector{Int}
+    distributions::Vector{UQModel}
+    prob_dict::Dict{Tuple,UQModel}
+end
 
-# struct ModelCPD
-#     target::NodeName
-#     parents::NodeNames
-#     distributions::Vector{UQModel}
-# end
+function ModelCPD(target::NodeName, parents::NodeNames, parental_ncategories::Vector{Int}, distributions::Vector{M}) where {M<:UQModel}
+    ## Algo for parental n-categories (Not here, but after node definition need to check that parental-ncategories is equal to combination of discrete parents and grandparents)
+    f = x -> collect(1:1:x)
+    combinations = sort(vec(collect(Iterators.product(f.(parental_ncategories)...))))
+    prob_dict = Dict{Tuple,UQModel}(combinations .=> distributions)
+    ModelCPD(target, parents, parental_ncategories, distributions, prob_dict)
+end
+## Second way to define the ModelCPD trought a dict::(1,1) => [NamedCategorical1, NamedCategorical2]
+function ModelCPD(target::NodeName, parents::NodeNames, prob_dict::Dict{Tuple,M}) where {M<:UQModel}
+    distributions = Vector{UQModel}(collect(values(sort(prob_dict))))
+    f = x -> collect(x)
+    combinations = mapreduce(permutedims, vcat, f.(collect(keys(prob_dict))))
+    parental_ncategories = vec(findmax(combinations, dims=1)[1])
+    ModelCPD(target, parents, parental_ncategories, distributions, prob_dict)
+end
+
+name(cpd::ModelCPD) = cpd.target
+parents(cpd::ModelCPD) = cpd.parents
+nparams(cpd::ModelCPD) = sum(d -> paramcount(params(d)), cpd.distributions)
