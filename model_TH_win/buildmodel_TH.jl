@@ -143,7 +143,33 @@ function _build_head_extractor2D(output_file::String)
     return extractors
 end
 
+# function build_specific_extractor(outputfile::String, x_range::Vector{Int64}, z_range::Vector{Int64}, qtyofinterest::String)
+#     regexs = Dict(
+#         "variable_regex" => r"(?<=\")[^,]*?(?=\")",
+#         "day_regex" => r"\d*\.\d{2,5}",
+#         "x_regex" => r"(?<=i=).*?(?=[,j=])",
+#         "z_regex" => r"(?<=j=).*?(?=,)",
+#     )
+#     extractors = Extractor(
+#         base -> begin
+#             file = joinpath(base, outputfile)
+#             result, var, x, z = concentrationplt2dict(
+#                 file,
+#                 regexs["variable_regex"],
+#                 regexs["day_regex"],
+#                 regexs["x_regex"],
+#                 regexs["z_regex"],
+#             )
+#             return [result]
+#         end,
+#         Symbol("$qtyofinterest"),
+#     )
+#     return [extractors]
+# end
+
+
 ## TODO add 3D concentration and 2/3D Temperature
+
 
 function build_performances(output_parameters::Dict)
     thresholds = Vector()
@@ -177,54 +203,54 @@ function _get_th_model(sourcedir::String, format_dict::Dict{Symbol,FormatSpec}, 
     return ExternalModel(sourcedir, [sourcefile], extras, format_dict, workdir, extractor, solver, cleanup)
 end
 
-function _get_discrete_inputs_mapping_dict(
-    parent_vector::Vector{T} where {T<:AbstractNode},
-    default_inputs::String,
-    sourcedir::String,
-    source_file::String,
-    extras::Vector{String},
-    solvername::String,
-    cleanup::Bool
-)
-    inputs_mapping_dict = Dict{Any,Vector}()
-    updated_inputs = Dict{Any,Vector{<:UQInput}}()
-    nodes_states, nodes_combinations = get_states_combination(parent_vector)
-    output_parameters = xlsx2output_parameter(default_inputs)
-    for state in nodes_combinations
-        updated_inputs[state] = Vector{UQInput}()
-        new_inputs = Vector{UQInput}()
-        new_formats = Vector{Dict{Symbol,FormatSpec}}()
-        for i in range(1, length(state))
-            append!(new_inputs, input for input in parent_vector[collect(keys(nodes_states))[i]].model_input[state[i]]["UQInputs"])
-            append!(new_formats, input for input in parent_vector[collect(keys(nodes_states))[i]].model_input[state[i]]["FormatSpec"])
-        end
-        updated_inputs[state] = update_input_list(get_default_inputs_and_format(default_inputs)["UQInputs"], new_inputs)
-        updated_formats_dict = Dict{Symbol,FormatSpec}()
-        updated_formats_i = update_input_list(get_default_inputs_and_format(default_inputs)["FormatSpec"], new_formats)
-        for el in updated_formats_i
-            for (k, v) in el
-                updated_formats_dict[k] = v
-            end
-        end
-        inputs_mapping_dict[state] = [
-            sourcedir,
-            [source_file],
-            extras,
-            updated_formats_dict,
-            get_workdir(update_input_list(get_default_inputs_and_format(default_inputs)["UQInputs"],
-                    new_inputs), joinpath(pwd(), "model_TH")),
-            _build_concentration_extractor(
-                output_parameters["output_filename"],
-                [output_parameters["x_min"],
-                    output_parameters["x_max"]],
-                [output_parameters["z_min"], output_parameters["z_max"]],
-                output_parameters["quantity_of_interest"]
-            ), Solver(joinpath(sourcedir, solvername), "", source_file),
-            cleanup
-        ]
-    end
-    return inputs_mapping_dict, updated_inputs
-end
+# function _get_discrete_inputs_mapping_dict(
+#     parent_vector::Vector{T} where {T<:AbstractNode},
+#     default_inputs::String,
+#     sourcedir::String,
+#     source_file::String,
+#     extras::Vector{String},
+#     solvername::String,
+#     cleanup::Bool
+# )
+#     inputs_mapping_dict = Dict{Any,Vector}()
+#     updated_inputs = Dict{Any,Vector{<:UQInput}}()
+#     nodes_states, nodes_combinations = get_states_combination(parent_vector)
+#     output_parameters = xlsx2output_parameter(default_inputs)
+#     for state in nodes_combinations
+#         updated_inputs[state] = Vector{UQInput}()
+#         new_inputs = Vector{UQInput}()
+#         new_formats = Vector{Dict{Symbol,FormatSpec}}()
+#         for i in range(1, length(state))
+#             append!(new_inputs, input for input in parent_vector[collect(keys(nodes_states))[i]].model_input[state[i]]["UQInputs"])
+#             append!(new_formats, input for input in parent_vector[collect(keys(nodes_states))[i]].model_input[state[i]]["FormatSpec"])
+#         end
+#         updated_inputs[state] = update_input_list(get_default_inputs_and_format(default_inputs)["UQInputs"], new_inputs)
+#         updated_formats_dict = Dict{Symbol,FormatSpec}()
+#         updated_formats_i = update_input_list(get_default_inputs_and_format(default_inputs)["FormatSpec"], new_formats)
+#         for el in updated_formats_i
+#             for (k, v) in el
+#                 updated_formats_dict[k] = v
+#             end
+#         end
+#         inputs_mapping_dict[state] = [
+#             sourcedir,
+#             [source_file],
+#             extras,
+#             updated_formats_dict,
+#             get_workdir(update_input_list(get_default_inputs_and_format(default_inputs)["UQInputs"],
+#                     new_inputs), joinpath(pwd(), "model_TH")),
+#             _build_concentration_extractor(
+#                 output_parameters["output_filename"],
+#                 [output_parameters["x_min"],
+#                     output_parameters["x_max"]],
+#                 [output_parameters["z_min"], output_parameters["z_max"]],
+#                 output_parameters["quantity_of_interest"]
+#             ), Solver(joinpath(sourcedir, solvername), "", source_file),
+#             cleanup
+#         ]
+#     end
+#     return inputs_mapping_dict, updated_inputs
+# end
 
 function _get_externalmodels_vector(inputs_mapping_dict::Dict{Any,Vector})
     extmodels_vector = Dict{Any,ExternalModel}()
