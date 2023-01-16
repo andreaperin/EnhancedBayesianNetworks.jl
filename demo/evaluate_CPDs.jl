@@ -1,7 +1,6 @@
 include("../CPDs.jl")
 include("../nodes.jl")
-include("../buildmodel_TH.jl")
-include("../models_probabilities.jl")
+Sys.isapple() ? include("../model_TH_macos/buildmodel_TH.jl") : include("../model_TH_win/buildmodel_TH.jl")include("../models_probabilities.jl")
 include("../bn.jl")
 
 

@@ -27,6 +27,8 @@ dispersivitivy_longv8 = NamedCategorical([:disp1, :disp2], [0.2, 0.8])
 dispersivitivy_longv9 = NamedCategorical([:disp1, :disp2], [0.1, 0.9])
 dist = [dispersivitivy_longv1, dispersivitivy_longv2, dispersivitivy_longv3, dispersivitivy_longv4, dispersivitivy_longv5, dispersivitivy_longv6, dispersivitivy_longv7, dispersivitivy_longv8, dispersivitivy_longv2]
 CPDd = CategoricalCPD(:dispersivity, [:time_scenario, :grandparent], [3, 3], dist)
+
+##TODO DiscreteModelInput and ContinuousModelInput need to be changed according to the new ModelNode Definition (WIP)
 model_input_disp = [
     DiscreteModelInput(:disp1, Parameter(2.0, :disp_longv), FormatSpec(".8e")),
     DiscreteModelInput(:disp2, Parameter(5.0, :disp_longv), FormatSpec(".8e"))

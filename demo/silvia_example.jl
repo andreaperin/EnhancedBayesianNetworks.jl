@@ -72,20 +72,20 @@ node_windvelocity = StdNode(CPD_windvelocity)
 #     )
 # )
 
+
 waveraising1 = Rayleigh(0.387)
 waveraising2 = Rayleigh(2.068)
 parents_waveraising = [node_windvelocity]
 CPD_waveraising = CategoricalCPD(:waveraising, name.(parents_waveraising), [2], [waveraising1, waveraising2])
 node_waveraising = StdNode(CPD_waveraising, parents_waveraising)
 
-## TODO Overtopping new type of node that accept functional relationship as CPD
 
 parents_child = [node_windvelocity, node_waveraising]
 child1 = Model(df -> df.waverising .+ df.windvelocity, :child1)
 child2 = Model(df -> df.waverising .- df.windvelocity, :child2)
 child_model = [child1, child2]
-node_child = ModelNode(parents_child, "continuous", child_model)
-
+CPD_child = ModelCPD(:child, name.(parents_child), [2], child_model)
+## TODO Child new type of node that accept functional relationship as CPD (Struct model node, add check on parents categories as written in notes)
 
 
 nodes = [node_windvelocity, node_waveraising, node_emission, node_debrisflow, node_extremeprecipitation, node_timescenario, node_waterlevel]
@@ -93,6 +93,16 @@ dag = _build_DiAGraph_from_nodes(nodes)
 ordered_cpds, ordered_nodes, ordered_name_to_index, ordered_dag = _topological_ordered_dag(nodes)
 bn = StdBayesNet(ordered_nodes)
 show(bn)
+
+
+
+
+
+
+
+
+
+
 
 ##TODO Review with Jasper, i want just a map function
 # discreteparents_states = vec(get_discreteparents_states_combinations(node_child)[2])
