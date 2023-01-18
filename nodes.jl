@@ -10,11 +10,24 @@ abstract type AbstractNode end
 abstract type Node <: AbstractNode end
 abstract type ModelInput end
 
-struct ModelNode <: Node
-    parents::Vector{T} where {T<:AbstractNode}
-    type::String
-    model::Vector{UQModel}
-end
+# struct ModelNode <: Node
+#     cpd::CPD
+#     parents::Vector{T} where {T<:AbstractNode}
+#     type::String
+#     ##TODO add to log
+#     function ModelNode(cpd::CPD, parents::Vector{T}, type::String) where {T<:AbstractNode}
+#         node_name = cpd.target
+#         cpd.parents == name.(parents) ? new(cpd, parents, type) : error("parents mismatch between CPD and node in $node_name")
+
+
+
+#     end
+
+#     function ModelNode(cpd::CPD, parents::Vector{T}) where {T<:AbstractNode}
+
+#     end
+
+# end
 
 struct StdNode <: Node
     cpd::CPD
@@ -24,8 +37,8 @@ struct StdNode <: Node
     function StdNode(cpd::CPD, parents::Vector{T}, type::String) where {T<:AbstractNode}
         node_name = cpd.target
         if ~isa(cpd, RootCPD)
-            cpd.parents == name.(parents) ? new(cpd, parents, type) : error("parents mismatch between CPD and node in $node_name")
-            length(filter(x -> x.type == "discrete", parents)) == length(cpd.parental_ncategories) ? new(cpd, parents, type) : error("parents mismatch in CPD for discrete parents and parental_ncategories in $node_name")
+            cpd.parents == name.(parents) ? new(cpd, parents, type) : throw(DomainError(node_name, "Assigned parents are not equals to the one of CPD"))
+            length(filter(x -> x.type == "discrete", parents)) == length(cpd.parental_ncategories) ? new(cpd, parents, type) : throw(DomainError(node_name, "parents mismatch in CPD for discrete parents and parental_ncategories in $node_name"))
         else
             new(cpd, parents, type)
         end
@@ -33,7 +46,6 @@ struct StdNode <: Node
 
     function StdNode(cpd::CPD)
         ```Function for Root Node only```
-        output_parameters = Dict{Any,Any}()
         parents = Vector{AbstractNode}()
         if isa(cpd, RootCPD)
             type = isa(cpd.distributions, NamedCategorical) ? "discrete" : "continuous"
@@ -50,11 +62,16 @@ struct StdNode <: Node
         end
         ##TODO add to log
         f = x -> findmax(collect(values(x)), dims=1)[1][1]
-        parental_ncategories = f.(states.(parents))
-        if parental_ncategories != cpd.parental_ncategories
-            parents_name = name.(parents)
+        discrete_parents = filter(x -> x.type == "discrete", parents)
+        continuous_parents = filter(x -> x.type == "continuous", parents)
+        discrete_parental_ncategories = f.(discrete_states.(discrete_parents))
+        isempty(discrete_parental_ncategories) ? discrete_parental_ncategories = [1] : discrete_parental_ncategories = discrete_parental_ncategories
+        continuous_parental_ncategories = length.(continuous_distributions.(continuous_parents))
+        isempty(continuous_parental_ncategories) ? continuous_parental_ncategories = [1] : continuous_parental_ncategories = continuous_parental_ncategories
+        theorical_parents_categories = prod(discrete_parental_ncategories) * prod(continuous_parental_ncategories)
+        if theorical_parents_categories != prod(cpd.parental_ncategories)
             node_name = cpd.target
-            println("mismatch in $node_name:  assigned cpds are not equal to parental categories $parental_ncategories")
+            throw(DomainError(node_name, "number of assigned cpds id not equal to parental categories $theorical_parents_categories"))
         else
             StdNode(cpd, parents, type)
         end
@@ -68,13 +85,42 @@ function name(node::T) where {T<:AbstractNode}
     return node.cpd.target
 end
 
-function states(node::AbstractNode)
-    if node.cpd isa RootCPD
-        return node.type == "discrete" ? node.cpd.distributions.map.n2d : "this is a continuous node"
+# ``` 1) discrete_states returns:
+#             states for discrete nodes 
+#                 Vector{Dict{state_description_Symbol, state_number}}
+#     2) continuous_distributions returns:
+#             possible distributions for continuous nodes 
+#                 Vector{Dict{distribution_description, distribution_number}}
+# ```
+
+function discrete_states(node::AbstractNode)
+    if node.type == "continuous"
+        throw(DomainError(node, "This is a continuous node"))
     else
-        return node.type == "discrete" ? node.cpd.distributions[1].map.n2d : "this is a continuous node"
+        if node.cpd isa RootCPD
+            return node.cpd.distributions.map.n2d
+        else
+            return node.cpd.distributions[1].map.n2d
+        end
     end
 end
+
+function continuous_distributions(node::AbstractNode)
+    if node.type == "discrete"
+        throw(DomainError(node, "This is a continuous node"))
+    else
+        return node.cpd.distributions
+    end
+end
+
+
+# function states(node::AbstractNode)
+#     if node.cpd isa RootCPD
+#         return node.type == "discrete" ? node.cpd.distributions.map.n2d : "this is a continuous node"
+#     else
+#         return node.type == "discrete" ? node.cpd.distributions[1].map.n2d : "this is a continuous node"
+#     end
+# end
 
 function get_discrete_parents(node::T) where {T<:AbstractNode}
     discrete_parents = copy(node.parents)
