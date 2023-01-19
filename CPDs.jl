@@ -10,16 +10,27 @@ const global NodeName = Symbol
 const global NodeNames = AbstractVector{NodeName}
 const global NodeNameUnion = Union{NodeName,NodeNames}
 
-
 """
     Definition of the Assignment constant as Dict{NodeName, Any}
 """
 const global Assignment = Dict{NodeName,Any}
 
+
 """
     Definition of the CPD AbstractType
 """
 abstract type CPD end
+
+"""
+    Definition of the Object SystemReliabilityProblem
+"""
+
+struct SystemReliabilityProblem
+    models::Union{Array{<:UQModel},UQModel}
+    performances::Dict{Symbol,Function}
+    inputs::Union{Array{<:UQInput},UQInput}
+    sim::AbstractMonteCarlo
+end
 
 
 """
@@ -144,20 +155,22 @@ struct ModelCPD <: CPD
     target::NodeName
     parents::NodeNames
     parental_ncategories::Vector{Int}
-    distributions::Vector{UQModel}
-    prob_dict::Dict{Tuple,UQModel}
+    distributions::Vector{SystemReliabilityProblem}
+    prob_dict::Dict{Tuple,SystemReliabilityProblem}
 end
 
-function ModelCPD(target::NodeName, parents::NodeNames, parental_ncategories::Vector{Int}, distributions::Vector{M}) where {M<:UQModel}
+
+
+function ModelCPD(target::NodeName, parents::NodeNames, parental_ncategories::Vector{Int}, distributions::Vector{S}) where {S<:SystemReliabilityProblem}
     ## Algo for parental n-categories (Not here, but after node definition need to check that parental-ncategories is equal to combination of discrete parents and grandparents)
     f = x -> collect(1:1:x)
     combinations = sort(vec(collect(Iterators.product(f.(parental_ncategories)...))))
-    prob_dict = Dict{Tuple,UQModel}(combinations .=> distributions)
+    prob_dict = Dict{Tuple,SystemReliabilityProblem}(combinations .=> distributions)
     ModelCPD(target, parents, parental_ncategories, distributions, prob_dict)
 end
 ## Second way to define the ModelCPD trought a dict::(1,1) => [NamedCategorical1, NamedCategorical2]
-function ModelCPD(target::NodeName, parents::NodeNames, prob_dict::Dict{Tuple,M}) where {M<:UQModel}
-    distributions = Vector{UQModel}(collect(values(sort(prob_dict))))
+function ModelCPD(target::NodeName, parents::NodeNames, prob_dict::Dict{Tuple,S}) where {S<:SystemReliabilityProblem}
+    distributions = Vector{SystemReliabilityProblem}(collect(values(sort(prob_dict))))
     f = x -> collect(x)
     combinations = mapreduce(permutedims, vcat, f.(collect(keys(prob_dict))))
     parental_ncategories = vec(findmax(combinations, dims=1)[1])

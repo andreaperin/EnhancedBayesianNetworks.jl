@@ -10,24 +10,26 @@ abstract type AbstractNode end
 abstract type Node <: AbstractNode end
 abstract type ModelInput end
 
-# struct ModelNode <: Node
-#     cpd::CPD
-#     parents::Vector{T} where {T<:AbstractNode}
-#     type::String
-#     ##TODO add to log
-#     function ModelNode(cpd::CPD, parents::Vector{T}, type::String) where {T<:AbstractNode}
-#         node_name = cpd.target
-#         cpd.parents == name.(parents) ? new(cpd, parents, type) : error("parents mismatch between CPD and node in $node_name")
+struct ModelNode <: Node
+    cpd::CPD
+    parents::Vector{T} where {T<:AbstractNode}
+    type::String
+    ## TODO check if this function works
+    function ModelNode(target::NodeName, parents::Vector{T}, model::Vector{UQModel}, typpe::String, type::String) where {T<:AbstractNode}
+        discrete, cont_nonroot, cont_root = nodes_split(par)
+        append!(discrete, cont_root)
+        while ~isempty(cont_nonroot)
+            new_parents = Vector{AbstractNode}()
+            for single_cont_nonroot in cont_nonroot
+                append!(new_parents, single_cont_nonroot.parents)
+            end
+            discrete_new, cont_nonroot_new, cont_root_new = nodes_split(new_parents)
+            append!(discrete, discrete_new)
+            append!(discrete, cont_root_new)
+        end
+    end
+end
 
-
-
-#     end
-
-#     function ModelNode(cpd::CPD, parents::Vector{T}) where {T<:AbstractNode}
-
-#     end
-
-# end
 
 struct StdNode <: Node
     cpd::CPD
@@ -131,6 +133,15 @@ function get_continuous_parents(node::T) where {T<:AbstractNode}
     continuous_parents = copy(node.parents)
     return filter(x -> x.type == "continuous", continuous_parents)
 end
+
+function nodes_split(nodes::Vector{T}) where {T<:AbstractNode}
+    discrete_parents = filter(x -> x.type == "discrete", nodes)
+    continuous_parents = filter(x -> x.type == "continuous", nodes)
+    continuous_nonroot_parents = filter(x -> ~isa(x.cpd, RootCPD), continuous_parents)
+    continuous_root_parents = filter(x -> isa(x.cpd, RootCPD), continuous_parents)
+    return discrete_parents, continuous_nonroot_parents, continuous_root_parents
+end
+
 
 function get_states_combination(nodes::Vector{T}) where {T<:AbstractNode}
     continuous = name.(filter(x -> x.type == "continuous", nodes))
