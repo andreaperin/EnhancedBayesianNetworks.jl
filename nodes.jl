@@ -26,7 +26,10 @@ struct ModelNode <: Node
             discrete_new, cont_nonroot_new, cont_root_new = nodes_split(new_parents)
             append!(discrete, discrete_new)
             append!(discrete, cont_root_new)
+            cont_nonroot = cont_nonroot_new
         end
+        ancestors = unique(discrete)
+
     end
 end
 
