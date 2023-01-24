@@ -49,7 +49,22 @@ parents_m = [t]
 CPD_m = CategoricalCPD(:m, name.(parents_m), [3], [wraising1, wraising2, wraising3])
 m = StdNode(CPD_m, parents_m)
 
-par = [t, k, m]
+par = [t, k, m, h]
+
+all_nodes = par
+for pr in par
+    if isempty(pr.parents)
+        continue
+    else
+        for i in pr.parents
+            push!(all_nodes, i)
+        end
+    end
+end
+for_bn = unique(all_nodes)
+
+
+
 
 discrete, cont_nonroot, cont_root = nodes_split(par)
 append!(discrete, cont_root)

@@ -16,7 +16,7 @@ struct ModelNode <: Node
     type::String
     ## TODO check if this function works
     function ModelNode(target::NodeName, parents::Vector{T}, model::Vector{UQModel}, type::String) where {T<:AbstractNode}
-        discrete, cont_nonroot, cont_root = nodes_split(par)
+        discrete, cont_nonroot, cont_root = nodes_split(parents)
         append!(discrete, cont_root)
         while ~isempty(cont_nonroot)
             new_parents = Vector{AbstractNode}()
@@ -29,7 +29,11 @@ struct ModelNode <: Node
             cont_nonroot = cont_nonroot_new
         end
         ancestors = unique(discrete)
+        states_vec_dicts = get_statesordistributions.(ancestors)
         states_combinations = get_combinations(ancestors)
+        ## get the continuous nodes that are parents of modelnode but not in ancestors
+        to_be_evidenced = setdiff(parents, ancestors)
+        ## Now all the nodes inside to_be_evidenced needs to be evaluate and used as ModelUQINputs for model node
 
     end
 end
