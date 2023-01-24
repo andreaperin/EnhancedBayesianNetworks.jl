@@ -51,20 +51,6 @@ m = StdNode(CPD_m, parents_m)
 
 par = [t, k, m, h]
 
-all_nodes = par
-for pr in par
-    if isempty(pr.parents)
-        continue
-    else
-        for i in pr.parents
-            push!(all_nodes, i)
-        end
-    end
-end
-for_bn = unique(all_nodes)
-
-
-
 
 discrete, cont_nonroot, cont_root = nodes_split(par)
 append!(discrete, cont_root)
@@ -79,9 +65,42 @@ while ~isempty(cont_nonroot)
     cont_nonroot = cont_nonroot_new
 end
 ancestors = unique(discrete)
-states_combinations = get_combinations(ancestors)
+states_vec_dicts = get_statesordistributions.(ancestors)
+states_combinations, reference_vec = get_combinations(ancestors)
+# get the continuous nodes that are parents of modelnode but not in ancestors
+to_be_evidenced = setdiff(par, ancestors)
+
+## TODO(done) building the evidences Vector
+evidence_vec = Vector{Dict}()
+for state_combination in states_combinations
+    evidence = Dict()
+    for i in range(1, length(reference_vec))
+        evidence[reference_vec[i]] = state_combination[i]
+    end
+    push!(evidence_vec, evidence)
+end
+# convert symbolic evicences to numerical evidences
+convertedevidence_vector = Vector{Assignment}()
+for evidence in evidence_vec
+    converted_evidence = Assignment()
+    for (key, val) in evidence
+        if ~isa(val, Number)
+            converted_evidence[name(key)] = get_states_mapping_dict([key])[name(key)][val]
+        else
+            converted_evidence[name(key)] = val
+        end
+    end
+    push!(convertedevidence_vector, converted_evidence)
+end
+
+
+
+
+
+bn = StdBayesNet([t, p, k, m, h])
 
 ## TODO for each state_comb, valutare quali node cont_nonroot mancano ad ancestors rispetto a parents, valutarli data la state combination e aggiungere la distribuzione!
-evidence = Assignment(:windvelocity => :fast, :emission => :happen)
-a = evaluate_nodecpd_with_evidence(bn, name(node_waveraising), evidence)
+evidence = Assignment(:t => :first)
+a = evaluate_nodecpd_with_evidence(bn, name(m), evidence)
 ## evaluate_nodecpd_with_evidence requires BN, maybe the function should be changed to just pass the parents(?)
+

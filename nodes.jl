@@ -195,9 +195,9 @@ end
 
 function get_statesordistributions(node::T) where {T<:AbstractNode}
     if node.type == "continuous"
-        return Dict(name(node) => [node.cpd.distributions])
+        return Dict(node => node.cpd.distributions)
     elseif node.type == "discrete"
-        ~isa(node.cpd, RootCPD) ? result = Dict(name(node) => collect(values(node.cpd.distributions[1].map.d2n))) : result = Dict(name(node) => collect(values(node.cpd.distributions.map.d2n)))
+        ~isa(node.cpd, RootCPD) ? result = Dict(node => collect(values(node.cpd.distributions[1].map.d2n))) : result = Dict(node => collect(values(node.cpd.distributions.map.d2n)))
         return result
     end
 end
@@ -205,10 +205,12 @@ end
 function get_combinations(nodes::Vector{T}) where {T<:AbstractNode}
     states_dictionary = get_statesordistributions.(nodes)
     to_combine = []
+    reference_vector = []
     for node in states_dictionary
         push!(to_combine, collect(values(node))[1])
+        push!(reference_vector, collect(keys(node))[1])
     end
-    return vec(collect(Iterators.product(to_combine...)))
+    return vec(collect(Iterators.product(to_combine...))), reference_vector
 end
 
 # function get_states_combination(nodes::Vector{T}) where {T<:AbstractNode}
@@ -235,7 +237,7 @@ end
 # end
 
 function get_states_mapping_dict(nodes::Vector{T}) where {T<:AbstractNode}
-    mapping = Dict{AbstractNode,Dict{}}()
+    mapping = Dict{NodeName,Dict{}}()
     for node in nodes
         if node.type == "discrete"
             isa(node.cpd, RootCPD) ? mapping[name(node)] = node.cpd.distributions.map.n2d : mapping[name(node)] = node.cpd.distributions[1].map.n2d

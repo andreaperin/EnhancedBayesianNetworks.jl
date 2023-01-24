@@ -12,7 +12,7 @@ include("nodes.jl")
 abstract type ProbabilisticGraphicalModel end
 
 
-function _build_DiAGraph_from_nodes(nodes::Vector{F}) where {F<:Node}
+function _build_DiAGraph_from_nodes(nodes::Vector{F}) where {F<:AbstractNode}
     cpds = [i.cpd for i in nodes]
     name_to_index = Dict{NodeName,Int}()
     for (i, cpd) in enumerate(cpds)
@@ -47,12 +47,12 @@ function _build_DiAGraph_from_nodes(
     return dag
 end
 
-function _topological_ordered_dag(nodes::Vector{F}) where {F<:Node}
+function _topological_ordered_dag(nodes::Vector{F}) where {F<:AbstractNode}
     dag = _build_DiAGraph_from_nodes(nodes)
     topological_ordered_vect = topological_sort_by_dfs(dag)
     cpds = [i.cpd for i in nodes]
     new_cpds = Vector{CPD}(undef, length(cpds))
-    new_nodes = Vector{Node}(undef, length(nodes))
+    new_nodes = Vector{AbstractNode}(undef, length(nodes))
     new_name_to_index = Dict{NodeName,Int}()
     for (new_index, old_index) in enumerate(topological_ordered_vect)
         new_name_to_index[name(cpds[old_index])] = new_index
@@ -65,12 +65,12 @@ end
 mutable struct StdBayesNet <: ProbabilisticGraphicalModel
     ## TODO: Add chech or all discrete or no continuous with children (=>EBN)
     dag::DiGraph
-    nodes::Vector{F} where {F<:Node}
+    nodes::Vector{F} where {F<:AbstractNode}
     cpds::Vector{CPD} ## TODO in EBN Struct will become VectorUnion{CPD, Vector{SRP}}
     name_to_index::Dict{NodeName,Int}
 end
 
-function StdBayesNet(nodes::Vector{F}) where {F<:Node}
+function StdBayesNet(nodes::Vector{F}) where {F<:AbstractNode}
     dag = _build_DiAGraph_from_nodes(nodes)
     !is_cyclic(dag) || error("BayesNet graph is non-acyclic!")
     ordered_cpds, ordered_nodes, ordered_name_to_index, ordered_dag = _topological_ordered_dag(nodes)
@@ -261,7 +261,7 @@ function evaluate_nodecpd_with_evidence(bn::StdBayesNet, nodename::NodeName, evi
     for (key, val) in evidence
         node = bn.nodes[bn.name_to_index[key]]
         if ~isa(val, Number)
-            convertedevidence[key] = get_states_mapping_dict([node])[node][val]
+            convertedevidence[key] = get_states_mapping_dict([node])[name(node)][val]
         else
             convertedevidence[key] = val
         end
