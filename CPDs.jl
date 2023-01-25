@@ -10,11 +10,6 @@ const global NodeName = Symbol
 const global NodeNames = AbstractVector{NodeName}
 const global NodeNameUnion = Union{NodeName,NodeNames}
 
-"""
-    Definition of the Assignment constant as Dict{NodeName, Any}
-"""
-const global Assignment = Dict{NodeName,Any}
-
 
 """
     Definition of the CPD AbstractType

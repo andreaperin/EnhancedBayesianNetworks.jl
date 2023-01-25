@@ -254,7 +254,7 @@ end
 The cpd of a node given an assignment (Works for Discrete Parents nodes only)
 """
 
-## This function works with StdNodes only
+##TODO this function needs to be checked after the new definition of Assignment that has Node Struct as key (nomore NodeName)
 function evaluate_nodecpd_with_evidence(bn::StdBayesNet, nodename::NodeName, evidence::Assignment)
     # convert symbolic evicences to numerical evidences
     convertedevidence = Assignment()
@@ -298,6 +298,4 @@ function evaluate_nodecpd_with_evidence(bn::StdBayesNet, nodename::NodeName, evi
     end
     return new_cond_dic
 end
-
-
 

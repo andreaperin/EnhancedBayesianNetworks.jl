@@ -9,6 +9,10 @@ include("CPDs.jl")
 abstract type AbstractNode end
 abstract type Node <: AbstractNode end
 abstract type ModelInput end
+"""
+    Definition of the Assignment constant as Dict{NodeName, Any}
+"""
+const global Assignment = Dict{Node,Any}
 
 struct ModelNode <: Node
     cpd::CPD
@@ -16,26 +20,51 @@ struct ModelNode <: Node
     type::String
     ## TODO check if this function works
     function ModelNode(target::NodeName, parents::Vector{T}, model::Vector{UQModel}, type::String) where {T<:AbstractNode}
-        discrete, cont_nonroot, cont_root = nodes_split(parents)
-        append!(discrete, cont_root)
-        while ~isempty(cont_nonroot)
-            new_parents = Vector{AbstractNode}()
-            for single_cont_nonroot in cont_nonroot
-                append!(new_parents, single_cont_nonroot.parents)
-            end
-            discrete_new, cont_nonroot_new, cont_root_new = nodes_split(new_parents)
-            append!(discrete, discrete_new)
-            append!(discrete, cont_root_new)
-            cont_nonroot = cont_nonroot_new
-        end
-        ancestors = unique(discrete)
-        states_vec_dicts = get_statesordistributions.(ancestors)
-        states_combinations = get_combinations(ancestors)
-        ## get the continuous nodes that are parents of modelnode but not in ancestors
-        to_be_evidenced = setdiff(parents, ancestors)
-        ## Now all the nodes inside to_be_evidenced needs to be evaluate and used as ModelUQINputs for model node
-
+        ancestors_states_combinations, parents_states_combination_reduced = get_evidences_vectors_for_modelnodes(parents)
+        ##TODO go on from here (now we have the prob_dict entries and we need to create the SRP problem from here and then adjust them following the parents and states order)
     end
+end
+
+
+function get_evidences_vectors_for_modelnodes(parents::Vector{T}) where {T<:AbstractNode}
+    discrete, cont_nonroot, cont_root = nodes_split(parents)
+    append!(discrete, cont_root)
+    while ~isempty(cont_nonroot)
+        new_parents = Vector{AbstractNode}()
+        for single_cont_nonroot in cont_nonroot
+            append!(new_parents, single_cont_nonroot.parents)
+        end
+        discrete_new, cont_nonroot_new, cont_root_new = nodes_split(new_parents)
+        append!(discrete, discrete_new)
+        append!(discrete, cont_root_new)
+        cont_nonroot = cont_nonroot_new
+    end
+    ancestors = unique(discrete)
+    ## Get Ancestors evidences vector
+    ancestors_states_combinations, reference_vec = get_combinations(ancestors)
+    evidence_over_ancestors = Vector{Assignment}()
+    for state_combination in ancestors_states_combinations
+        evidence = Dict()
+        for i in range(1, length(reference_vec))
+            evidence[reference_vec[i]] = state_combination[i]
+        end
+        push!(evidence_over_ancestors, evidence)
+    end
+    evidence_over_parents = Vector{Assignment}()
+    parents_states_combination_reduced = []
+    for single_evidence_over_ancestors in evidence_over_ancestors
+        single_evidence_over_parents = Assignment()
+        for node in parents
+            if haskey(single_evidence_over_ancestors, node)
+                single_evidence_over_parents[node] = single_evidence_over_ancestors[node]
+            else
+                single_evidence_over_parents[node] = collect(values(evaluate_nodecpd_with_evidence(node, single_evidence_over_ancestors)))
+            end
+        end
+        push!(evidence_over_parents, single_evidence_over_parents)
+        push!(parents_states_combination_reduced, Tuple(x for x in collect(values(single_evidence_over_parents))))
+    end
+    return ancestors_states_combinations, parents_states_combination_reduced
 end
 
 
@@ -89,7 +118,7 @@ struct StdNode <: Node
 end
 
 
-struct ModelInputNode <: AbstractNode
+struct ModelInputNode <: Node
     cpd::CPD
     parents::Vector{T} where {T<:AbstractNode}
     type::String
@@ -213,28 +242,22 @@ function get_combinations(nodes::Vector{T}) where {T<:AbstractNode}
     return vec(collect(Iterators.product(to_combine...))), reference_vector
 end
 
-# function get_states_combination(nodes::Vector{T}) where {T<:AbstractNode}
-#     continuous = name.(filter(x -> x.type == "continuous", nodes))
-#     if ~isempty(continuous)
-#         filter(x -> x.type == "continuous", nodes)
-#         println("$continuous are continuous nodes => Not taken into account")
-#     end
-#     discrete_nodes = filter(x -> x.type == "discrete", nodes)
-#     nodes_states = Vector{Dict{Symbol,Vector}}()
-#     to_combine = []
-#     nodes_combinations = Vector{Tuple{Symbol}}()
-#     for node in discrete_nodes
-#         if node.cpd isa RootCPD
-#             push!(nodes_states, Dict(name(node) => collect(values(node.cpd.distributions.map.d2n))))
-#             push!(to_combine, collect(values(node.cpd.distributions.map.d2n)))
-#         else
-#             push!(nodes_states, Dict(name(node) => collect(values(node.cpd.distributions[1].map.d2n))))
-#             push!(to_combine, collect(values(node.cpd.distributions[1].map.d2n)))
-#         end
-#     end
-#     nodes_combinations = vec(collect(Iterators.product(to_combine...)))
-#     return nodes_combinations
-# end
+function get_ancestors(node::T) where {T<:AbstractNode}
+    parents = node.parents
+    discrete, cont_nonroot, cont_root = nodes_split(parents)
+    append!(discrete, cont_root)
+    while ~isempty(cont_nonroot)
+        new_parents = Vector{AbstractNode}()
+        for single_cont_nonroot in cont_nonroot
+            append!(new_parents, single_cont_nonroot.parents)
+        end
+        discrete_new, cont_nonroot_new, cont_root_new = nodes_split(new_parents)
+        append!(discrete, discrete_new)
+        append!(discrete, cont_root_new)
+        cont_nonroot = cont_nonroot_new
+    end
+    ancestors = unique(discrete)
+end
 
 function get_states_mapping_dict(nodes::Vector{T}) where {T<:AbstractNode}
     mapping = Dict{NodeName,Dict{}}()
@@ -314,4 +337,47 @@ end
 function get_discreteparents_states_mapping_dict(node::T) where {T<:AbstractNode}
     discrete_parents = get_discrete_parents(node)
     return get_states_mapping_dict(discrete_parents)
+end
+
+## To be used when bn is not already defined
+function evaluate_nodecpd_with_evidence(node::T, evidence::Assignment) where {T<:AbstractNode}
+    convertedevidence = Assignment()
+    for (key, val) in evidence
+        if ~isa(val, Number)
+            convertedevidence[key] = get_states_mapping_dict([key])[name(key)][val]
+        else
+            convertedevidence[key] = val
+        end
+    end
+
+    cpd_dict = node.cpd.prob_dict
+    parents_nodes = node.parents
+    evidenced_nodes = collect(keys(convertedevidence))
+    assignment_index = (parents_nodes) .∈ [evidenced_nodes]
+    undefined_parents = (parents_nodes)[(parents_nodes).∉[evidenced_nodes]]
+    useless_assignmets = evidenced_nodes[evidenced_nodes.∉[(parents_nodes)]]
+    if ~isempty(useless_assignmets)
+        println("Evidences on $useless_assignmets should be treated with join pdf")
+    end
+    if ~isempty(undefined_parents)
+        println("Following cpds are defined for each value of $undefined_parents")
+    end
+    vec_keys = Vector()
+    for i in range(1, length(assignment_index))
+        if assignment_index[i]
+            push!(vec_keys, [convertedevidence[(parents_nodes[i])]])
+        else
+            if isa(parents_nodes[i].cpd, RootCPD)
+                push!(vec_keys, [1:length(parents_nodes[i].cpd.distributions);])
+            else
+                push!(vec_keys, [1:length(parents_nodes[i].cpd.distributions);])
+            end
+        end
+    end
+    new_states = collect(filter(key -> all([key[i] in vec_keys[i] for i in 1:length(assignment_index)]), keys(cpd_dict)))
+    new_cond_dic = Dict{Tuple,Union{CPD,Distribution}}()
+    for k in new_states
+        new_cond_dic[k] = cpd_dict[k]
+    end
+    return new_cond_dic
 end

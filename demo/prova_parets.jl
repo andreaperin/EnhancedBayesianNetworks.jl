@@ -52,49 +52,6 @@ m = StdNode(CPD_m, parents_m)
 par = [t, k, m, h]
 
 
-discrete, cont_nonroot, cont_root = nodes_split(par)
-append!(discrete, cont_root)
-while ~isempty(cont_nonroot)
-    new_parents = Vector{AbstractNode}()
-    for single_cont_nonroot in cont_nonroot
-        append!(new_parents, single_cont_nonroot.parents)
-    end
-    discrete_new, cont_nonroot_new, cont_root_new = nodes_split(new_parents)
-    append!(discrete, discrete_new)
-    append!(discrete, cont_root_new)
-    cont_nonroot = cont_nonroot_new
-end
-ancestors = unique(discrete)
-states_vec_dicts = get_statesordistributions.(ancestors)
-states_combinations, reference_vec = get_combinations(ancestors)
-# get the continuous nodes that are parents of modelnode but not in ancestors
-to_be_evidenced = setdiff(par, ancestors)
-
-## TODO(done) building the evidences Vector
-evidence_vec = Vector{Dict}()
-for state_combination in states_combinations
-    evidence = Dict()
-    for i in range(1, length(reference_vec))
-        evidence[reference_vec[i]] = state_combination[i]
-    end
-    push!(evidence_vec, evidence)
-end
-# convert symbolic evicences to numerical evidences
-convertedevidence_vector = Vector{Assignment}()
-for evidence in evidence_vec
-    converted_evidence = Assignment()
-    for (key, val) in evidence
-        if ~isa(val, Number)
-            converted_evidence[name(key)] = get_states_mapping_dict([key])[name(key)][val]
-        else
-            converted_evidence[name(key)] = val
-        end
-    end
-    push!(convertedevidence_vector, converted_evidence)
-end
-
-
-
 
 
 bn = StdBayesNet([t, p, k, m, h])
