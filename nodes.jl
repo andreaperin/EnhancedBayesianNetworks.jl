@@ -22,6 +22,7 @@ struct ModelNode <: Node
     function ModelNode(target::NodeName, parents::Vector{T}, model::Vector{UQModel}, type::String) where {T<:AbstractNode}
         ancestors_states_combinations, parents_states_combination_reduced = get_evidences_vectors_for_modelnodes(parents)
         ##TODO go on from here (now we have the prob_dict entries and we need to create the SRP problem from here and then adjust them following the parents and states order)
+
     end
 end
 
@@ -41,12 +42,12 @@ function get_evidences_vectors_for_modelnodes(parents::Vector{T}) where {T<:Abst
     end
     ancestors = unique(discrete)
     ## Get Ancestors evidences vector
-    ancestors_states_combinations, reference_vec = get_combinations(ancestors)
+    ancestors_states_combinations, reference_ancestors_vec = get_combinations(ancestors)
     evidence_over_ancestors = Vector{Assignment}()
     for state_combination in ancestors_states_combinations
         evidence = Dict()
-        for i in range(1, length(reference_vec))
-            evidence[reference_vec[i]] = state_combination[i]
+        for i in range(1, length(reference_ancestors_vec))
+            evidence[reference_ancestors_vec[i]] = state_combination[i]
         end
         push!(evidence_over_ancestors, evidence)
     end
@@ -58,14 +59,17 @@ function get_evidences_vectors_for_modelnodes(parents::Vector{T}) where {T<:Abst
             if haskey(single_evidence_over_ancestors, node)
                 single_evidence_over_parents[node] = single_evidence_over_ancestors[node]
             else
-                single_evidence_over_parents[node] = collect(values(evaluate_nodecpd_with_evidence(node, single_evidence_over_ancestors)))
+                single_evidence_over_parents[node] = collect(values(evaluate_nodecpd_with_evidence(node, single_evidence_over_ancestors)))[1]
             end
         end
         push!(evidence_over_parents, single_evidence_over_parents)
         push!(parents_states_combination_reduced, Tuple(x for x in collect(values(single_evidence_over_parents))))
     end
-    return ancestors_states_combinations, parents_states_combination_reduced
+    ancestors_states = [ancestors_states_combinations, reference_ancestors_vec]
+    parents_states = [parents_states_combination_reduced, collect(keys(evidence_over_parents[1]))]
+    return ancestors_states, parents_states
 end
+
 
 
 struct StdNode <: Node
@@ -234,7 +238,7 @@ end
 function get_combinations(nodes::Vector{T}) where {T<:AbstractNode}
     states_dictionary = get_statesordistributions.(nodes)
     to_combine = []
-    reference_vector = []
+    reference_vector = Vector{T}()
     for node in states_dictionary
         push!(to_combine, collect(values(node))[1])
         push!(reference_vector, collect(keys(node))[1])
@@ -299,35 +303,49 @@ function map_state_to_integer(vector_to_be_mapped::Vector, nodes::Vector{T}) whe
     return new_dict
 end
 
-function map_integer_to_state(dict_to_be_mapped::Dict, nodes::Vector{T}) where {T<:AbstractNode}
-    new_dict = Dict()
+function map_state_to_integer(states::Tuple, nodes::Vector{T}) where {T<:AbstractNode}
+    new_states = []
     mapping = get_states_mapping_dict(nodes)
-    for (key, val) in dict_to_be_mapped
-        new_key = []
-        for i in range(1, length(key))
-            rmapping = Dict(values(mapping[nodes[collect(keys(nodes))[i]]]) .=> keys(mapping[nodes[collect(keys(nodes))[i]]]))
-            push!(new_key, rmapping[key[i]])
+    for i in range(1, length(states))
+        if isa(states[i], Symbol)
+            push!(new_states, mapping[name(nodes[i])][states[i]])
+        else
+            push!(new_states, states[i])
         end
-        new_key = tuple(new_key...)
-        new_dict[new_key] = val
     end
-    return new_dict
+    return Tuple(new_states)
 end
 
-function map_integer_to_state(vector_to_be_mapped::Vector, nodes::Vector{T}) where {T<:AbstractNode}
-    new_dict = Dict()
-    mapping = get_states_mapping_dict(nodes)
-    for key in vector_to_be_mapped
-        new_key = []
-        for i in range(1, length(key))
-            rmapping = Dict(values(mapping[nodes[collect(keys(nodes))[i]]]) .=> keys(mapping[nodes[collect(keys(nodes))[i]]]))
-            push!(new_key, rmapping[key[i]])
-        end
-        new_key = tuple(new_key...)
-        new_dict[new_key] = undef
-    end
-    return new_dict
-end
+
+# function map_integer_to_state(dict_to_be_mapped::Dict, nodes::Vector{T}) where {T<:AbstractNode}
+#     new_dict = Dict()
+#     mapping = get_states_mapping_dict(nodes)
+#     for (key, val) in dict_to_be_mapped
+#         new_key = []
+#         for i in range(1, length(key))
+#             rmapping = Dict(values(mapping[nodes[collect(keys(nodes))[i]]]) .=> keys(mapping[nodes[collect(keys(nodes))[i]]]))
+#             push!(new_key, rmapping[key[i]])
+#         end
+#         new_key = tuple(new_key...)
+#         new_dict[new_key] = val
+#     end
+#     return new_dict
+# end
+
+# function map_integer_to_state(vector_to_be_mapped::Vector, nodes::Vector{T}) where {T<:AbstractNode}
+#     new_dict = Dict()
+#     mapping = get_states_mapping_dict(nodes)
+#     for key in vector_to_be_mapped
+#         new_key = []
+#         for i in range(1, length(key))
+#             rmapping = Dict(values(mapping[nodes[collect(keys(nodes))[i]]]) .=> keys(mapping[nodes[collect(keys(nodes))[i]]]))
+#             push!(new_key, rmapping[key[i]])
+#         end
+#         new_key = tuple(new_key...)
+#         new_dict[new_key] = undef
+#     end
+#     return new_dict
+# end
 
 function get_discreteparents_states_combinations(node::T) where {T<:AbstractNode}
     discrete_parents = get_discrete_parents(node)

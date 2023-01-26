@@ -52,6 +52,16 @@ m = StdNode(CPD_m, parents_m)
 par = [t, k, m, h]
 
 
+ancestors_states, parents_states = get_evidences_vectors_for_modelnodes(par)
+
+b = map_state_to_integer.(ancestors_states[1], repeat([ancestors_states[2]], length(ancestors_states[1])))
+
+d = map_state_to_integer.(parents_states[1], repeat([Vector{Node}(parents_states[2])], length(parents_states[1])))
+
+states_vector = d
+reference_vector = Vector{Node}(parents_states[2])
+
+
 
 
 bn = StdBayesNet([t, p, k, m, h])
@@ -59,5 +69,8 @@ bn = StdBayesNet([t, p, k, m, h])
 ## TODO for each state_comb, valutare quali node cont_nonroot mancano ad ancestors rispetto a parents, valutarli data la state combination e aggiungere la distribuzione!
 evidence = Assignment(:t => :first)
 a = evaluate_nodecpd_with_evidence(bn, name(m), evidence)
+
+
+
 ## evaluate_nodecpd_with_evidence requires BN, maybe the function should be changed to just pass the parents(?)
 
