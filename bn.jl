@@ -254,48 +254,48 @@ end
 The cpd of a node given an assignment (Works for Discrete Parents nodes only)
 """
 
-##TODO this function needs to be checked after the new definition of Assignment that has Node Struct as key (nomore NodeName)
-function evaluate_nodecpd_with_evidence(bn::StdBayesNet, nodename::NodeName, evidence::Assignment)
-    # convert symbolic evicences to numerical evidences
-    convertedevidence = Assignment()
-    for (key, val) in evidence
-        node = bn.nodes[bn.name_to_index[key]]
-        if ~isa(val, Number)
-            convertedevidence[key] = get_states_mapping_dict([node])[name(node)][val]
-        else
-            convertedevidence[key] = val
-        end
-    end
+# ##TODO this function needs to be checked after the new definition of Assignment that has Node Struct as key (nomore NodeName)
+# function evaluate_nodecpd_with_evidence(bn::StdBayesNet, nodename::NodeName, evidence::Assignment)
+#     # convert symbolic evicences to numerical evidences
+#     convertedevidence = Assignment()
+#     for (key, val) in evidence
+#         node = bn.nodes[bn.name_to_index[key]]
+#         if ~isa(val, Number)
+#             convertedevidence[key] = get_states_mapping_dict([node])[name(node)][val]
+#         else
+#             convertedevidence[key] = val
+#         end
+#     end
 
-    cpd_dict = bn.nodes[bn.name_to_index[nodename]].cpd.prob_dict
-    nodename_parents = bn.cpds[bn.name_to_index[nodename]].parents
-    assignment_parents = collect(keys(convertedevidence))
-    assignment_index = nodename_parents .∈ [assignment_parents]
-    undefined_assignmets = nodename_parents[nodename_parents.∉[assignment_parents]]
-    useless_assignmets = assignment_parents[assignment_parents.∉[nodename_parents]]
-    if ~isempty(useless_assignmets)
-        println("Evidences on $useless_assignmets should be treated with join pdf")
-    end
-    if ~isempty(undefined_assignmets)
-        println("Following cpds are defined for each value of $undefined_assignmets")
-    end
-    vec_keys = Vector()
-    for i in range(1, length(assignment_index))
-        if assignment_index[i]
-            push!(vec_keys, [convertedevidence[nodename_parents[i]]])
-        else
-            if isa(bn.cpds[bn.name_to_index[nodename_parents[i]]], RootCPD)
-                push!(vec_keys, [1:length(bn.cpds[bn.name_to_index[nodename_parents[i]]].distributions);])
-            else
-                push!(vec_keys, [1:length(bn.cpds[bn.name_to_index[nodename_parents[i]]].distributions);])
-            end
-        end
-    end
-    new_states = collect(filter(key -> all([key[i] in vec_keys[i] for i in 1:length(assignment_index)]), keys(cpd_dict)))
-    new_cond_dic = Dict{Tuple,Union{CPD,Distribution}}()
-    for k in new_states
-        new_cond_dic[k] = cpd_dict[k]
-    end
-    return new_cond_dic
-end
+#     cpd_dict = bn.nodes[bn.name_to_index[nodename]].cpd.prob_dict
+#     nodename_parents = bn.cpds[bn.name_to_index[nodename]].parents
+#     assignment_parents = collect(keys(convertedevidence))
+#     assignment_index = nodename_parents .∈ [assignment_parents]
+#     undefined_assignmets = nodename_parents[nodename_parents.∉[assignment_parents]]
+#     useless_assignmets = assignment_parents[assignment_parents.∉[nodename_parents]]
+#     if ~isempty(useless_assignmets)
+#         println("Evidences on $useless_assignmets should be treated with join pdf")
+#     end
+#     if ~isempty(undefined_assignmets)
+#         println("Following cpds are defined for each value of $undefined_assignmets")
+#     end
+#     vec_keys = Vector()
+#     for i in range(1, length(assignment_index))
+#         if assignment_index[i]
+#             push!(vec_keys, [convertedevidence[nodename_parents[i]]])
+#         else
+#             if isa(bn.cpds[bn.name_to_index[nodename_parents[i]]], RootCPD)
+#                 push!(vec_keys, [1:length(bn.cpds[bn.name_to_index[nodename_parents[i]]].distributions);])
+#             else
+#                 push!(vec_keys, [1:length(bn.cpds[bn.name_to_index[nodename_parents[i]]].distributions);])
+#             end
+#         end
+#     end
+#     new_states = collect(filter(key -> all([key[i] in vec_keys[i] for i in 1:length(assignment_index)]), keys(cpd_dict)))
+#     new_cond_dic = Dict{Tuple,Union{CPD,Distribution}}()
+#     for k in new_states
+#         new_cond_dic[k] = cpd_dict[k]
+#     end
+#     return new_cond_dic
+# end
 
