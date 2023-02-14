@@ -67,19 +67,19 @@ struct StdNode <: Node
 end
 
 
-# mutable struct FunctionalNode <: Node
-#     cpd::FunctionalCPD
-#     parents::Vector{T} where {T<:AbstractNode}
-#     type::String
-#     function FunctionalNode(cpd::FunctionalCPD, parents::Vector{T}, type::String)
-#         ## Build prob_dict for cpd knowing which are the discrete parents
-#         discrete_parents = filter(x -> x.type == "discrete", parents)
-#         continuous_parents = filter(x -> x.type == "continuous", parents)
+mutable struct FunctionalNode <: Node
+    cpd::FunctionalCPD
+    parents::Vector{T} where {T<:AbstractNode}
+    type::String
+    function FunctionalNode(cpd::FunctionalCPD, parents::Vector{T}, type::String)
+        ## Check parents coherence between CPD and FunctionalNode
+        if name.(parents) != cpd.parents
+            throw(ArgumentError(cpd.target, "Missmatch in parents assigned in CPD and assigned in Node Struct"))
+        end
 
 
-#     end
-# end
-
+    end
+end
 
 
 function name(node::T) where {T<:AbstractNode}

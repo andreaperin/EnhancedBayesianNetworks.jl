@@ -28,7 +28,6 @@ CPD_ρ = RootCPD(:ρ, ρ_distribution)
 ρ_node = StdNode(CPD_ρ)
 
 
-
 c1 = GaussianCopula([1 0.8; 0.8 1])
 c2 = GaussianCopula([1 0.7; 0.7 1])
 f1 = (E, ρ) -> JointDistribution([E, ρ], c1)
@@ -44,7 +43,7 @@ prob_dict_jd = [ProbabilityDictionary(((:emission => 1), f1)),
 CPD_jd = FunctionalCPD(:jd, parents_jd, parental_ncategories, prob_dict_jd)
 
 ### TODO Build functional nodes (mutable struct) from FunctionalCPD checking: 1) Discrete Parents (same in evidence) 2) Discrete Parents lengh and parental_ncategories
-
+### TODO NEW Build a prob_dict with node information (not only nodename as in CPD) {This should be a function used by every StdNode & FunctionalNode}
 
 
 c_distribution = Normal(0, 1)
