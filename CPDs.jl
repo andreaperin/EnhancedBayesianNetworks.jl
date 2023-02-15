@@ -75,7 +75,7 @@ mutable struct RootCPD <: CPD
     distributions::Distribution
     prob_dict::Vector{ProbabilityDictionary}
 end
-
+## Creating prob_dict for RootCPD
 function RootCPD(target::NodeName, distributions::Distribution)
     if isa(distributions, NamedCategorical)
         prob_dict = [ProbabilityDictionary((nothing, Dict(distributions.items .=> distributions.probs / sum(distributions.probs))))]
@@ -84,7 +84,6 @@ function RootCPD(target::NodeName, distributions::Distribution)
     end
     RootCPD(target, NodeName[], distributions, prob_dict)
 end
-
 
 name(cpd::RootCPD) = cpd.target
 parents(cpd::RootCPD) = cpd.parents
@@ -108,20 +107,21 @@ struct CategoricalCPD <: CPD
     parental_ncategories::Vector{Int}
     distributions::Vector{Distribution}
     prob_dict::Vector{ProbabilityDictionary}
-    ## Check distributions-parents_ncategories coherence
+    ## Checks:
+    #    - parental_ncategories - parents coherence
+    #    - distributions - parents_ncategories coherence
     function CategoricalCPD(target::NodeName, parents::NodeNames, parental_ncategories::Vector{Int}, distributions::Vector{D}, prob_dict) where {D<:Distribution}
+        length(parental_ncategories) == length(parents) ? new(target, parents, parental_ncategories, distributions, prob_dict) : throw(DomainError(target, "length of parental_ncategories is different from the number of defined parents"))
         prod(parental_ncategories) == length(distributions) ? new(target, parents, parental_ncategories, distributions, prob_dict) : throw(DomainError(target, "number of parental_ncategories is different from the number of  defined functions"))
     end
 
+    ## Creating prob_dict for CategoricalCPD
     function CategoricalCPD(target::NodeName, parents::NodeNames, parental_ncategories::Vector{Int}, distributions::Vector{D}) where {D<:Distribution}
         f = x -> collect(1:1:x)
         fn = x -> Dict(x.items .=> x.probs / sum(x.probs))
         fd = x -> Dict("all states" .=> x)
         combinations = sort(vec(collect(Iterators.product(f.(parental_ncategories)...))))
         evidences_vector = map_combination2evidence.(combinations, repeat([parents], length(combinations)))
-        if prod(parental_ncategories) != length(distributions)
-            throw(DomainError(target, "number of parental_ncategories is different from the number of  defined functions"))
-        end
         if isa(distributions, Vector{NamedCategorical{Symbol}})
             prob_dict = ProbabilityDictionary.(tuple.(evidences_vector, fn.(distributions)))
         else
@@ -130,7 +130,6 @@ struct CategoricalCPD <: CPD
         new(target, parents, parental_ncategories, distributions, prob_dict)
     end
 end
-
 
 function map_combination2evidence(combination::Tuple, nodes::NodeNames)
     evidence_dict = Dict()
@@ -158,9 +157,9 @@ struct FunctionalCPD <: CPD
     parents::NodeNames
     parental_ncategories::Vector{Int}
     prob_dict::Vector{ProbabilityDictionary}
-    ## Check prob_dict-parents_ncategories coherence
+    ## Check:
+    #    - parental_ncategories - parents coherence
     function FunctionalCPD(target::NodeName, parents::NodeNames, parental_ncategories::Vector{Int64}, prob_dict::Vector{ProbabilityDictionary})
         prod(parental_ncategories) == length(prob_dict) ? new(target, parents, parental_ncategories, prob_dict) : throw(DomainError(target, "number of parental_ncategories is different from the number of  defined functions"))
     end
 end
-

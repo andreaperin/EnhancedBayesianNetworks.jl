@@ -18,13 +18,20 @@ struct StdNode <: Node
     cpd::CPD
     parents::Vector{T} where {T<:AbstractNode}
     type::String
-    ##TODO add to log
     function StdNode(cpd::CPD, parents::Vector{T}, type::String) where {T<:AbstractNode}
         node_name = cpd.target
         if ~isa(cpd, RootCPD)
+            ## Checks:
+            #    - No continuous parents
+            #    - name(parents) - CPD.parents
+            #    - parents - parental_ncategories
+            #    - parents_states - parental_ncategories
+            isempty(filter(x -> x.type == "continuous", parents)) ? new(cpd, parents, type) : throw(DomainError(node_name, "CategoricalCPD is for node with discrete parents only!"))
             cpd.parents == name.(parents) ? new(cpd, parents, type) : throw(DomainError(node_name, "Assigned parents are not equals to the one of CPD"))
             length(parents) == length(cpd.parental_ncategories) ? new(cpd, parents, type) : throw(DomainError(node_name, "parents mismatch in CPD for discrete parents and parental_ncategories in $node_name"))
+            get_numberofstates.(parents) == cpd.parental_ncategories ? new(cpd, parents, type) : throw(DomainError(node_name, "Missmatch in parents categories and (manually defined) parental_ncategories in $node_name"))
         else
+            ## No check needed for RootNode
             new(cpd, parents, type)
         end
     end
@@ -40,6 +47,7 @@ struct StdNode <: Node
         end
         StdNode(cpd, parents, type)
     end
+
     function StdNode(cpd::CPD, parents::Vector{T}) where {T<:AbstractNode}
         node_name = cpd.target
         if isa(cpd, RootCPD)
@@ -47,37 +55,22 @@ struct StdNode <: Node
             isempty(parents) ? StdNode(cpd, parents, type) : throw(DomainError(node_name, "a RootNode cannot have parents"))
         elseif isa(cpd, CategoricalCPD)
             type = isa(cpd.distributions[1], NamedCategorical) ? "discrete" : "continuous"
-            f = x -> findmax(collect(values(x)), dims=1)[1][1]
-            discrete_parents = filter(x -> x.type == "discrete", parents)
-            continuous_parents = filter(x -> x.type == "continuous", parents)
-            ## Categorical CPD can accept discrete parents only
-            if ~isempty(continuous_parents)
-                throw(DomainError(node_name, "CategoricalCPD is for node with discrete parents only!"))
-            end
-            discrete_parental_ncategories = f.(discrete_states.(discrete_parents))
-            theorical_parents_categories = prod(discrete_parental_ncategories)
-            if theorical_parents_categories != prod(cpd.parental_ncategories)
-                node_name = cpd.target
-                throw(DomainError(node_name, "number of assigned cpds is not equal to parental categories $theorical_parents_categories"))
-            else
-                StdNode(cpd, parents, type)
-            end
+            StdNode(cpd, parents, type)
         end
     end
 end
+
 
 
 mutable struct FunctionalNode <: Node
     cpd::FunctionalCPD
     parents::Vector{T} where {T<:AbstractNode}
     type::String
-    function FunctionalNode(cpd::FunctionalCPD, parents::Vector{T}, type::String)
+    function FunctionalNode(cpd::FunctionalCPD, parents::Vector{T}, type::String) where {T<:AbstractNode}
         ## Check parents coherence between CPD and FunctionalNode
         if name.(parents) != cpd.parents
             throw(ArgumentError(cpd.target, "Missmatch in parents assigned in CPD and assigned in Node Struct"))
         end
-
-
     end
 end
 
@@ -106,6 +99,20 @@ function discrete_states(node::AbstractNode)
         end
     end
 end
+
+function get_numberofstates(node::AbstractNode)
+    if node.type == "continuous"
+        throw(DomainError(node, "This is a continuous node"))
+    else
+        if node.cpd isa RootCPD
+            return length(node.cpd.distributions.items)
+        else
+            return length(node.cpd.distributions[1].items)
+        end
+    end
+end
+
+
 
 function continuous_distributions(node::AbstractNode)
     if node.type == "discrete"
