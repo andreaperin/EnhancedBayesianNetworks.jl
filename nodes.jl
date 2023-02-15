@@ -18,7 +18,13 @@ struct StdNode <: Node
     cpd::CPD
     parents::Vector{T} where {T<:AbstractNode}
     type::String
-    function StdNode(cpd::CPD, parents::Vector{T}, type::String) where {T<:AbstractNode}
+    ## node_prob_dict structure:
+    #   NamedTuple(
+    #       :evidence = Dict(node => number_of_specific_state)
+    #       :distribution =  Distribution
+    #   )
+    node_prob_dict::Vector{ProbabilityDictionary}
+    function StdNode(cpd::CPD, parents::Vector{T}, type::String, node_prob_dict::Vector{ProbabilityDictionary}) where {T<:AbstractNode}
         node_name = cpd.target
         if ~isa(cpd, RootCPD)
             ## Checks:
@@ -26,13 +32,13 @@ struct StdNode <: Node
             #    - name(parents) - CPD.parents
             #    - parents - parental_ncategories
             #    - parents_states - parental_ncategories
-            isempty(filter(x -> x.type == "continuous", parents)) ? new(cpd, parents, type) : throw(DomainError(node_name, "CategoricalCPD is for node with discrete parents only!"))
-            cpd.parents == name.(parents) ? new(cpd, parents, type) : throw(DomainError(node_name, "Assigned parents are not equals to the one of CPD"))
-            length(parents) == length(cpd.parental_ncategories) ? new(cpd, parents, type) : throw(DomainError(node_name, "parents mismatch in CPD for discrete parents and parental_ncategories in $node_name"))
-            get_numberofstates.(parents) == cpd.parental_ncategories ? new(cpd, parents, type) : throw(DomainError(node_name, "Missmatch in parents categories and (manually defined) parental_ncategories in $node_name"))
+            isempty(filter(x -> x.type == "continuous", parents)) ? new(cpd, parents, type, node_prob_dict) : throw(DomainError(node_name, "CategoricalCPD is for node with discrete parents only!"))
+            cpd.parents == name.(parents) ? new(cpd, parents, type, node_prob_dict) : throw(DomainError(node_name, "Assigned parents are not equals to the one of CPD"))
+            length(parents) == length(cpd.parental_ncategories) ? new(cpd, parents, type, node_prob_dict) : throw(DomainError(node_name, "parents mismatch in CPD for discrete parents and parental_ncategories in $node_name"))
+            get_numberofstates.(parents) == cpd.parental_ncategories ? new(cpd, parents, type, node_prob_dict) : throw(DomainError(node_name, "Missmatch in parents categories and (manually defined) parental_ncategories in $node_name"))
         else
             ## No check needed for RootNode
-            new(cpd, parents, type)
+            new(cpd, parents, type, node_prob_dict)
         end
     end
 
@@ -41,26 +47,29 @@ struct StdNode <: Node
         parents = Vector{AbstractNode}()
         if isa(cpd, RootCPD)
             type = isa(cpd.distributions, NamedCategorical) ? "discrete" : "continuous"
+            # Building node_prob_dict for RootNode
+            node_prob_dict = [ProbabilityDictionary(((parents => nothing), Dict("all states" => cpd.distributions)))]
         else
             node_name = cpd.target
             throw(DomainError(node_name, "Missing parents argument as vector of AbstractNodes for $node_name"))
         end
-        StdNode(cpd, parents, type)
+        StdNode(cpd, parents, type, node_prob_dict)
     end
 
     function StdNode(cpd::CPD, parents::Vector{T}) where {T<:AbstractNode}
         node_name = cpd.target
         if isa(cpd, RootCPD)
             type = isa(cpd.distributions, NamedCategorical) ? "discrete" : "continuous"
-            isempty(parents) ? StdNode(cpd, parents, type) : throw(DomainError(node_name, "a RootNode cannot have parents"))
+            node_prob_dict = [ProbabilityDictionary(((parents => nothing), Dict("all states" => cpd.distributions)))]
+            isempty(parents) ? StdNode(cpd, parents, type, node_prob_dict) : throw(DomainError(node_name, "a RootNode cannot have parents"))
         elseif isa(cpd, CategoricalCPD)
             type = isa(cpd.distributions[1], NamedCategorical) ? "discrete" : "continuous"
-            StdNode(cpd, parents, type)
+            # Building node_prob_dict for Non-RootNode
+            node_prob_dict = build_node_prob_dict_fromCPD.(cpd.prob_dict, repeat([parents], length(cpd.prob_dict)))
+            StdNode(cpd, parents, type, node_prob_dict)
         end
     end
 end
-
-
 
 mutable struct FunctionalNode <: Node
     cpd::FunctionalCPD
@@ -73,7 +82,6 @@ mutable struct FunctionalNode <: Node
         end
     end
 end
-
 
 function name(node::T) where {T<:AbstractNode}
     return node.cpd.target
@@ -111,8 +119,6 @@ function get_numberofstates(node::AbstractNode)
         end
     end
 end
-
-
 
 function continuous_distributions(node::AbstractNode)
     if node.type == "discrete"
@@ -200,12 +206,13 @@ function map_state_to_integer(states::Tuple, nodes::Vector{T}) where {T<:Abstrac
     return Tuple(new_states)
 end
 
-# function get_discreteparents_states_combinations(node::T) where {T<:AbstractNode}
-#     discrete_parents = get_discrete_parents(node)
-#     return get_states_combination(discrete_parents)
-# end
-
-# function get_discreteparents_states_mapping_dict(node::T) where {T<:AbstractNode}
-#     discrete_parents = get_discrete_parents(node)
-#     return get_states_mapping_dict(discrete_parents)
-# end
+function build_node_prob_dict_fromCPD(prob_dict::ProbabilityDictionary, parents::Vector{T}) where {T<:AbstractNode}
+    f1 = (nodename, p) -> filter(p -> name(p) == nodename, p)
+    evid = Dict()
+    for key in collect(keys(prob_dict.evidence))
+        node = f1(key, parents)[1]
+        evid[node] = prob_dict.evidence[key]
+    end
+    node_prob_dict = ProbabilityDictionary(tuple(evid, prob_dict.distribution))
+    return node_prob_dict
+end
