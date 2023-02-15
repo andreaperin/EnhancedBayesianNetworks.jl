@@ -10,7 +10,7 @@ const global NodeName = Symbol
 const global NodeNames = AbstractVector{NodeName}
 const global NodeNameUnion = Union{NodeName,NodeNames}
 
-const global ProbabilityDictionary = NamedTuple{(:evidence, :distribution),Tuple{Any,Any}}
+const global ProbabilityDictionary = NamedTuple{(:evidence, :distribution),Tuple{Union{Dict,Nothing},Any}}
 
 """
     Definition of the CPD AbstractType
@@ -108,8 +108,9 @@ struct CategoricalCPD <: CPD
     distributions::Vector{Distribution}
     prob_dict::Vector{ProbabilityDictionary}
     ## Checks:
-    #    - parental_ncategories - parents coherence
-    #    - distributions - parents_ncategories coherence
+    #    - number of parental_ncategories - number of parents coherence
+    #    - number of distributions - number of parents_ncategories coherence
+    #    - no check on parental_ncategories - prob_dict cause prob dict is automatically generated
     function CategoricalCPD(target::NodeName, parents::NodeNames, parental_ncategories::Vector{Int}, distributions::Vector{D}, prob_dict) where {D<:Distribution}
         length(parental_ncategories) == length(parents) ? new(target, parents, parental_ncategories, distributions, prob_dict) : throw(DomainError(target, "length of parental_ncategories is different from the number of defined parents"))
         prod(parental_ncategories) == length(distributions) ? new(target, parents, parental_ncategories, distributions, prob_dict) : throw(DomainError(target, "number of parental_ncategories is different from the number of  defined functions"))
@@ -158,7 +159,7 @@ struct FunctionalCPD <: CPD
     parental_ncategories::Vector{Int}
     prob_dict::Vector{ProbabilityDictionary}
     ## Check:
-    #    - parental_ncategories - parents coherence
+    #    - parental_ncategories - prob_dict coherence
     function FunctionalCPD(target::NodeName, parents::NodeNames, parental_ncategories::Vector{Int64}, prob_dict::Vector{ProbabilityDictionary})
         prod(parental_ncategories) == length(prob_dict) ? new(target, parents, parental_ncategories, prob_dict) : throw(DomainError(target, "number of parental_ncategories is different from the number of  defined functions"))
     end
