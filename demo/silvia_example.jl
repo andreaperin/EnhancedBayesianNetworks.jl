@@ -30,15 +30,16 @@ CPD_extremeprecipitation = CategoricalCPD(
 )
 node_extremeprecipitation = StdNode(CPD_extremeprecipitation, parents_extremeprecipitation)
 
-prob_dict_waterlevel = Dict{Tuple,Distribution}(
-    Tuple(1) => NamedCategorical([:low, :high], [0.9, 0.1]),
-    Tuple(2) => NamedCategorical([:low, :high], [0.8, 0.2]),
-    Tuple(3) => NamedCategorical([:low, :high], [0.6, 0.4]),
-    Tuple(4) => NamedCategorical([:low, :high], [0.2, 0.8]),
-    Tuple(5) => NamedCategorical([:low, :high], [0.1, 0.9])
-)
+distribution_waterlevel = [
+    NamedCategorical([:low, :high], [0.9, 0.1]),
+    NamedCategorical([:low, :high], [0.8, 0.2]),
+    NamedCategorical([:low, :high], [0.6, 0.4]),
+    NamedCategorical([:low, :high], [0.2, 0.8]),
+    NamedCategorical([:low, :high], [0.1, 0.9])
+]
 parents_waterlevel = [node_extremeprecipitation]
-CPD_waterlevel = CategoricalCPD(:waterlevel, name.(parents_waterlevel), prob_dict_waterlevel)
+parental_ncategories_waterlevel = [5]
+CPD_waterlevel = CategoricalCPD(:waterlevel, name.(parents_waterlevel), parental_ncategories_waterlevel, distribution_waterlevel)
 node_waterlevel = StdNode(CPD_waterlevel, parents_waterlevel)
 
 debrisflow1 = NamedCategorical([:state1, :state2, :state3, :state4], [0.444, 0.519, 0.027, 0.01])
@@ -77,11 +78,6 @@ waveraising2 = Rayleigh(2.068)
 parents_waveraising = [node_windvelocity]
 CPD_waveraising = CategoricalCPD(:waveraising, name.(parents_waveraising), [2], [waveraising1, waveraising2])
 node_waveraising = StdNode(CPD_waveraising, parents_waveraising)
-
-
-parents_child = [node_windvelocity, node_waveraising]
-CPD_waveraising2 = CategoricalCPD(:waveraising2, name.(parents_child), [4], [waveraising1, waveraising2, waveraising1, waveraising2])
-node_waveraising2 = StdNode(CPD_waveraising2, parents_child)
 
 child1 = Model(df -> df.waverising .+ df.windvelocity, :child1)
 child2 = Model(df -> df.waverising .- df.windvelocity, :child2)
