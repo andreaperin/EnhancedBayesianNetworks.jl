@@ -6,28 +6,30 @@ using UncertaintyQuantification
     Definition of the NodeName constant
 """
 const global NodeName = Symbol
-
 const global NodeNames = AbstractVector{NodeName}
-const global NodeNameUnion = Union{NodeName,NodeNames}
 
-const global ProbabilityDictionary = NamedTuple{(:evidence, :distribution),Tuple{Union{Dict,Nothing},Any}}
+"""
+    Definition of the SRP Struct
+"""
+# struct SystemReliabilityProblem
+#     models::Union{Array{<:UQModel},UQModel}
+#     performances::Dict{Symbol,Function}
+#     inputs::Union{Array{<:UQInput},UQInput}
+#     sim::AbstractMonteCarlo
+# end
+struct SystemReliabilityProblem
+    f::Any
+end
 
+const global ProbabilityDictionaryEvidence = Union{Dict,Nothing}
+const global ProbabilityDictionaryDistribution = Dict{Symbol,Union{Float64,Distribution}}
+
+const global ProbabilityDictionary = NamedTuple{(:evidence, :distribution),Tuple{ProbabilityDictionaryEvidence,ProbabilityDictionaryDistribution}}
+const global ProbabilityDictionaryFunctional = NamedTuple{(:evidence, :distribution),Tuple{ProbabilityDictionaryEvidence,SystemReliabilityProblem}}
 """
     Definition of the CPD AbstractType
 """
 abstract type CPD end
-
-"""
-    Definition of the Object SystemReliabilityProblem
-"""
-
-struct SystemReliabilityProblem
-    models::Union{Array{<:UQModel},UQModel}
-    performances::Dict{Symbol,Function}
-    inputs::Union{Array{<:UQInput},UQInput}
-    sim::AbstractMonteCarlo
-end
-
 
 """
     An Object for mapping each distribution to a MapableTypes::Union{AbstractString, Symbol}
@@ -80,14 +82,13 @@ function RootCPD(target::NodeName, distributions::Distribution)
     if isa(distributions, NamedCategorical)
         prob_dict = [ProbabilityDictionary((nothing, Dict(distributions.items .=> distributions.probs / sum(distributions.probs))))]
     else
-        prob_dict = [ProbabilityDictionary((nothing, Dict("all states" => distributions)))]
+        prob_dict = [ProbabilityDictionary((nothing, Dict(:all_states => distributions)))]
     end
     RootCPD(target, NodeName[], distributions, prob_dict)
 end
 
 name(cpd::RootCPD) = cpd.target
 parents(cpd::RootCPD) = cpd.parents
-nparams(cpd::RootCPD) = paramcount(params(cpd.distributions))
 
 """
 A categorical CPD, P(x|parents(x)) where all parents are discrete integers 1:N 
@@ -120,7 +121,7 @@ struct CategoricalCPD <: CPD
     function CategoricalCPD(target::NodeName, parents::NodeNames, parental_ncategories::Vector{Int}, distributions::Vector{D}) where {D<:Distribution}
         f = x -> collect(1:1:x)
         fn = x -> Dict(x.items .=> x.probs / sum(x.probs))
-        fd = x -> Dict("all states" .=> x)
+        fd = x -> Dict(:all_states .=> x)
         combinations = sort(vec(collect(Iterators.product(f.(parental_ncategories)...))))
         evidences_vector = map_combination2evidence.(combinations, repeat([parents], length(combinations)))
         if isa(distributions, Vector{NamedCategorical{Symbol}})
@@ -145,8 +146,7 @@ function map_combination2evidence(combination::Tuple, nodes::NodeNames)
 end
 
 name(cpd::CategoricalCPD) = cpd.target
-parents(cpd::CategoricalCPD) = cpd.parents
-nparams(cpd::CategoricalCPD) = sum(d -> paramcount(params(d)), cpd.distributions)
+parents(cpd::CategoricalCPD) = cpd.parentsz
 
 
 """
@@ -157,10 +157,13 @@ struct FunctionalCPD <: CPD
     target::NodeName
     parents::NodeNames
     parental_ncategories::Vector{Int}
-    prob_dict::Vector{ProbabilityDictionary}
+    prob_dict::Vector{ProbabilityDictionaryFunctional}
     ## Check:
     #    - parental_ncategories - prob_dict coherence
-    function FunctionalCPD(target::NodeName, parents::NodeNames, parental_ncategories::Vector{Int64}, prob_dict::Vector{ProbabilityDictionary})
+    function FunctionalCPD(target::NodeName, parents::NodeNames, parental_ncategories::Vector{Int64}, prob_dict::Vector{ProbabilityDictionaryFunctional})
         prod(parental_ncategories) == length(prob_dict) ? new(target, parents, parental_ncategories, prob_dict) : throw(DomainError(target, "number of parental_ncategories is different from the number of  defined functions"))
     end
 end
+
+name(cpd::FunctionalCPD) = cpd.target
+parents(cpd::FunctionalCPD) = cpd.parents

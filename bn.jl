@@ -10,6 +10,8 @@ include("CPDs.jl")
 include("nodes.jl")
 
 abstract type ProbabilisticGraphicalModel end
+abstract type AbstractBayesNet <: ProbabilisticGraphicalModel end
+
 
 
 function _build_DiAGraph_from_nodes(nodes::Vector{F}) where {F<:AbstractNode}
@@ -62,22 +64,39 @@ function _topological_ordered_dag(nodes::Vector{F}) where {F<:AbstractNode}
     new_dag = _build_DiAGraph_from_nodes(new_cpds)
     return new_cpds, new_nodes, new_name_to_index, new_dag
 end
-mutable struct StdBayesNet <: ProbabilisticGraphicalModel
-    ## TODO: Add chech or all discrete or no continuous with children (=>EBN)
+mutable struct StdBayesNet <: AbstractBayesNet
     dag::DiGraph
-    nodes::Vector{F} where {F<:AbstractNode}
-    cpds::Vector{CPD} ## TODO in EBN Struct will become VectorUnion{CPD, Vector{SRP}}
+    nodes::Vector{T} where {T<:AbstractNode}
+    cpds::Vector{CPD}
     name_to_index::Dict{NodeName,Int}
+    ## Check none of the nodes is FunctionalNode
+    function StdBayesNet(dag::DiGraph, nodes::Vector{T}, cpds::Vector{CPD}, name_to_index::Dict{NodeName,Int}) where {T<:AbstractNode}
+        if isa.(nodes, FunctionalNode) == zeros(length(nodes))
+            new(dag, nodes, cpds, name_to_index)
+        else
+            nodes_names = name.(nodes[isa.(nodes, FunctionalNode)])
+            throw(DomainError(nodes_names, "StdBayesNet cannot handle Functional Nodes => Pass to EnhancedBayesNet"))
+        end
+    end
 end
 
 function StdBayesNet(nodes::Vector{F}) where {F<:AbstractNode}
     dag = _build_DiAGraph_from_nodes(nodes)
-    !is_cyclic(dag) || error("BayesNet graph is non-acyclic!")
+    ## Check Graph's a-cyclicity
+    !is_cyclic(dag) || throw(DomainError(dag, "BayesNet graph is non-acyclic!"))
     ordered_cpds, ordered_nodes, ordered_name_to_index, ordered_dag = _topological_ordered_dag(nodes)
     return StdBayesNet(ordered_dag, ordered_nodes, ordered_cpds, ordered_name_to_index)
 end
 
-function show(bn::StdBayesNet)
+mutable struct EnhancedBayesNet <: AbstractBayesNet
+    dag::DiGraph
+    nodes::Vector{T} where {T<:AbstractNode}
+    cpds::Vector{CPD}
+    name_to_index::Dict{NodeName,Int}
+end
+
+
+function show(bn::AbstractBayesNet)
     graphplot(
         bn.dag,
         method=:tree,

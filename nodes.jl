@@ -7,14 +7,13 @@ using ProgressMeter
 include("CPDs.jl")
 
 abstract type AbstractNode end
-abstract type NodeToBe <: AbstractNode end
-abstract type Node <: AbstractNode end
+
 """
     Definition of the Assignment constant as Dict{NodeName, Any}
 """
-const global Assignment = Dict{Node,Any}
+const global Assignment = Dict{AbstractNode,Any}
 
-struct StdNode <: Node
+struct StdNode <: AbstractNode
     cpd::CPD
     parents::Vector{T} where {T<:AbstractNode}
     type::String
@@ -47,7 +46,7 @@ struct StdNode <: Node
         if isa(cpd, RootCPD)
             type = isa(cpd.distributions, NamedCategorical) ? "discrete" : "continuous"
             # Building node_prob_dict for RootNode
-            node_prob_dict = [ProbabilityDictionary((Dict(parents => nothing), cpd.distributions))]
+            node_prob_dict = cpd.prob_dict
         else
             node_name = cpd.target
             throw(DomainError(node_name, "Missing parents argument as vector of AbstractNodes for $node_name"))
@@ -58,7 +57,7 @@ struct StdNode <: Node
     function StdNode(cpd::CPD, parents::Vector{T}) where {T<:AbstractNode}
         if isa(cpd, RootCPD)
             type = isa(cpd.distributions, NamedCategorical) ? "discrete" : "continuous"
-            node_prob_dict = [ProbabilityDictionary((Dict(parents => nothing), cpd.distributions))]
+            node_prob_dict = cpd.prob_dict
             isempty(parents) ? StdNode(cpd, parents, type, node_prob_dict) : throw(DomainError(cpd.target, "a RootNode cannot have parents"))
         elseif isa(cpd, CategoricalCPD)
             type = isa(cpd.distributions[1], NamedCategorical) ? "discrete" : "continuous"
@@ -70,13 +69,12 @@ struct StdNode <: Node
 end
 
 
-## TODO Add coherence Checks (notes on paper during train) and build the node_prob_dict for functional nodes
-mutable struct FunctionalNode <: Node
+mutable struct FunctionalNode <: AbstractNode
     cpd::FunctionalCPD
     parents::Vector{T} where {T<:AbstractNode}
     type::String
-    node_prob_dict::Vector{ProbabilityDictionary}
-    function FunctionalNode(cpd::FunctionalCPD, parents::Vector{T}, type::String, node_prob_dict::Vector{ProbabilityDictionary}) where {T<:AbstractNode}
+    node_prob_dict::Vector{ProbabilityDictionaryFunctional}
+    function FunctionalNode(cpd::FunctionalCPD, parents::Vector{T}, type::String, node_prob_dict::Vector{ProbabilityDictionaryFunctional}) where {T<:AbstractNode}
         discrete_parents = filter(x -> x.type == "discrete", parents)
         ## Checks on
         #    - parents as nodenames and parents as nodes coherence between CPD and FunctionalNode
@@ -226,13 +224,17 @@ function map_state_to_integer(states::Tuple, nodes::Vector{T}) where {T<:Abstrac
     return Tuple(new_states)
 end
 
-function build_node_prob_dict_fromCPD(prob_dict::ProbabilityDictionary, parents::Vector{T}) where {T<:AbstractNode}
+function build_node_prob_dict_fromCPD(prob_dict::Union{ProbabilityDictionary,ProbabilityDictionaryFunctional}, parents::Vector{T}) where {T<:AbstractNode}
     f1 = (nodename, p) -> filter(p -> name(p) == nodename, p)
     evid = Dict()
-    for key in collect(keys(prob_dict.evidence))
+    for (key, value) in prob_dict.evidence
         node = f1(key, parents)[1]
-        evid[node] = prob_dict.evidence[key]
+        evid[node] = value
     end
-    node_prob_dict = ProbabilityDictionary(tuple(evid, prob_dict.distribution))
+    if isa(prob_dict, ProbabilityDictionary)
+        node_prob_dict = ProbabilityDictionary(tuple(evid, prob_dict.distribution))
+    else
+        node_prob_dict = ProbabilityDictionaryFunctional(tuple(evid, prob_dict.distribution))
+    end
     return node_prob_dict
 end
