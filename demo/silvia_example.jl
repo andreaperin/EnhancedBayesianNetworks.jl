@@ -82,7 +82,6 @@ node_waveraising = StdNode(CPD_waveraising, parents_waveraising)
 child1 = Model(df -> df.waverising .+ df.windvelocity, :child1)
 child2 = Model(df -> df.waverising .- df.windvelocity, :child2)
 child_model = [child1, child2]
-CPD_child = ModelCPD(:child, name.(parents_child), [2], child_model)
 ## TODO Child new type of node that accept functional relationship as CPD (Struct model node, add check on parents categories as written in notes)
 
 
