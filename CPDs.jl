@@ -17,8 +17,53 @@ const global NodeNames = AbstractVector{NodeName}
 #     inputs::Union{Array{<:UQInput},UQInput}
 #     sim::AbstractMonteCarlo
 # end
+struct CorrelationCopula
+    nodes::Vector{NodeName}
+    copula::Union{GaussianCopula,Nothing}
+    name::NodeName
+end
+
+function CorrelationCopula()
+    nodes = Vector{NodeName}()
+    copula = nothing
+    name = NodeName()
+    new(nodes, copula, name)
+end
+
 struct SystemReliabilityProblem
-    f::Any
+    model::Union{Array{<:UQModel},UQModel}
+    parameters::Vector{Parameter}
+    post_processing::Union{Function,Nothing}
+    performance::Function
+    correlation::Vector{CorrelationCopula}
+
+    function SystemReliabilityProblem(
+        model::Union{Array{<:UQModel},UQModel},
+        parameters::Vector{Parameter},
+        performance::Function,
+        correlation::Vector{CorrelationCopula}
+    )
+        post_processing = nothing
+        new(model, parameters, post_processing, performance, correlation)
+    end
+    function SystemReliabilityProblem(
+        model::Union{Array{<:UQModel},UQModel},
+        parameters::Vector{Parameter},
+        post_processing::Union{Function,Nothing},
+        performance::Function
+    )
+        correlation = [CorrelationCopula()]
+        new(model, parameters, post_processing, performance, correlation)
+    end
+    function SystemReliabilityProblem(
+        model::Union{Array{<:UQModel},UQModel},
+        parameters::Vector{Parameter},
+        performance::Function
+    )
+        correlation = [CorrelationCopula()]
+        post_processing = nothing
+        new(model, parameters, post_processing, performance, correlation)
+    end
 end
 
 const global ProbabilityDictionaryEvidence = Union{Dict,Nothing}
