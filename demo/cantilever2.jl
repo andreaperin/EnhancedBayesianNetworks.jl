@@ -54,7 +54,7 @@ correlated_nodes1 = name.([E_node, ρ_node])
 copula1 = GaussianCopula([1 0.8; 0.8 1])
 name1 = :jd
 correlation1 = [CorrelationCopula(correlated_nodes1, copula1, :jd)]
-srp1 = SystemReliabilityProblem(model1, parameters1, performance1, correlation1)
+srp1 = NodeNameSystemReliabilityProblem(model1, parameters1, performance1, correlation1)
 scenario1 = ProbabilityDictionaryFunctional((Dict(name(emission_node) => 1), srp1))
 ## Scenario1 (Emission_node = 2)
 model2 = [inertia, displacement]
@@ -64,9 +64,9 @@ correlated_nodes2 = name.([E_node, ρ_node])
 copula2 = GaussianCopula([1 0.85; 0.85 1])
 name2 = :jd
 correlation2 = [CorrelationCopula(correlated_nodes2, copula2, :jd)]
-srp2 = SystemReliabilityProblem(model2, parameters2, performance2, correlation2)
+srp2 = NodeNameSystemReliabilityProblem(model2, parameters2, performance2, correlation2)
 scenario2 = ProbabilityDictionaryFunctional((Dict(name(emission_node) => 2), srp1))
-srp2 = SystemReliabilityProblem(model2, parameters2, performance2, correlation2)
+srp2 = NodeNameSystemReliabilityProblem(model2, parameters2, performance2, correlation2)
 
 scenario2 = ProbabilityDictionaryFunctional((Dict(name(emission_node) => 2), srp2))
 
@@ -75,10 +75,6 @@ prob_dict_output = [scenario1, scenario2]
 CPD_output = FunctionalCPD(output_target, name.(output_parents), output_parental_ncat, prob_dict_output)
 
 output_node = FunctionalNode(CPD_output, output_parents, "discrete")
-
-
-
-
 
 nodes = [output_node, E_node, ρ_node, P_node, h_node, emission_node]
 ebn = EnhancedBayesNet(nodes)
@@ -96,7 +92,7 @@ function evaluate_rvs(ebn::EnhancedBayesNet, node::FunctionalNode, srp::SystemRe
     non_correlated_continuous_parents = Vector{UQInput}()
     rvs = Vector{UQInput}()
     for copula in srp.correlation
-        continuous_parents = filter(n -> n in name.(continuous_parents, copula.nodes))
+        continuous_parents = filter(n -> n.name in name.(continuous_parents), copula.nodes)
         if isa(rv.cpd, RootCPD)
             get_rv = (target, x) -> RandomVariable(filter(x -> name(x) == target, x)[1].cpd.distributions, target)
             correlated_distributions = get_rv.(copula.nodes, repeat([continuous_parents], length(copula.nodes)))

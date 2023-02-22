@@ -8,15 +8,12 @@ using UncertaintyQuantification
 const global NodeName = Symbol
 const global NodeNames = AbstractVector{NodeName}
 
+abstract type SystemReliabilityProblem end
+
+
 """
     Definition of the SRP Struct
 """
-# struct SystemReliabilityProblem
-#     models::Union{Array{<:UQModel},UQModel}
-#     performances::Dict{Symbol,Function}
-#     inputs::Union{Array{<:UQInput},UQInput}
-#     sim::AbstractMonteCarlo
-# end
 struct CorrelationCopula
     nodes::Vector{NodeName}
     copula::Union{GaussianCopula,Nothing}
@@ -27,17 +24,17 @@ function CorrelationCopula()
     nodes = Vector{NodeName}()
     copula = nothing
     name = NodeName()
-    new(nodes, copula, name)
+    return CorrelationCopula(nodes, copula, name)
 end
 
-struct SystemReliabilityProblem
+struct NodeNameSystemReliabilityProblem <: SystemReliabilityProblem
     model::Union{Array{<:UQModel},UQModel}
     parameters::Vector{Parameter}
     post_processing::Union{Function,Nothing}
     performance::Function
     correlation::Vector{CorrelationCopula}
 
-    function SystemReliabilityProblem(
+    function NodeNameSystemReliabilityProblem(
         model::Union{Array{<:UQModel},UQModel},
         parameters::Vector{Parameter},
         performance::Function,
@@ -46,7 +43,7 @@ struct SystemReliabilityProblem
         post_processing = nothing
         new(model, parameters, post_processing, performance, correlation)
     end
-    function SystemReliabilityProblem(
+    function NodeNameSystemReliabilityProblem(
         model::Union{Array{<:UQModel},UQModel},
         parameters::Vector{Parameter},
         post_processing::Union{Function,Nothing},
@@ -55,7 +52,7 @@ struct SystemReliabilityProblem
         correlation = [CorrelationCopula()]
         new(model, parameters, post_processing, performance, correlation)
     end
-    function SystemReliabilityProblem(
+    function NodeNameSystemReliabilityProblem(
         model::Union{Array{<:UQModel},UQModel},
         parameters::Vector{Parameter},
         performance::Function
@@ -70,7 +67,7 @@ const global ProbabilityDictionaryEvidence = Union{Dict,Nothing}
 const global ProbabilityDictionaryDistribution = Dict{Symbol,Union{Float64,Distribution}}
 
 const global ProbabilityDictionary = NamedTuple{(:evidence, :distribution),Tuple{ProbabilityDictionaryEvidence,ProbabilityDictionaryDistribution}}
-const global ProbabilityDictionaryFunctional = NamedTuple{(:evidence, :distribution),Tuple{ProbabilityDictionaryEvidence,SystemReliabilityProblem}}
+const global ProbabilityDictionaryFunctional = NamedTuple{(:evidence, :distribution),Tuple{ProbabilityDictionaryEvidence,NodeNameSystemReliabilityProblem}}
 """
     Definition of the CPD AbstractType
 """
