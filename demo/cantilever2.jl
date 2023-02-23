@@ -27,11 +27,7 @@ P_node = StdNode(CPD_P)
 CPD_ρ = RootCPD(:ρ, ρ_distribution)
 ρ_node = StdNode(CPD_ρ)
 
-
-
-
 ##TODO Continue from here implementing dependency between rvs as an argument of SRP states_dictionary
-
 
 ## Output Node FunctionalCPD
 output_target = :output
@@ -48,27 +44,28 @@ displacement = Model(
 )
 ## Scenario1 (Emission_node = 1)
 model1 = [inertia, displacement]
-performance1 = df -> max_displacement .- df.w
+max_displacement1 = 0.01
+performance1 = df -> max_displacement1 .- df.w
 parameters1 = [l, b]
 correlated_nodes1 = name.([E_node, ρ_node])
 copula1 = GaussianCopula([1 0.8; 0.8 1])
 name1 = :jd
-correlation1 = [CorrelationCopula(correlated_nodes1, copula1, :jd)]
-srp1 = NodeNameSystemReliabilityProblem(model1, parameters1, performance1, correlation1)
-scenario1 = ProbabilityDictionaryFunctional((Dict(name(emission_node) => 1), srp1))
+correlation1 = [CPDCorrelationCopula(correlated_nodes1, copula1, :jd)]
+simulation1 = SubSetSimulation(2000, 0.1, 10, Uniform(-0.5, 0.5))
+srp1 = CPDSystemReliabilityProblem(model1, parameters1, performance1, correlation1, simulation1)
+scenario1 = CPDProbabilityDictionaryFunctional((Dict(name(emission_node) => 1), srp1))
 ## Scenario1 (Emission_node = 2)
 model2 = [inertia, displacement]
-performance2 = df -> max_displacement .- df.w
+max_displacement2 = 0.015
+performance2 = df -> max_displacement2 .- df.w
 parameters2 = [l, b]
 correlated_nodes2 = name.([E_node, ρ_node])
 copula2 = GaussianCopula([1 0.85; 0.85 1])
 name2 = :jd
-correlation2 = [CorrelationCopula(correlated_nodes2, copula2, :jd)]
-srp2 = NodeNameSystemReliabilityProblem(model2, parameters2, performance2, correlation2)
-scenario2 = ProbabilityDictionaryFunctional((Dict(name(emission_node) => 2), srp1))
-srp2 = NodeNameSystemReliabilityProblem(model2, parameters2, performance2, correlation2)
-
-scenario2 = ProbabilityDictionaryFunctional((Dict(name(emission_node) => 2), srp2))
+correlation2 = [CPDCorrelationCopula(correlated_nodes2, copula2, :jd)]
+simulation2 = MonteCarlo(10^6)
+srp2 = CPDSystemReliabilityProblem(model2, parameters2, performance2, correlation2, simulation2)
+scenario2 = CPDProbabilityDictionaryFunctional((Dict(name(emission_node) => 2), srp1))
 
 prob_dict_output = [scenario1, scenario2]
 
@@ -80,53 +77,11 @@ nodes = [output_node, E_node, ρ_node, P_node, h_node, emission_node]
 ebn = EnhancedBayesNet(nodes)
 show(ebn)
 
-
-
-
 """ Solving EnhancedBayesNet (No undefined continuous parents case) """
-
-
-
-function evaluate_rvs(ebn::EnhancedBayesNet, node::FunctionalNode, srp::SystemReliabilityProblem)
-    continuous_parents = get_continuous_parents(node)
-    non_correlated_continuous_parents = Vector{UQInput}()
-    rvs = Vector{UQInput}()
-    for copula in srp.correlation
-        continuous_parents = filter(n -> n.name in name.(continuous_parents), copula.nodes)
-        if isa(rv.cpd, RootCPD)
-            get_rv = (target, x) -> RandomVariable(filter(x -> name(x) == target, x)[1].cpd.distributions, target)
-            correlated_distributions = get_rv.(copula.nodes, repeat([continuous_parents], length(copula.nodes)))
-            push!(rvs, JointDistribution(correlated_distributions, copula.copula))
-        else
-            throw(DomainError(copula, "this case needs to be taken into account"))
-        end
-    end
-
+result = Dict()
+for prob_dict in output_node.node_prob_dict
+    UQInputs = vcat(build_UQInputs_singlecase(output_node, prob_dict), prob_dict.distribution.parameters)
+    result[prob_dict.evidence] = probability_of_failure(prob_dict.distribution.model, prob_dict.distribution.performance, UQInputs, prob_dict.distribution.simulation)
 end
 
-
-
-# c1 = GaussianCopula([1 0.8; 0.8 1])
-# c2 = GaussianCopula([1 0.7; 0.7 1])
-# f1 = (E, ρ) -> JointDistribution([E, ρ], c1)
-# fun1 = Dict(
-#     ":model" => f1,
-#     ":rvs_node" => [E_node, ρ_node]
-# )
-# f2 = (E, ρ) -> JointDistribution([E, ρ], c2)
-
-# parents_jd = name.([E_node, ρ_node, emission_node])
-# target = :jd
-# parental_ncategories = [2]
-# prob_dict_jd = [ProbabilityDictionaryFunctional((Dict(:emission => 1), SystemReliabilityProblem(fun1))),
-#     ProbabilityDictionaryFunctional((Dict(:emission => 2), SystemReliabilityProblem(f2)))]
-
-# CPD_jd = FunctionalCPD(:jd, parents_jd, parental_ncategories, prob_dict_jd)
-# jd_node = FunctionalNode(CPD_jd, [E_node, ρ_node, emission_node], "continuous")
-
-# ### Evaluating node_jd Distribution
-# nodes = [emission_node, h_node, E_node, P_node, ρ_node, jd_node]
-# dag = _build_DiAGraph_from_nodes(nodes)
-# ordered_cpds, ordered_nodes, ordered_name_to_index, ordered_dag = _topological_ordered_dag(nodes)
-# bn = EnhancedBayesNet(ordered_dag, ordered_nodes, ordered_cpds, ordered_name_to_index)
-# show(bn)
+## TODO try to perform probability_of_failure with jonas code building a specific post-processing function from matrix to 1 single value

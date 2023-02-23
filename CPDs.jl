@@ -9,69 +9,60 @@ const global NodeName = Symbol
 const global NodeNames = AbstractVector{NodeName}
 
 abstract type SystemReliabilityProblem end
-
+"""
+    Definition of the CPD AbstractType
+"""
+abstract type CPD end
 
 """
     Definition of the SRP Struct
 """
-struct CorrelationCopula
+struct CPDCorrelationCopula
     nodes::Vector{NodeName}
     copula::Union{GaussianCopula,Nothing}
     name::NodeName
 end
 
-function CorrelationCopula()
+function CPDCorrelationCopula()
     nodes = Vector{NodeName}()
     copula = nothing
     name = NodeName()
-    return CorrelationCopula(nodes, copula, name)
+    return CPDCorrelationCopula(nodes, copula, name)
 end
 
-struct NodeNameSystemReliabilityProblem <: SystemReliabilityProblem
+struct CPDSystemReliabilityProblem <: SystemReliabilityProblem
     model::Union{Array{<:UQModel},UQModel}
     parameters::Vector{Parameter}
-    post_processing::Union{Function,Nothing}
     performance::Function
-    correlation::Vector{CorrelationCopula}
-
-    function NodeNameSystemReliabilityProblem(
+    correlation::Vector{CPDCorrelationCopula}
+    simulation::Any
+    function CPDSystemReliabilityProblem(
         model::Union{Array{<:UQModel},UQModel},
         parameters::Vector{Parameter},
         performance::Function,
-        correlation::Vector{CorrelationCopula}
+        correlation::Vector{CPDCorrelationCopula},
+        simulation::Any
     )
-        post_processing = nothing
-        new(model, parameters, post_processing, performance, correlation)
+        new(model, parameters, performance, correlation, simulation)
     end
-    function NodeNameSystemReliabilityProblem(
+
+    function CPDSystemReliabilityProblem(
         model::Union{Array{<:UQModel},UQModel},
         parameters::Vector{Parameter},
-        post_processing::Union{Function,Nothing},
-        performance::Function
+        performance::Function,
+        simulation::Any
     )
-        correlation = [CorrelationCopula()]
-        new(model, parameters, post_processing, performance, correlation)
-    end
-    function NodeNameSystemReliabilityProblem(
-        model::Union{Array{<:UQModel},UQModel},
-        parameters::Vector{Parameter},
-        performance::Function
-    )
-        correlation = [CorrelationCopula()]
-        post_processing = nothing
-        new(model, parameters, post_processing, performance, correlation)
+        correlation = [CPDCorrelationCopula()]
+        new(model, parameters, performance, correlation, simulation)
     end
 end
 
 const global ProbabilityDictionaryEvidence = Union{Dict,Nothing}
-const global ProbabilityDictionaryDistribution = Dict{Symbol,Union{Float64,Distribution}}
+const global CPDProbabilityDictionaryDistribution = Dict{Symbol,Union{Float64,Distribution}}
 
-const global ProbabilityDictionary = NamedTuple{(:evidence, :distribution),Tuple{ProbabilityDictionaryEvidence,ProbabilityDictionaryDistribution}}
-const global ProbabilityDictionaryFunctional = NamedTuple{(:evidence, :distribution),Tuple{ProbabilityDictionaryEvidence,NodeNameSystemReliabilityProblem}}
-"""
-    Definition of the CPD AbstractType
-"""
-abstract type CPD end
+const global CPDProbabilityDictionary = NamedTuple{(:evidence, :distribution),Tuple{ProbabilityDictionaryEvidence,CPDProbabilityDictionaryDistribution}}
+const global CPDProbabilityDictionaryFunctional = NamedTuple{(:evidence, :distribution),Tuple{ProbabilityDictionaryEvidence,CPDSystemReliabilityProblem}}
+
 
 """
     An Object for mapping each distribution to a MapableTypes::Union{AbstractString, Symbol}
@@ -117,14 +108,14 @@ mutable struct RootCPD <: CPD
     target::NodeName
     parents::NodeNames
     distributions::Distribution
-    prob_dict::Vector{ProbabilityDictionary}
+    prob_dict::Vector{CPDProbabilityDictionary}
 end
 ## Creating prob_dict for RootCPD
 function RootCPD(target::NodeName, distributions::Distribution)
     if isa(distributions, NamedCategorical)
-        prob_dict = [ProbabilityDictionary((nothing, Dict(distributions.items .=> distributions.probs / sum(distributions.probs))))]
+        prob_dict = [CPDProbabilityDictionary((nothing, Dict(distributions.items .=> distributions.probs / sum(distributions.probs))))]
     else
-        prob_dict = [ProbabilityDictionary((nothing, Dict(:all_states => distributions)))]
+        prob_dict = [CPDProbabilityDictionary((nothing, Dict(:all_states => distributions)))]
     end
     RootCPD(target, NodeName[], distributions, prob_dict)
 end
@@ -149,7 +140,7 @@ struct CategoricalCPD <: CPD
     parents::NodeNames
     parental_ncategories::Vector{Int}
     distributions::Vector{Distribution}
-    prob_dict::Vector{ProbabilityDictionary}
+    prob_dict::Vector{CPDProbabilityDictionary}
     ## Checks:
     #    - number of parental_ncategories - number of parents coherence
     #    - number of distributions - number of parents_ncategories coherence
@@ -167,9 +158,9 @@ struct CategoricalCPD <: CPD
         combinations = sort(vec(collect(Iterators.product(f.(parental_ncategories)...))))
         evidences_vector = map_combination2evidence.(combinations, repeat([parents], length(combinations)))
         if isa(distributions, Vector{NamedCategorical{Symbol}})
-            prob_dict = ProbabilityDictionary.(tuple.(evidences_vector, fn.(distributions)))
+            prob_dict = CPDProbabilityDictionary.(tuple.(evidences_vector, fn.(distributions)))
         else
-            prob_dict = ProbabilityDictionary.(tuple.(evidences_vector, fd.(distributions)))
+            prob_dict = CPDProbabilityDictionary.(tuple.(evidences_vector, fd.(distributions)))
         end
         new(target, parents, parental_ncategories, distributions, prob_dict)
     end
@@ -199,10 +190,10 @@ struct FunctionalCPD <: CPD
     target::NodeName
     parents::NodeNames
     parental_ncategories::Vector{Int}
-    prob_dict::Vector{ProbabilityDictionaryFunctional}
+    prob_dict::Vector{CPDProbabilityDictionaryFunctional}
     ## Check:
     #    - parental_ncategories - prob_dict coherence
-    function FunctionalCPD(target::NodeName, parents::NodeNames, parental_ncategories::Vector{Int64}, prob_dict::Vector{ProbabilityDictionaryFunctional})
+    function FunctionalCPD(target::NodeName, parents::NodeNames, parental_ncategories::Vector{Int64}, prob_dict::Vector{CPDProbabilityDictionaryFunctional})
         prod(parental_ncategories) == length(prob_dict) ? new(target, parents, parental_ncategories, prob_dict) : throw(DomainError(target, "number of parental_ncategories is different from the number of  defined functions"))
     end
 end

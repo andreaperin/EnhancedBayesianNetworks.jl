@@ -8,16 +8,14 @@ include("CPDs.jl")
 
 abstract type AbstractNode end
 
+
 """
     Definition of the Assignment constant as Dict{NodeName, Any}
 """
 const global Assignment = Dict{AbstractNode,Any}
-
-
 """
     Definition of the Node_SystemReliabilityPorblem
 """
-
 struct NodeCorrelationCopula
     nodes::Vector{AbstractNode}
     copula::Union{GaussianCopula,Nothing}
@@ -34,49 +32,33 @@ end
 struct NodeSystemReliabilityProblem <: SystemReliabilityProblem
     model::Union{Array{<:UQModel},UQModel}
     parameters::Vector{Parameter}
-    post_processing::Union{Function,Nothing}
     performance::Function
     correlation::Vector{NodeCorrelationCopula}
+    simulation::Any
     function NodeSystemReliabilityProblem(
         model::Union{Array{<:UQModel},UQModel},
         parameters::Vector{Parameter},
-        post_processing::Union{Function,Nothing},
         performance::Function,
-        correlation::Vector{NodeCorrelationCopula}
+        correlation::Vector{NodeCorrelationCopula},
+        simulation::Any
     )
-        new(model, parameters, post_processing, performance, correlation)
+        new(model, parameters, performance, correlation, simulation)
     end
 
     function NodeSystemReliabilityProblem(
         model::Union{Array{<:UQModel},UQModel},
         parameters::Vector{Parameter},
         performance::Function,
-        correlation::Vector{NodeCorrelationCopula}
-    )
-        post_processing = nothing
-        new(model, parameters, post_processing, performance, correlation)
-    end
-    function NodeSystemReliabilityProblem(
-        model::Union{Array{<:UQModel},UQModel},
-        parameters::Vector{Parameter},
-        post_processing::Union{Function,Nothing},
-        performance::Function
+        simulation::Any
     )
         correlation = [NodeCorrelationCopula()]
-        new(model, parameters, post_processing, performance, correlation)
-    end
-    function NodeSystemReliabilityProblem(
-        model::Union{Array{<:UQModel},UQModel},
-        parameters::Vector{Parameter},
-        performance::Function
-    )
-        correlation = [NodeCorrelationCopula()]
-        post_processing = nothing
-        new(model, parameters, post_processing, performance, correlation)
+        new(model, parameters, performance, correlation, simulation)
     end
 end
 
-const global NodeProbabilityDictionaryFunctional = NamedTuple{(:evidence, :distribution),Tuple{ProbabilityDictionaryEvidence,SystemReliabilityProblem}}
+
+const global NodeProbabilityDictionary = NamedTuple{(:evidence, :distribution),Tuple{ProbabilityDictionaryEvidence,CPDProbabilityDictionaryDistribution}}
+const global NodeProbabilityDictionaryFunctional = NamedTuple{(:evidence, :distribution),Tuple{ProbabilityDictionaryEvidence,NodeSystemReliabilityProblem}}
 
 """
     Definition of the StdNode Struct
@@ -90,8 +72,8 @@ struct StdNode <: AbstractNode
     #       :evidence = Dict(node => number_of_specific_state)
     #       :distribution =  Distribution
     #   )
-    node_prob_dict::Vector{ProbabilityDictionary}
-    function StdNode(cpd::CPD, parents::Vector{T}, type::String, node_prob_dict::Vector{ProbabilityDictionary}) where {T<:AbstractNode}
+    node_prob_dict::Vector{NodeProbabilityDictionary}
+    function StdNode(cpd::CPD, parents::Vector{T}, type::String, node_prob_dict::Vector{NodeProbabilityDictionary}) where {T<:AbstractNode}
         if ~isa(cpd, RootCPD)
             ## Checks:
             #    - No continuous parents
@@ -141,12 +123,12 @@ mutable struct FunctionalNode <: AbstractNode
     cpd::FunctionalCPD
     parents::Vector{T} where {T<:AbstractNode}
     type::String
-    node_prob_dict::Union{Vector{NodeProbabilityDictionaryFunctional},Vector{ProbabilityDictionaryFunctional}}
+    node_prob_dict::Union{Vector{NodeProbabilityDictionaryFunctional},Vector{CPDProbabilityDictionaryFunctional}}
     function FunctionalNode(
         cpd::FunctionalCPD,
         parents::Vector{T},
         type::String,
-        node_prob_dict::Union{Vector{NodeProbabilityDictionaryFunctional},Vector{ProbabilityDictionaryFunctional}}
+        node_prob_dict::Union{Vector{NodeProbabilityDictionaryFunctional},Vector{CPDProbabilityDictionaryFunctional}}
     ) where {T<:AbstractNode}
         discrete_parents = filter(x -> x.type == "discrete", parents)
         ## Checks on
@@ -297,24 +279,24 @@ function map_state_to_integer(states::Tuple, nodes::Vector{T}) where {T<:Abstrac
     return Tuple(new_states)
 end
 
-function convert_prob_dict_2_node_prob_dict(prob_dict::Union{ProbabilityDictionary,ProbabilityDictionaryFunctional}, discrete_parents::Vector{T}, all_parents::Vector{T}) where {T<:AbstractNode}
+function convert_prob_dict_2_node_prob_dict(prob_dict::Union{NodeProbabilityDictionary,CPDProbabilityDictionaryFunctional}, discrete_parents::Vector{T}, all_parents::Vector{T}) where {T<:AbstractNode}
     f1 = (nodename, p) -> filter(p -> name(p) == nodename, p)
     evid = Dict()
     for (key, value) in prob_dict.evidence
         node = f1(key, discrete_parents)[1]
         evid[node] = value
     end
-    if isa(prob_dict, ProbabilityDictionary)
-        node_prob_dict = ProbabilityDictionary(tuple(evid, prob_dict.distribution))
+    if isa(prob_dict, CPDProbabilityDictionary)
+        node_prob_dict = NodeProbabilityDictionary(tuple(evid, prob_dict.distribution))
     else
         new_node_correlationcopula = convert_correlation_2_node_correlation.(prob_dict.distribution.correlation, repeat([all_parents], length(prob_dict.distribution.correlation)))
-        new_node_srp = NodeSystemReliabilityProblem(prob_dict.distribution.model, prob_dict.distribution.parameters, prob_dict.distribution.post_processing, prob_dict.distribution.performance, new_node_correlationcopula)
+        new_node_srp = NodeSystemReliabilityProblem(prob_dict.distribution.model, prob_dict.distribution.parameters, prob_dict.distribution.performance, new_node_correlationcopula, prob_dict.distribution.simulation,)
         node_prob_dict = NodeProbabilityDictionaryFunctional(tuple(evid, new_node_srp))
     end
     return node_prob_dict
 end
 
-function convert_correlation_2_node_correlation(correlation::CorrelationCopula, parents::Vector{T}) where {T<:AbstractNode}
+function convert_correlation_2_node_correlation(correlation::CPDCorrelationCopula, parents::Vector{T}) where {T<:AbstractNode}
     f1 = (nodename, p) -> filter(p -> name(p) == nodename, p)
     new_nodes = Vector()
     for n in correlation.nodes
@@ -323,4 +305,27 @@ function convert_correlation_2_node_correlation(correlation::CorrelationCopula, 
     return NodeCorrelationCopula(new_nodes, correlation.copula, correlation.name)
 end
 
+
+function build_UQInputs_singlecase(node::FunctionalNode, prob_dict::NodeProbabilityDictionaryFunctional)
+    continuous_parents = get_continuous_parents(node)
+    non_correlated_continuous_parents = Vector{UQInput}()
+    joint_rvs = Vector{UQInput}()
+    for copula in prob_dict.distribution.correlation
+        continuous_parents = setdiff(continuous_parents, copula.nodes)
+        if all([isa(n.cpd, RootCPD) for n in copula.nodes])
+            rvs = [RandomVariable(x.cpd.distributions, x.cpd.target) for x in copula.nodes]
+            push!(joint_rvs, JointDistribution(rvs, copula.copula))
+        else
+            throw(DomainError(copula.nodes, "Implement when a nodes for joint distribution is not a root node"))
+        end
+    end
+    for node in continuous_parents
+        if isa(node.cpd, RootCPD)
+            push!(non_correlated_continuous_parents, RandomVariable(node.cpd.distributions, name(node)))
+        else
+            throw(DomainError(name(node), "Implement when a nodes for joint distribution is not a root node"))
+        end
+    end
+    return vcat(joint_rvs, non_correlated_continuous_parents)
+end
 
