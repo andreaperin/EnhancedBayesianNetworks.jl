@@ -17,13 +17,23 @@ disp_longv_distribution = truncated(Normal(1, 1), lower=0)
 CPD_disp_longv = RootCPD(:disp_longv, disp_longv_distribution)
 disp_longv_node = StdNode(CPD_disp_longv)
 
+Kz_distribution = truncated(Normal(1, 1), lower=0)
+CPD_Kz = RootCPD(:Kz, Kz_distribution)
+Kz_node = StdNode(CPD_Kz)
+
 ## Model Node
 
 output_target = :output
-output_parents = [earthquake_node, disp_longv_node]
+output_parents = [earthquake_node, disp_longv_node, Kz_node]
 output_parental_ncat = [2]
 
 ## Scenario 1
+
+correlated_nodes1 = name.([disp_longv_node, Kz_node])
+copula1 = GaussianCopula([1 0.8; 0.8 1])
+name1 = :jd
+correlation1 = [CPDCorrelationCopula(correlated_nodes1, copula1, :jd)]
+
 sourcedir = Sys.isapple() ? "model_TH_macos" : "model_TH_win"
 default_file1 = joinpath(pwd(), sourcedir, "inputs", "default_th_values1.xlsx")
 sourcedir = joinpath(pwd(), sourcedir)
@@ -57,10 +67,17 @@ function performance1(df::DataFrame)
 end
 
 simulation1 = MonteCarlo(20)
-srp1 = CPDSystemReliabilityProblem(model1, parameters, performance1, simulation1)
+srp1 = CPDSystemReliabilityProblem(model1, parameters, performance1, correlation1, simulation1)
 scenario1 = CPDProbabilityDictionaryFunctional((Dict(name(earthquake_node) => 1), srp1))
 
 ## Scenario 2
+
+correlated_nodes2 = name.([disp_longv_node, Kz_node])
+copula2 = GaussianCopula([1 0.8; 0.8 1])
+name2 = :jd
+correlation2 = [CPDCorrelationCopula(correlated_nodes1, copula1, :jd)]
+
+
 sourcedir = Sys.isapple() ? "model_TH_macos" : "model_TH_win"
 default_file2 = joinpath(pwd(), sourcedir, "inputs", "default_th_values2.xlsx")
 sourcedir = joinpath(pwd(), sourcedir)
@@ -87,33 +104,13 @@ function performance2(df::DataFrame)
         for (key, val) in df[i, :head]
             append!(max_head, maximum(val.head))
         end
-        push!(results, min(10 - maximum(max_temp), 100 - maximum(max_conc), 100 - maximum(max_head)))
-    end
-    return results
-end
-
-function performance2(df::DataFrame)
-    results = []
-    for i in range(1, size(df)[1])
-        max_temp = []
-        for (key, val) in df[i, :temperature]
-            append!(max_temp, maximum(val.temperature))
-        end
-        max_conc = []
-        for (key, val) in df[i, :concentration]
-            append!(max_conc, maximum(val.concentration))
-        end
-        max_head = []
-        for (key, val) in df[i, :head]
-            append!(max_head, maximum(val.head))
-        end
         push!(results, min(1 - maximum(max_temp), 1 - maximum(max_conc), 1 - maximum(max_head)))
     end
     return results
 end
 
 simulation2 = MonteCarlo(10)
-srp2 = CPDSystemReliabilityProblem(model2, parameters, performance2, simulation2)
+srp2 = CPDSystemReliabilityProblem(model2, parameters, performance2, correlation2, simulation2)
 scenario2 = CPDProbabilityDictionaryFunctional((Dict(name(earthquake_node) => 2), srp2))
 
 
@@ -122,8 +119,9 @@ CPD_output = FunctionalCPD(output_target, name.(output_parents), output_parental
 output_node = FunctionalNode(CPD_output, output_parents, "discrete")
 
 
-nodes = [earthquake_node, disp_longv_node, output_node]
+nodes = [earthquake_node, disp_longv_node, Kz_node, output_node]
 ebn = EnhancedBayesNet(nodes)
+##TODO add check when ExternalModel with Moustaches (continuous nodename should be among moustaches)
 show(ebn)
 
 

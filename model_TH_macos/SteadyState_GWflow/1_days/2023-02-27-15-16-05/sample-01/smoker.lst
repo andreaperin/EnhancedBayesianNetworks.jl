@@ -1,0 +1,164 @@
+          ************************************************************
+
+          heatflow/smoker
+          john.molson@ggl.ulaval.ca
+
+          3-d density-dependent flow and thermal transport model
+          linear isoparametric elements
+
+          ************************************************************
+
+          smokerV3TC from SALT FLOW MODEL: 2D transport Hydrocoin                         
+
+          100 x 2 x 51 TOTAL TRANSPORT NODES                                              
+          March 2022 - test simulation                                                    
+          ************************************************************
+
+          ************************************************************
+
+          heatflow/smoker
+          john.molson@ggl.ulaval.ca
+
+          3-d density-dependent flow and thermal transport model
+          linear isoparametric elements
+
+          ************************************************************
+
+          smokerV3TC from SALT FLOW MODEL: 2D transport Hydrocoin                         
+
+          100 x 2 x 51 TOTAL TRANSPORT NODES                                              
+          March 2022 - test simulation                                                    
+          ************************************************************
+
+
+          run-time options ...
+          kprt,kcntrl,kwt,kint,kintv,kgo,ksat,kmass,ktair,krk,kdz,ksubtr,kr1top,kfreec
+            1  0  0  0  0  0  1  1  0  0  0  1  0  0
+
+          mass transport option in effect
+
+
+          conjugate gradient solver for flow
+
+
+          direct integration for element matrices
+
+          direct derivatives for velocities
+
+          transport: advective term lagged, augmentation
+                     matrix at midpoint in time
+
+
+          weighting for physical dispersion   1.000
+
+          weighting for augmentation term     0.500
+          weighting for cauchy boundary       0.000
+
+
+          saturated domain only
+
+
+          using transport formulation v1 for latent heat
+
+          grid definition:
+          ----------------
+          ngx,ngy,ngz: 
+               1     1     1
+
+          Global grid intervals for element spacing:
+          ------------------------------------------
+          x-dimension grid intervals: 
+              400.00
+          y-dimension grid intervals: 
+                1.00
+          z-dimension grid intervals: 
+               50.00
+
+          element distribution (nlx,nly,nlz): 
+
+          x-dimension:     200
+          y-dimension:       1
+          z-dimension:      25
+
+
+          flow grid size, elements (nex,ney,nez):  200    1   25
+          estimated bandwidth (nb,nbb):        15   15
+
+          flow grid size, nx,ny,nz:     201    2   26
+          total nodes in flow grid        10452
+          total elements in flow grid      5000
+
+
+          number of deformable layers:     0
+          grid datum:                    0.0000
+          conc./density coefficient:     0.2000
+
+          this is a nonlinear mass transport run
+          well index data for breakthrough well:    0    0    0    0
+
+          number of monitor wells ...      0
+
+          vertical strip at (x,y)=(0,0) x,y,z coords:
+        1 0.000E+00 0.000E+00 0.000E+00        2 0.000E+00 0.000E+00 0.200E+01
+        3 0.000E+00 0.000E+00 0.400E+01        4 0.000E+00 0.000E+00 0.600E+01
+        5 0.000E+00 0.000E+00 0.800E+01        6 0.000E+00 0.000E+00 0.100E+02
+        7 0.000E+00 0.000E+00 0.120E+02        8 0.000E+00 0.000E+00 0.140E+02
+        9 0.000E+00 0.000E+00 0.160E+02       10 0.000E+00 0.000E+00 0.180E+02
+       11 0.000E+00 0.000E+00 0.200E+02       12 0.000E+00 0.000E+00 0.220E+02
+       13 0.000E+00 0.000E+00 0.240E+02       14 0.000E+00 0.000E+00 0.260E+02
+       15 0.000E+00 0.000E+00 0.280E+02       16 0.000E+00 0.000E+00 0.300E+02
+       17 0.000E+00 0.000E+00 0.320E+02       18 0.000E+00 0.000E+00 0.340E+02
+       19 0.000E+00 0.000E+00 0.360E+02       20 0.000E+00 0.000E+00 0.380E+02
+       21 0.000E+00 0.000E+00 0.400E+02       22 0.000E+00 0.000E+00 0.420E+02
+       23 0.000E+00 0.000E+00 0.440E+02       24 0.000E+00 0.000E+00 0.460E+02
+       25 0.000E+00 0.000E+00 0.480E+02       26 0.000E+00 0.000E+00 0.500E+02
+
+          vertical strip at (x,y)=(xl,yl) x,y,z coords:
+    10427 0.400E+03 0.100E+01 0.000E+00    10428 0.400E+03 0.100E+01 0.200E+01
+    10429 0.400E+03 0.100E+01 0.400E+01    10430 0.400E+03 0.100E+01 0.600E+01
+    10431 0.400E+03 0.100E+01 0.800E+01    10432 0.400E+03 0.100E+01 0.100E+02
+    10433 0.400E+03 0.100E+01 0.120E+02    10434 0.400E+03 0.100E+01 0.140E+02
+    10435 0.400E+03 0.100E+01 0.160E+02    10436 0.400E+03 0.100E+01 0.180E+02
+    10437 0.400E+03 0.100E+01 0.200E+02    10438 0.400E+03 0.100E+01 0.220E+02
+    10439 0.400E+03 0.100E+01 0.240E+02    10440 0.400E+03 0.100E+01 0.260E+02
+    10441 0.400E+03 0.100E+01 0.280E+02    10442 0.400E+03 0.100E+01 0.300E+02
+    10443 0.400E+03 0.100E+01 0.320E+02    10444 0.400E+03 0.100E+01 0.340E+02
+    10445 0.400E+03 0.100E+01 0.360E+02    10446 0.400E+03 0.100E+01 0.380E+02
+    10447 0.400E+03 0.100E+01 0.400E+02    10448 0.400E+03 0.100E+01 0.420E+02
+    10449 0.400E+03 0.100E+01 0.440E+02    10450 0.400E+03 0.100E+01 0.460E+02
+    10451 0.400E+03 0.100E+01 0.480E+02    10452 0.400E+03 0.100E+01 0.500E+02
+
+          found        0 duplicate fracture elements
+
+          number of fracture elements ...       0
+
+          summary: listing of first 100 fracture elements:
+          l       ck      xarea       lvert    ifracl    ifdim
+                 (m/s)    (m^2)       (face)   (3D #)       
+
+
+
+          mindex routine ... flow boundary arrays ...
+
+          boundary codes       0    0    0    0    0    1    0
+
+
+          Flow: Dirichlet patch source on surface:   6
+          indeces: x1,x2, y/z 1, y/z 2 ...    1   1   1   2  head:    0.0000
+
+          Flow: Dirichlet patch source on surface:   6
+          indeces: x1,x2, y/z 1, y/z 2 ...  201 201   1   2  head:    0.0000
+
+
+          number of dirichlet nodes:     4
+          number of degrees of freedom:     10448
+          final bandwidth    11
+          vector length     96548
+
+          specified hydraulic conductivity @ 0 celsius:
+          ---------------------------------------------
+          element range        ckx          cky          ckz        tcx(sol)     cps(sol)    ps(sol)   porosity   saturation
+
+          error in reading elemental hydraulic Kx,Ky,Kz, etc.
+          check j1,j2,ckx,cky,ckz,tcx,cps,ps,theta,satw,more
+          program stopping
