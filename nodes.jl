@@ -312,9 +312,11 @@ function build_UQInputs_singlecase(node::FunctionalNode, prob_dict::NodeProbabil
     joint_rvs = Vector{UQInput}()
     for copula in prob_dict.distribution.correlation
         continuous_parents = setdiff(continuous_parents, copula.nodes)
-        if all([isa(n.cpd, RootCPD) for n in copula.nodes])
+        if all([isa(n.cpd, RootCPD) for n in copula.nodes]) && ~isempty(copula.nodes)
             rvs = [RandomVariable(x.cpd.distributions, x.cpd.target) for x in copula.nodes]
             push!(joint_rvs, JointDistribution(rvs, copula.copula))
+        elseif isempty(copula.nodes)
+            continue
         else
             throw(DomainError(copula.nodes, "Implement when a nodes for joint distribution is not a root node"))
         end

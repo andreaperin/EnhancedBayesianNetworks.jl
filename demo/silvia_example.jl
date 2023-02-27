@@ -1,7 +1,4 @@
 using DataFrames
-include("../CPDs.jl")
-include("../nodes.jl")
-include("../models_probabilities.jl")
 include("../bn.jl")
 
 emission = NamedCategorical([:nothappen, :happen], [0.0, 1.0])
