@@ -29,6 +29,7 @@ output_parental_ncat = [2]
 
 ## Scenario 1
 
+
 correlated_nodes1 = name.([disp_longv_node, Kz_node])
 copula1 = GaussianCopula([1 0.8; 0.8 1])
 name1 = :jd
