@@ -137,9 +137,10 @@ mutable struct FunctionalNode <: AbstractNode
         #    - number of parents as (Discrete) nodes - length of the evidence in CPD's prob_dict
         #    - number of parents as (Discrete) nodes states - values inside CPD's parental_ncategories   
         name.(parents) == cpd.parents ? new(cpd, parents, type, node_prob_dict) : throw(DomainError(cpd.target, "Missmatch in parents assigned in CPD and assigned in Node Struct"))
-        length(discrete_parents) == length(cpd.parental_ncategories) ? new(cpd, parents, type, node_prob_dict) : throw(DomainError(cpd.target, "Number of discrete parents in not equals to the length of CPD.parental_ncategories"))
-        length(discrete_parents) == length(cpd.prob_dict[1].evidence) ? new(cpd, parents, type, node_prob_dict) : throw(DomainError(cpd.target, "Number of discrete parents in not equals to the length of CPD.prob_dict.evidence"))
-        get_numberofstates.(discrete_parents) == cpd.parental_ncategories ? new(cpd, parents, type, node_prob_dict) : throw(DomainError(cpd.target, "Missmatch in parents categories and (manually defined) parental_ncategories in $node_name"))
+
+        length(filter(x -> x.type == "discrete", get_ancestors(parents))) == length(cpd.parental_ncategories) ? new(cpd, parents, type, node_prob_dict) : throw(DomainError(cpd.target, "Number of discrete ancestors != length of CPD.parental_ncategories"))
+        length(filter(x -> x.type == "discrete", get_ancestors(parents))) == length(cpd.prob_dict[1].evidence) ? new(cpd, parents, type, node_prob_dict) : throw(DomainError(cpd.target, "Number of discrete ancestors != length of CPD.prob_dict.evidence"))
+        get_numberofstates.(filter(x -> x.type == "discrete", get_ancestors(parents))) == cpd.parental_ncategories ? new(cpd, parents, type, node_prob_dict) : throw(DomainError(cpd.target, "Missmatch in parents categories and (manually defined) parental_ncategories in $node_name"))
     end
 
     function FunctionalNode(cpd::FunctionalCPD, parents::Vector{T}, type::String) where {T<:AbstractNode}
@@ -219,6 +220,10 @@ function nodes_split(nodes::Vector{T}) where {T<:AbstractNode}
     return discrete_parents, continuous_nonroot_parents, continuous_root_parents
 end
 
+function get_discrete_ancestors(nodes::Vector{T}) where {T<:AbstractNode}
+
+end
+
 function get_statesordistributions(node::T) where {T<:AbstractNode}
     if node.type == "continuous"
         return Dict(node => node.cpd.distributions)
@@ -239,21 +244,21 @@ function get_combinations(nodes::Vector{T}) where {T<:AbstractNode}
     return vec(collect(Iterators.product(to_combine...))), reference_vector
 end
 
-function get_ancestors(node::T) where {T<:AbstractNode}
-    parents = node.parents
-    discrete, cont_nonroot, cont_root = nodes_split(parents)
+
+function get_ancestors(nodes::Vector{T}) where {T<:AbstractNode}
+    discrete, cont_nonroot, cont_root = nodes_split(nodes)
     append!(discrete, cont_root)
     while ~isempty(cont_nonroot)
-        new_parents = Vector{AbstractNode}()
+        new_nodes = Vector{AbstractNode}()
         for single_cont_nonroot in cont_nonroot
-            append!(new_parents, single_cont_nonroot.parents)
+            append!(new_nodes, single_cont_nonroot.parents)
         end
-        discrete_new, cont_nonroot_new, cont_root_new = nodes_split(new_parents)
+        discrete_new, cont_nonroot_new, cont_root_new = nodes_split(new_nodes)
         append!(discrete, discrete_new)
         append!(discrete, cont_root_new)
         cont_nonroot = cont_nonroot_new
     end
-    ancestors = unique(discrete)
+    return unique(discrete)
 end
 
 function get_states_mapping_dict(node::T) where {T<:AbstractNode}

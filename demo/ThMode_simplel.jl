@@ -9,17 +9,20 @@ earthquake = NamedCategorical([:happen, :nothappen], [0.5, 0.5])
 CPD_earthquake = RootCPD(:earthquake, earthquake)
 earthquake_node = StdNode(CPD_earthquake)
 
-# extremerain = NamedCategorical([:low, :medium, :high], [0.5, 0.3, 0.2])
-# CPD_extremerain = RootCPD(:extreme_rain, extremerain)
-# extremerain_node = StdNode(CPD_extremerain)
+extremerain = NamedCategorical([:low, :medium, :high], [0.5, 0.3, 0.2])
+CPD_extremerain = RootCPD(:extreme_rain, extremerain)
+extremerain_node = StdNode(CPD_extremerain)
 
 disp_longv_distribution = truncated(Normal(1, 1), lower=0)
 CPD_disp_longv = RootCPD(:disp_longv, disp_longv_distribution)
 disp_longv_node = StdNode(CPD_disp_longv)
 
-Kz_distribution = truncated(Normal(1, 1), lower=0)
-CPD_Kz = RootCPD(:Kz, Kz_distribution)
-Kz_node = StdNode(CPD_Kz)
+Kz_parents = [extremerain_node]
+Kz_distribution1 = truncated(Normal(1, 1), lower=0)
+Kz_distribution2 = truncated(Normal(4, 2), lower=0)
+Kz_distribution3 = truncated(Normal(10, 5), lower=0)
+CPD_Kz = CategoricalCPD(:Kz, name.(Kz_parents), [3], [Kz_distribution1, Kz_distribution2, Kz_distribution3])
+Kz_node = StdNode(CPD_Kz, Kz_parents)
 
 ## Model Node
 
@@ -28,8 +31,6 @@ output_parents = [earthquake_node, disp_longv_node, Kz_node]
 output_parental_ncat = [2]
 
 ## Scenario 1
-
-
 correlated_nodes1 = name.([disp_longv_node, Kz_node])
 copula1 = GaussianCopula([1 0.8; 0.8 1])
 name1 = :jd
