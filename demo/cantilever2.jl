@@ -78,10 +78,12 @@ ebn = EnhancedBayesNet(nodes)
 show(ebn)
 
 """ Solving EnhancedBayesNet (No undefined continuous parents case) """
-result = Dict()
+results = Dict()
 for prob_dict in output_node.node_prob_dict
     UQInputs = vcat(build_UQInputs_singlecase(output_node, prob_dict), prob_dict.distribution.parameters)
-    result[prob_dict.evidence] = probability_of_failure(prob_dict.distribution.model, prob_dict.distribution.performance, UQInputs, prob_dict.distribution.simulation)
+    pf, cov, samples = probability_of_failure(prob_dict.distribution.model, prob_dict.distribution.performance, UQInputs, prob_dict.distribution.simulation)
+    samples[!, :performance] = prob_dict.distribution.performance(samples)
+    results[prob_dict] = Dict("pf" => pf, "cov" => cov, "samples" => samples)
 end
 
 ## TODO try to perform probability_of_failure with jonas code building a specific post-processing function from matrix to 1 single value

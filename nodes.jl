@@ -12,7 +12,7 @@ abstract type AbstractNode end
 """
     Definition of the Assignment constant as Dict{NodeName, Any}
 """
-const global Assignment = Dict{AbstractNode,Any}
+const global Assignment = Dict{<:AbstractNode,Any}
 """
     Definition of the Node_SystemReliabilityPorblem
 """
@@ -131,6 +131,7 @@ mutable struct FunctionalNode <: AbstractNode
         node_prob_dict::Union{Vector{NodeProbabilityDictionaryFunctional},Vector{CPDProbabilityDictionaryFunctional}}
     ) where {T<:AbstractNode}
         discrete_parents = filter(x -> x.type == "discrete", parents)
+        discrete_ancestors = filter(x -> x.type == "discrete", get_ancestors(parents))
         ## Checks on
         #    - parents as nodenames and parents as nodes coherence between CPD and FunctionalNode
         #    - number of parents as (Discrete) nodes - number of parental_ncategories coherence 
@@ -138,15 +139,16 @@ mutable struct FunctionalNode <: AbstractNode
         #    - number of parents as (Discrete) nodes states - values inside CPD's parental_ncategories   
         name.(parents) == cpd.parents ? new(cpd, parents, type, node_prob_dict) : throw(DomainError(cpd.target, "Missmatch in parents assigned in CPD and assigned in Node Struct"))
 
-        length(filter(x -> x.type == "discrete", get_ancestors(parents))) == length(cpd.parental_ncategories) ? new(cpd, parents, type, node_prob_dict) : throw(DomainError(cpd.target, "Number of discrete ancestors != length of CPD.parental_ncategories"))
-        length(filter(x -> x.type == "discrete", get_ancestors(parents))) == length(cpd.prob_dict[1].evidence) ? new(cpd, parents, type, node_prob_dict) : throw(DomainError(cpd.target, "Number of discrete ancestors != length of CPD.prob_dict.evidence"))
-        get_numberofstates.(filter(x -> x.type == "discrete", get_ancestors(parents))) == cpd.parental_ncategories ? new(cpd, parents, type, node_prob_dict) : throw(DomainError(cpd.target, "Missmatch in parents categories and (manually defined) parental_ncategories in $node_name"))
+        length(discrete_ancestors) == length(cpd.parental_ncategories) ? new(cpd, parents, type, node_prob_dict) : throw(DomainError(cpd.target, "Number of discrete ancestors != length of CPD.parental_ncategories"))
+        length(discrete_ancestors) == length(cpd.prob_dict[1].evidence) ? new(cpd, parents, type, node_prob_dict) : throw(DomainError(cpd.target, "Number of discrete ancestors != Number of evidence assigned"))
+        get_numberofstates.(discrete_ancestors) == cpd.parental_ncategories ? new(cpd, parents, type, node_prob_dict) : throw(DomainError(cpd.target, "Missmatch in parents categories and (manually defined) parental_ncategories"))
     end
 
     function FunctionalNode(cpd::FunctionalCPD, parents::Vector{T}, type::String) where {T<:AbstractNode}
         discrete_parents = filter(x -> x.type == "discrete", parents)
+        discrete_ancestors = filter(x -> x.type == "discrete", get_ancestors(parents))
         # Building node_prob_dict for Non-FunctionalNode
-        node_prob_dict = convert_prob_dict_2_node_prob_dict.(cpd.prob_dict, repeat([discrete_parents], length(cpd.prob_dict)), repeat([parents], length(cpd.prob_dict)))
+        node_prob_dict = convert_prob_dict_2_node_prob_dict.(cpd.prob_dict, repeat([discrete_ancestors], length(cpd.prob_dict)), repeat([parents], length(cpd.prob_dict)))
         FunctionalNode(cpd, parents, type, node_prob_dict)
     end
 end
@@ -262,13 +264,17 @@ function get_ancestors(nodes::Vector{T}) where {T<:AbstractNode}
 end
 
 function get_states_mapping_dict(node::T) where {T<:AbstractNode}
-    mapping = Dict{NodeName,Dict{}}()
     if node.type == "discrete"
-        isa(node.cpd, RootCPD) ? mapping[name(node)] = node.cpd.distributions.map.n2d : mapping[name(node)] = node.cpd.distributions[1].map.n2d
-    elseif node.type == "continuous"
-        mapping[name(node)] = Dict(node.cpd.distributions => node.cpd.distributions)
+        mapping = Dict{NodeName,Dict{}}()
+        if node.type == "discrete"
+            isa(node.cpd, RootCPD) ? mapping[name(node)] = node.cpd.distributions.map.n2d : mapping[name(node)] = node.cpd.distributions[1].map.n2d
+        elseif node.type == "continuous"
+            mapping[name(node)] = Dict(node.cpd.distributions => node.cpd.distributions)
+        end
+        return mapping
+    else
+        println("this function is for discrete node only")
     end
-    return mapping
 end
 
 function map_state_to_integer(states::Tuple, nodes::Vector{T}) where {T<:AbstractNode}
@@ -284,11 +290,11 @@ function map_state_to_integer(states::Tuple, nodes::Vector{T}) where {T<:Abstrac
     return Tuple(new_states)
 end
 
-function convert_prob_dict_2_node_prob_dict(prob_dict::Union{NodeProbabilityDictionary,CPDProbabilityDictionaryFunctional}, discrete_parents::Vector{T}, all_parents::Vector{T}) where {T<:AbstractNode}
+function convert_prob_dict_2_node_prob_dict(prob_dict::Union{NodeProbabilityDictionary,CPDProbabilityDictionaryFunctional}, discrete_ancestors::Vector{T}, all_parents::Vector{T}) where {T<:AbstractNode}
     f1 = (nodename, p) -> filter(p -> name(p) == nodename, p)
     evid = Dict()
     for (key, value) in prob_dict.evidence
-        node = f1(key, discrete_parents)[1]
+        node = f1(key, discrete_ancestors)[1]
         evid[node] = value
     end
     if isa(prob_dict, CPDProbabilityDictionary)
@@ -310,6 +316,60 @@ function convert_correlation_2_node_correlation(correlation::CPDCorrelationCopul
     return NodeCorrelationCopula(new_nodes, correlation.copula, correlation.name)
 end
 
+
+"""
+The cpd of a StdNode(Continuous or Discrete) given an assignment => Discrete Parents nodes only!!
+"""
+
+function to_numerical_values(evidence::ProbabilityDictionaryEvidence)
+    convertedevidence = Dict()
+    for (key, val) in evidence
+        if ~isa(val, Number)
+            convertedevidence[key] = get_states_mapping_dict(key)[name(key)][val]
+        else
+            val ∈ collect(values(get_states_mapping_dict(key)[name(key)])) ? convertedevidence[key] = val : throw(DomainError(evidence, "assigned evidence number is not available in the node"))
+        end
+    end
+    return convertedevidence
+end
+
+function evaluate_nodecpd_with_evidence_standard(node_to_eval::StdNode, evidence::ProbabilityDictionaryEvidence)
+    check = x -> x.type == "discrete"
+    if all([check(i) for i in keys(evidence)])
+        # convert symbolic evicences to numerical evidences
+        evidence = to_numerical_values(evidence)
+        f = x -> CPDProbabilityDictionary(to_numerical_values(x.evidence) => x.distribution)
+        converted_node_to_eval_prob_dict = f.(node_to_eval.node_prob_dict)
+        node_parents = node.parents
+        assigned_nodes = collect(keys(evidence))
+        undefined_assignmets = node_parents[node_parents.∉[assigned_nodes]]
+        useless_assignmets = assigned_nodes[assigned_nodes.∉[node_parents]]
+        evidence_to_compare = evidence
+        if ~isempty(useless_assignmets)
+            useless = name.(useless_assignmets)
+            println("Evidences on $useless should be treated with join pdf")
+            for i in useless_assignmets
+                pop!(evidence_to_compare, i)
+            end
+        end
+        if ~isempty(undefined_assignmets)
+            undefined = name.(undefined_assignmets)
+            println("Following cpds are defined for each value of $undefined")
+        end
+        distribution_under_given_evidence = []
+        for element in converted_node_to_eval_prob_dict
+            if all([element.evidence[key] == val for (key, val) in evidence_to_compare])
+                push!(distribution_under_given_evidence, element.distribution)
+            end
+        end
+        return distribution_under_given_evidence
+    else
+        throw(DomainError("evaluate node cpd with evidence do not allow nodes with continuous parents"))
+    end
+end
+
+
+# ##TODO starts from here for building UQinputs when continuous parent of the functional node is not a RootNode!
 
 function build_UQInputs_singlecase(node::FunctionalNode, prob_dict::NodeProbabilityDictionaryFunctional)
     continuous_parents = get_continuous_parents(node)
@@ -335,4 +395,3 @@ function build_UQInputs_singlecase(node::FunctionalNode, prob_dict::NodeProbabil
     end
     return vcat(joint_rvs, non_correlated_continuous_parents)
 end
-

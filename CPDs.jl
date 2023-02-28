@@ -179,7 +179,7 @@ function map_combination2evidence(combination::Tuple, nodes::NodeNames)
 end
 
 name(cpd::CategoricalCPD) = cpd.target
-parents(cpd::CategoricalCPD) = cpd.parentsz
+parents(cpd::CategoricalCPD) = cpd.parents
 
 
 """
