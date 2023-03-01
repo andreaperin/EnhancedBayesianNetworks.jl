@@ -67,7 +67,7 @@ function performance1(df::DataFrame)
 end
 
 simulation1 = MonteCarlo(2)
-srp1 = CPDSystemReliabilityProblem(model1, parameters, performance1, correlation1, simulation1)
+srp1 = CPDSystemReliabilityProblem(model1, parameters, performance1, simulation1)
 scenario1 = CPDProbabilityDictionaryFunctional((Dict(name(earthquake_node) => 1, name(extremerain_node) => 1), srp1))
 
 ## Scenario 2

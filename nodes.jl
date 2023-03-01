@@ -323,11 +323,15 @@ The cpd of a StdNode(Continuous or Discrete) given an assignment => Discrete Par
 
 function to_numerical_values(evidence::ProbabilityDictionaryEvidence)
     convertedevidence = Dict()
-    for (key, val) in evidence
-        if ~isa(val, Number)
-            convertedevidence[key] = get_states_mapping_dict(key)[name(key)][val]
-        else
-            val ∈ collect(values(get_states_mapping_dict(key)[name(key)])) ? convertedevidence[key] = val : throw(DomainError(evidence, "assigned evidence number is not available in the node"))
+    if isa(evidence, Nothing)
+        convertedevidence = evidence
+    else
+        for (key, val) in evidence
+            if ~isa(val, Number)
+                convertedevidence[key] = get_states_mapping_dict(key)[name(key)][val]
+            else
+                val ∈ collect(values(get_states_mapping_dict(key)[name(key)])) ? convertedevidence[key] = val : throw(DomainError(evidence, "assigned evidence number is not available in the node"))
+            end
         end
     end
     return convertedevidence
@@ -340,7 +344,7 @@ function evaluate_nodecpd_with_evidence_standard(node_to_eval::StdNode, evidence
         evidence = to_numerical_values(evidence)
         f = x -> CPDProbabilityDictionary(to_numerical_values(x.evidence) => x.distribution)
         converted_node_to_eval_prob_dict = f.(node_to_eval.node_prob_dict)
-        node_parents = node.parents
+        node_parents = node_to_eval.parents
         assigned_nodes = collect(keys(evidence))
         undefined_assignmets = node_parents[node_parents.∉[assigned_nodes]]
         useless_assignmets = assigned_nodes[assigned_nodes.∉[node_parents]]
@@ -377,21 +381,20 @@ function build_UQInputs_singlecase(node::FunctionalNode, prob_dict::NodeProbabil
     joint_rvs = Vector{UQInput}()
     for copula in prob_dict.distribution.correlation
         continuous_parents = setdiff(continuous_parents, copula.nodes)
-        if all([isa(n.cpd, RootCPD) for n in copula.nodes]) && ~isempty(copula.nodes)
-            rvs = [RandomVariable(x.cpd.distributions, x.cpd.target) for x in copula.nodes]
-            push!(joint_rvs, JointDistribution(rvs, copula.copula))
-        elseif isempty(copula.nodes)
-            continue
-        else
-            throw(DomainError(copula.nodes, "Implement when a nodes for joint distribution is not a root node"))
+        if ~isempty(copula.nodes)
+            rvs = [RandomVariable(evaluate_nodecpd_with_evidence_standard(x, prob_dict.evidence)[1][:all_states], x.cpd.target) for x in copula.nodes]
+            if all(length.([evaluate_nodecpd_with_evidence_standard(x, prob_dict.evidence) for x in copula.nodes]) .== 1)
+                push!(joint_rvs, JointDistribution(rvs, copula.copula))
+            else
+                throw(DomainError(prob_dict.evidence, "Not sufficient evidence condition"))
+            end
         end
     end
-    for node in continuous_parents
-        if isa(node.cpd, RootCPD)
-            push!(non_correlated_continuous_parents, RandomVariable(node.cpd.distributions, name(node)))
-        else
-            throw(DomainError(name(node), "Implement when a nodes for joint distribution is not a root node"))
-        end
+    rvs = [RandomVariable(evaluate_nodecpd_with_evidence_standard(x, prob_dict.evidence)[1][:all_states], x.cpd.target) for x in continuous_parents]
+    if all(length.([evaluate_nodecpd_with_evidence_standard(x, prob_dict.evidence) for x in continuous_parents]) .== 1)
+        append!(non_correlated_continuous_parents, rvs)
+    else
+        throw(DomainError(prob_dict.evidence, "Not sufficient evidence condition"))
     end
     return vcat(joint_rvs, non_correlated_continuous_parents)
 end
