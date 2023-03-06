@@ -29,6 +29,42 @@ output_target = :output
 output_parents = [earthquake_node, disp_longv_node, Kz_node]
 output_parental_ncat = [2, 2]
 
+
+function max_t(df::DataFrame)
+    max_temp = []
+    for i in range(1, length(df.temperature))
+        max_tempi = []
+        for (key, val) in df.temperature[i]
+            push!(max_tempi, maximum(df.temperature[i][key].temperature))
+        end
+        push!(max_temp, maximum(max_tempi))
+    end
+    return max_temp
+end
+function max_c(df::DataFrame)
+    max_conc = []
+    for i in range(1, length(df.concentration))
+        max_conci = []
+        for (key, val) in df.concentration[i]
+            push!(max_conci, maximum(df.concentration[i][key].concentration))
+        end
+        push!(max_conc, maximum(max_conci))
+    end
+    return max_conc
+end
+
+function max_h(df::DataFrame)
+    max_head = []
+    for i in range(1, length(df.head))
+        max_headi = []
+        for (key, val) in df.head[i]
+            push!(max_headi, maximum(df.head[i][key].head))
+        end
+        push!(max_head, maximum(max_headi))
+    end
+    return max_head
+end
+
 ## Scenario 1
 correlated_nodes1 = name.([disp_longv_node, Kz_node])
 copula1 = GaussianCopula([1 0.8; 0.8 1])
@@ -45,29 +81,12 @@ output_file_temp = "smoker_txz.plt"
 output_file_head = "smoker_hxz.plt"
 extractor1 = [_build_temperature_extractor2D(output_file_temp), _build_concentration_extractor2D(output_file_conc), _build_head_extractor2D(output_file_head)]
 model1 = _get_th_model(sourcedir, format_dict, parameters, extractor1, true)
+models1 = [model1, Model(max_t, :T_max), Model(max_c, :c_max), Model(max_h, :head_max)]
 
-function performance1(df::DataFrame)
-    results = []
-    for i in range(1, size(df)[1])
-        max_temp = []
-        for (key, val) in df[i, :temperature]
-            append!(max_temp, maximum(val.temperature))
-        end
-        max_conc = []
-        for (key, val) in df[i, :concentration]
-            append!(max_conc, maximum(val.concentration))
-        end
-        max_head = []
-        for (key, val) in df[i, :head]
-            append!(max_head, maximum(val.head))
-        end
-        push!(results, min(1 - maximum(max_temp), 0.1 - maximum(max_conc), 10 - maximum(max_head)))
-    end
-    return results
-end
+performance1 = df -> 10 .- df.T_max
 
 simulation1 = MonteCarlo(2)
-srp1 = CPDSystemReliabilityProblem(model1, parameters, performance1, simulation1)
+srp1 = CPDSystemReliabilityProblem(models1, parameters, performance1, simulation1)
 scenario1 = CPDProbabilityDictionaryFunctional((Dict(name(earthquake_node) => 1, name(extremerain_node) => 1), srp1))
 
 ## Scenario 2
@@ -86,29 +105,12 @@ output_file_temp = "smoker_txz.plt"
 output_file_head = "smoker_hxz.plt"
 extractor2 = [_build_temperature_extractor2D(output_file_temp), _build_concentration_extractor2D(output_file_conc), _build_head_extractor2D(output_file_head)]
 model2 = _get_th_model(sourcedir, format_dict, parameters, extractor2, true)
+models2 = [model2, Model(max_t, :T_max), Model(max_c, :c_max), Model(max_h, :head_max)]
 
-function performance2(df::DataFrame)
-    results = []
-    for i in range(1, size(df)[1])
-        max_temp = []
-        for (key, val) in df[i, :temperature]
-            append!(max_temp, maximum(val.temperature))
-        end
-        max_conc = []
-        for (key, val) in df[i, :concentration]
-            append!(max_conc, maximum(val.concentration))
-        end
-        max_head = []
-        for (key, val) in df[i, :head]
-            append!(max_head, maximum(val.head))
-        end
-        push!(results, min(1 - maximum(max_temp), 1 - maximum(max_conc), 1 - maximum(max_head)))
-    end
-    return results
-end
+performance2 = df -> 2 .- df.c_max
 
 simulation2 = MonteCarlo(2)
-srp2 = CPDSystemReliabilityProblem(model2, parameters, performance2, correlation2, simulation2)
+srp2 = CPDSystemReliabilityProblem(models2, parameters, performance2, correlation2, simulation2)
 scenario2 = CPDProbabilityDictionaryFunctional((Dict(name(earthquake_node) => 1, name(extremerain_node) => 2), srp2))
 
 ## Scenario 3
@@ -127,29 +129,12 @@ output_file_temp = "smoker_txz.plt"
 output_file_head = "smoker_hxz.plt"
 extractor3 = [_build_temperature_extractor2D(output_file_temp), _build_concentration_extractor2D(output_file_conc), _build_head_extractor2D(output_file_head)]
 model3 = _get_th_model(sourcedir, format_dict, parameters, extractor3, true)
+models3 = [model3, Model(max_t, :T_max), Model(max_c, :c_max), Model(max_h, :head_max)]
 
-function performance3(df::DataFrame)
-    results = []
-    for i in range(1, size(df)[1])
-        max_temp = []
-        for (key, val) in df[i, :temperature]
-            append!(max_temp, maximum(val.temperature))
-        end
-        max_conc = []
-        for (key, val) in df[i, :concentration]
-            append!(max_conc, maximum(val.concentration))
-        end
-        max_head = []
-        for (key, val) in df[i, :head]
-            append!(max_head, maximum(val.head))
-        end
-        push!(results, min(1 - maximum(max_temp), 0.1 - maximum(max_conc), 10 - maximum(max_head)))
-    end
-    return results
-end
+performance3 = df -> 0.9 .- df.c_max
 
 simulation3 = MonteCarlo(2)
-srp3 = CPDSystemReliabilityProblem(model3, parameters, performance3, correlation3, simulation3)
+srp3 = CPDSystemReliabilityProblem(models3, parameters, performance3, correlation3, simulation3)
 scenario3 = CPDProbabilityDictionaryFunctional((Dict(name(earthquake_node) => 2, name(extremerain_node) => 1), srp3))
 
 ## Scenario 4
@@ -168,29 +153,12 @@ output_file_temp = "smoker_txz.plt"
 output_file_head = "smoker_hxz.plt"
 extractor4 = [_build_temperature_extractor2D(output_file_temp), _build_concentration_extractor2D(output_file_conc), _build_head_extractor2D(output_file_head)]
 model4 = _get_th_model(sourcedir, format_dict, parameters, extractor4, true)
+models4 = [model4, Model(max_t, :T_max), Model(max_c, :c_max), Model(max_h, :head_max)]
 
-function performance4(df::DataFrame)
-    results = []
-    for i in range(1, size(df)[1])
-        max_temp = []
-        for (key, val) in df[i, :temperature]
-            append!(max_temp, maximum(val.temperature))
-        end
-        max_conc = []
-        for (key, val) in df[i, :concentration]
-            append!(max_conc, maximum(val.concentration))
-        end
-        max_head = []
-        for (key, val) in df[i, :head]
-            append!(max_head, maximum(val.head))
-        end
-        push!(results, min(1 - maximum(max_temp), 0.1 - maximum(max_conc), 10 - maximum(max_head)))
-    end
-    return results
-end
+performance4 = df -> 0.9 .- df.c_max
 
 simulation4 = MonteCarlo(2)
-srp4 = CPDSystemReliabilityProblem(model4, parameters, performance4, correlation4, simulation4)
+srp4 = CPDSystemReliabilityProblem(models4, parameters, performance4, correlation4, simulation4)
 scenario4 = CPDProbabilityDictionaryFunctional((Dict(name(earthquake_node) => 2, name(extremerain_node) => 2), srp4))
 
 prob_dict_output = [scenario1, scenario2, scenario3, scenario4]
