@@ -13,23 +13,8 @@ abstract type AbstractNode end
     Definition of the Assignment constant as Dict{NodeName, Any}
 """
 const global Assignment = Dict{<:AbstractNode,Any}
-"""
-    Definition of the Node_SystemReliabilityPorblem
-"""
-struct NodeCorrelationCopula
-    nodes::Vector{AbstractNode}
-    copula::Union{GaussianCopula,Nothing}
-    name::NodeName
-end
 
-function NodeCorrelationCopula()
-    nodes = Vector{AbastractNodes}()
-    copula = nothing
-    name = NodeName()
-    new(nodes, copula, name)
-end
-
-struct NodeSystemReliabilityProblem <: SystemReliabilityProblem
+struct SystemReliabilityProblem
     model::Union{Array{<:UQModel},UQModel}
     parameters::Vector{Parameter}
     performance::Function
@@ -57,8 +42,8 @@ struct NodeSystemReliabilityProblem <: SystemReliabilityProblem
 end
 
 
-const global NodeProbabilityDictionary = NamedTuple{(:evidence, :distribution),Tuple{ProbabilityDictionaryEvidence,CPDProbabilityDictionaryDistribution}}
-const global NodeProbabilityDictionaryFunctional = NamedTuple{(:evidence, :distribution),Tuple{ProbabilityDictionaryEvidence,NodeSystemReliabilityProblem}}
+const global ProbabilityDictionary = NamedTuple{(:evidence, :distribution),Tuple}
+const global ProbabilityDictionaryFunctional = NamedTuple{(:evidence, :distribution),Tuple}
 
 """
     Definition of the StdNode Struct
@@ -67,25 +52,14 @@ struct StdNode <: AbstractNode
     cpd::CPD
     parents::Vector{T} where {T<:AbstractNode}
     type::String
-    ## node_prob_dict structure:
-    #   NamedTuple(
-    #       :evidence = Dict(node => number_of_specific_state)
-    #       :distribution =  Distribution
-    #   )
-    node_prob_dict::Vector{NodeProbabilityDictionary}
-    function StdNode(cpd::CPD, parents::Vector{T}, type::String, node_prob_dict::Vector{NodeProbabilityDictionary}) where {T<:AbstractNode}
+    node_prob_dict::Vector{ProbabilityDictionary}
+    function StdNode(cpd::CPD, parents::Vector{T}, type::String, node_prob_dict::Vector{ProbabilityDictionary}) where {T<:AbstractNode}
         if ~isa(cpd, RootCPD)
-            ## Checks:
-            #    - No continuous parents
-            #    - name(parents as nodes) - CPD.parents as nodenames
-            #    - number of parents (as node)- length of CPD's parental_ncategories
-            #    - number of parents (as nodes) states - values of CPD's parental_ncategories
             isempty(filter(x -> x.type == "continuous", parents)) ? new(cpd, parents, type, node_prob_dict) : throw(DomainError(cpd.target, "CategoricalCPD is for node with discrete parents only!"))
             cpd.parents == name.(parents) ? new(cpd, parents, type, node_prob_dict) : throw(DomainError(cpd.target, "Assigned parents are not equals to the one of CPD"))
             length(parents) == length(cpd.parental_ncategories) ? new(cpd, parents, type, node_prob_dict) : throw(DomainError(cpd.target, "parents mismatch in CPD for discrete parents and parental_ncategories"))
             get_numberofstates.(parents) == cpd.parental_ncategories ? new(cpd, parents, type, node_prob_dict) : throw(DomainError(cpd.target, "Missmatch in parents categories and (manually defined) parental_ncategories"))
         else
-            ## No check needed for RootNode
             new(cpd, parents, type, node_prob_dict)
         end
     end
@@ -123,12 +97,12 @@ mutable struct FunctionalNode <: AbstractNode
     cpd::FunctionalCPD
     parents::Vector{T} where {T<:AbstractNode}
     type::String
-    node_prob_dict::Union{Vector{NodeProbabilityDictionaryFunctional},Vector{CPDProbabilityDictionaryFunctional}}
+    node_prob_dict::Union{Vector{ProbabilityDictionaryFunctional},Vector{CPDProbabilityDictionaryFunctional}}
     function FunctionalNode(
         cpd::FunctionalCPD,
         parents::Vector{T},
         type::String,
-        node_prob_dict::Union{Vector{NodeProbabilityDictionaryFunctional},Vector{CPDProbabilityDictionaryFunctional}}
+        node_prob_dict::Union{Vector{ProbabilityDictionaryFunctional},Vector{CPDProbabilityDictionaryFunctional}}
     ) where {T<:AbstractNode}
         discrete_parents = filter(x -> x.type == "discrete", parents)
         discrete_ancestors = filter(x -> x.type == "discrete", get_ancestors(parents))
@@ -290,7 +264,7 @@ function map_state_to_integer(states::Tuple, nodes::Vector{T}) where {T<:Abstrac
     return Tuple(new_states)
 end
 
-function convert_prob_dict_2_node_prob_dict(prob_dict::Union{NodeProbabilityDictionary,CPDProbabilityDictionaryFunctional}, discrete_ancestors::Vector{T}, all_parents::Vector{T}) where {T<:AbstractNode}
+function convert_prob_dict_2_node_prob_dict(prob_dict::Union{ProbabilityDictionary,CPDProbabilityDictionaryFunctional}, discrete_ancestors::Vector{T}, all_parents::Vector{T}) where {T<:AbstractNode}
     f1 = (nodename, p) -> filter(p -> name(p) == nodename, p)
     evid = Dict()
     for (key, value) in prob_dict.evidence
@@ -298,11 +272,11 @@ function convert_prob_dict_2_node_prob_dict(prob_dict::Union{NodeProbabilityDict
         evid[node] = value
     end
     if isa(prob_dict, CPDProbabilityDictionary)
-        node_prob_dict = NodeProbabilityDictionary(tuple(evid, prob_dict.distribution))
+        node_prob_dict = ProbabilityDictionary(tuple(evid, prob_dict.distribution))
     else
         new_node_correlationcopula = convert_correlation_2_node_correlation.(prob_dict.distribution.correlation, repeat([all_parents], length(prob_dict.distribution.correlation)))
         new_node_srp = NodeSystemReliabilityProblem(prob_dict.distribution.model, prob_dict.distribution.parameters, prob_dict.distribution.performance, new_node_correlationcopula, prob_dict.distribution.simulation,)
-        node_prob_dict = NodeProbabilityDictionaryFunctional(tuple(evid, new_node_srp))
+        node_prob_dict = ProbabilityDictionaryFunctional(tuple(evid, new_node_srp))
     end
     return node_prob_dict
 end
@@ -375,7 +349,7 @@ end
 
 # ##TODO starts from here for building UQinputs when continuous parent of the functional node is not a RootNode!
 
-function build_UQInputs_singlecase(node::FunctionalNode, prob_dict::NodeProbabilityDictionaryFunctional)
+function build_UQInputs_singlecase(node::FunctionalNode, prob_dict::ProbabilityDictionaryFunctional)
     continuous_parents = get_continuous_parents(node)
     non_correlated_continuous_parents = Vector{UQInput}()
     joint_rvs = Vector{UQInput}()

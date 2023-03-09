@@ -8,7 +8,7 @@ using UncertaintyQuantification
 const global NodeName = Symbol
 const global NodeNames = AbstractVector{NodeName}
 
-abstract type SystemReliabilityProblem end
+# abstract type SystemReliabilityProblem end
 """
     Definition of the CPD AbstractType
 """
@@ -17,52 +17,18 @@ abstract type CPD end
 """
     Definition of the SRP Struct
 """
-struct CPDCorrelationCopula
-    nodes::Vector{NodeName}
+struct CorrelationCopula
+    nodes::Any
     copula::Union{GaussianCopula,Nothing}
     name::NodeName
 end
 
-function CPDCorrelationCopula()
+function CorrelationCopula()
     nodes = Vector{NodeName}()
     copula = nothing
     name = NodeName()
-    return CPDCorrelationCopula(nodes, copula, name)
+    CorrelationCopula(nodes, copula, name)
 end
-
-struct CPDSystemReliabilityProblem <: SystemReliabilityProblem
-    model::Union{Array{<:UQModel},UQModel}
-    parameters::Vector{Parameter}
-    performance::Function
-    correlation::Vector{CPDCorrelationCopula}
-    simulation::Any
-    function CPDSystemReliabilityProblem(
-        model::Union{Array{<:UQModel},UQModel},
-        parameters::Vector{Parameter},
-        performance::Function,
-        correlation::Vector{CPDCorrelationCopula},
-        simulation::Any
-    )
-        new(model, parameters, performance, correlation, simulation)
-    end
-
-    function CPDSystemReliabilityProblem(
-        model::Union{Array{<:UQModel},UQModel},
-        parameters::Vector{Parameter},
-        performance::Function,
-        simulation::Any
-    )
-        correlation = [CPDCorrelationCopula()]
-        new(model, parameters, performance, correlation, simulation)
-    end
-end
-
-const global ProbabilityDictionaryEvidence = Union{Dict,Nothing}
-const global CPDProbabilityDictionaryDistribution = Dict{Symbol,Union{Float64,Distribution}}
-
-const global CPDProbabilityDictionary = NamedTuple{(:evidence, :distribution),Tuple{ProbabilityDictionaryEvidence,CPDProbabilityDictionaryDistribution}}
-const global CPDProbabilityDictionaryFunctional = NamedTuple{(:evidence, :distribution),Tuple{ProbabilityDictionaryEvidence,CPDSystemReliabilityProblem}}
-
 
 """
     An Object for mapping each distribution to a MapableTypes::Union{AbstractString, Symbol}
@@ -76,26 +42,18 @@ end
 struct NamedCategorical{N<:MapableTypes} <: DiscreteUnivariateDistribution
     items::AbstractVector{N}
     probs::Vector{Float64}
-    cat::Categorical
+    # cat::Categorical
     map::CategoricalDiscretizer{N,Int}
 end
 
-Distributions.ncategories(s::MappedAliasTable) = Distributions.ncategories(s.alias)
-
-function NamedCategorical(items::AbstractVector{N}, probs::Vector{Float64}) where {N<:MapableTypes}
-    ## TODO Add this to logs
-    if sum(probs) != 1
-        println("$items => Not normalized probabilities => automatically normalized")
-    end
-    cat = Categorical(probs ./ sum(probs))
-    map = CategoricalDiscretizer(items)
-    NamedCategorical{N}(items, probs, cat, map)
+function NamedCategorical(item::AbstractVector{N}, probs::Vector{Float64}) where {N<:MapableTypes}
+    map = CategoricalDiscretizer(item)
+    sum(probs) == 1 ? probs = probs : probs = probs ./ sum(probs)
+    NamedCategorical(item, probs, map)
 end
 
+Distributions.ncategories(s::MappedAliasTable) = Distributions.ncategories(s.alias)
 Distributions.ncategories(d::NamedCategorical) = Distributions.ncategories(d.cat)
-Distributions.probs(d::NamedCategorical) = Distributions.probs(d.cat)
-Distributions.params(d::NamedCategorical) = Distributions.params(d.cat)
-
 
 """
 A CPD for which the distribution never changes.
@@ -104,20 +62,17 @@ A CPD for which the distribution never changes.
     distributions: a Distributions.jl distribution
 While a RootCPD can have parents, their assignments will not affect the distribution.
 """
-mutable struct RootCPD <: CPD
+struct RootCPD <: CPD
     target::NodeName
     parents::NodeNames
-    distributions::Distribution
-    prob_dict::Vector{CPDProbabilityDictionary}
-end
-## Creating prob_dict for RootCPD
-function RootCPD(target::NodeName, distributions::Distribution)
-    if isa(distributions, NamedCategorical)
-        prob_dict = [CPDProbabilityDictionary((nothing, Dict(distributions.items .=> distributions.probs / sum(distributions.probs))))]
-    else
-        prob_dict = [CPDProbabilityDictionary((nothing, Dict(:all_states => distributions)))]
+    distributions::Union{NamedCategorical,ContinuousUnivariateDistribution}
+    function RootCPD(target::NodeName, parents::NodeNames, distributions::Union{NamedCategorical,ContinuousUnivariateDistribution})
+        isempty(parents) ? new(target, parents, distributions) : throw(DomainError(target, "Is a RootNode with non empty parents argument"))
     end
-    RootCPD(target, NodeName[], distributions, prob_dict)
+end
+
+function RootCPD(target::NodeName, distributions::Union{NamedCategorical,ContinuousUnivariateDistribution})
+    RootCPD(target, NodeName[], distributions)
 end
 
 name(cpd::RootCPD) = cpd.target
@@ -140,16 +95,13 @@ struct CategoricalCPD <: CPD
     parents::NodeNames
     parental_ncategories::Vector{Int}
     distributions::Vector{Distribution}
-    prob_dict::Vector{CPDProbabilityDictionary}
-    ## Checks:
-    #    - number of parental_ncategories - number of parents coherence
-    #    - number of distributions - number of parents_ncategories coherence
-    #    - no check on parental_ncategories - prob_dict cause prob dict is automatically generated
-    function CategoricalCPD(target::NodeName, parents::NodeNames, parental_ncategories::Vector{Int}, distributions::Vector{D}, prob_dict) where {D<:Distribution}
-        length(parental_ncategories) == length(parents) ? new(target, parents, parental_ncategories, distributions, prob_dict) : throw(DomainError(target, "length of parental_ncategories is different from the number of defined parents"))
-        prod(parental_ncategories) == length(distributions) ? new(target, parents, parental_ncategories, distributions, prob_dict) : throw(DomainError(target, "number of parental_ncategories is different from the number of  defined functions"))
+    function CategoricalCPD(target::NodeName, parents::NodeNames, parental_ncategories::Vector{Int}, distributions::Vector{D}) where {D<:Distribution}
+        ##TODO this check should be done in node
+        # length(parental_ncategories) == length(parents) ? new(target, parents, parental_ncategories, distributions) : throw(DomainError(target, "length of parental_ncategories is different from the number of defined parents"))
+        prod(parental_ncategories) == length(distributions) ? new(target, parents, parental_ncategories, distributions) : throw(DomainError(target, "number of parental_ncategories is different from the number of  defined functions"))
     end
 
+    ##TODO ALL of this should be done in node
     ## Creating prob_dict for CategoricalCPD
     function CategoricalCPD(target::NodeName, parents::NodeNames, parental_ncategories::Vector{Int}, distributions::Vector{D}) where {D<:Distribution}
         f = x -> collect(1:1:x)
@@ -182,21 +134,31 @@ name(cpd::CategoricalCPD) = cpd.target
 parents(cpd::CategoricalCPD) = cpd.parents
 
 
-"""
-A Parent Functional CPD to be used when there at least a continuos parents and/or distribution are not known.
-"""
-
-struct FunctionalCPD <: CPD
+struct new_functional_cpd <: CPD
     target::NodeName
     parents::NodeNames
-    parental_ncategories::Vector{Int}
-    prob_dict::Vector{CPDProbabilityDictionaryFunctional}
-    ## Check:
-    #    - parental_ncategories - prob_dict coherence
-    function FunctionalCPD(target::NodeName, parents::NodeNames, parental_ncategories::Vector{Int64}, prob_dict::Vector{CPDProbabilityDictionaryFunctional})
-        prod(parental_ncategories) == length(prob_dict) ? new(target, parents, parental_ncategories, prob_dict) : throw(DomainError(target, "number of parental_ncategories is different from the number of  defined functions"))
-    end
+    parental_ncategorie::Vector{Int}
+    distributions::Vector
+    correlation::CorrelationCopula
 end
 
-name(cpd::FunctionalCPD) = cpd.target
-parents(cpd::FunctionalCPD) = cpd.parents
+
+
+# """
+# A Parent Functional CPD to be used when there at least a continuos parents and/or distribution are not known.
+# """
+
+# struct FunctionalCPD <: CPD
+#     target::NodeName
+#     parents::NodeNames
+#     parental_ncategories::Vector{Int}
+#     prob_dict::Vector{CPDProbabilityDictionaryFunctional}
+#     ## Check:
+#     #    - parental_ncategories - prob_dict coherence
+#     function FunctionalCPD(target::NodeName, parents::NodeNames, parental_ncategories::Vector{Int64}, prob_dict::Vector{CPDProbabilityDictionaryFunctional})
+#         prod(parental_ncategories) == length(prob_dict) ? new(target, parents, parental_ncategories, prob_dict) : throw(DomainError(target, "number of parental_ncategories is different from the number of  defined functions"))
+#     end
+# end
+
+# name(cpd::FunctionalCPD) = cpd.target
+# parents(cpd::FunctionalCPD) = cpd.parents
