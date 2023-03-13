@@ -1,13 +1,13 @@
 using DataFrames
-include("../bn.jl")
+include("../src/nodes.jl")
 
 emission = NamedCategorical([:nothappen, :happen], [0.0, 1.0])
-CPD_emission = RootCPD(:emission, emission)
-node_emission = StdNode(CPD_emission)
+CPD_emission = RootCPD(:emission, [emission])
+node_emission = RootNode(CPD_emission)
 
 timescenario = NamedCategorical([:first, :second, :third], [1.0, 0.0, 0.0])
-CPD_timescenario = RootCPD(:timescenario, timescenario)
-node_timescenario = StdNode(CPD_timescenario)
+CPD_timescenario = RootCPD(:timescenario, [timescenario])
+node_timescenario = RootNode(CPD_timescenario)
 
 extremeprecipitation1 = NamedCategorical([:lev1, :lev2, :lev3, :lev4, :lev5], [0.39, 0.37, 0.15, 0.07, 0.01])
 extremeprecipitation2 = NamedCategorical([:lev1, :lev2, :lev3, :lev4, :lev5], [0.39, 0.52, 0.0, 0.07, 0.01])
@@ -54,6 +54,13 @@ CPD_debrisflow = CategoricalCPD(
         debrisflow5]
 )
 node_debrisflow = StdNode(CPD_debrisflow, parents_debrisflow)
+
+
+
+
+
+## TODO check from here on
+
 
 windvelocity = NamedCategorical([:slow, :fast], [0.8, 0.2])
 CPD_windvelocity = RootCPD(:windvelocity, windvelocity)

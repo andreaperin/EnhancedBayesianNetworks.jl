@@ -1,31 +1,31 @@
 using UncertaintyQuantification
-include("../cpds.jl")
+include("../src/nodes.jl")
 
 emission = NamedCategorical([:nothappen, :happen], [0.5, 0.7])
-CPD_emission = RootCPD(:emission, emission)
-emission_node = StdNode(CPD_emission)
+CPD_emission = RootCPD(:emission, [emission])
+emission_node = Node(CPD_emission)
 
 h_distribution = Normal(0.24, 0.01)
-CPD_h = RootCPD(:h, h_distribution)
-h_node = StdNode(CPD_h)
+CPD_h = RootCPD(:h, [h_distribution])
+h_node = Node(CPD_h)
 
 μ = log(10e9^2 / sqrt(1.6e9^2 + 10e9^2))
 σ = sqrt(log(1.6e9^2 / 10e9^2 + 1))
 E_distribution = LogNormal(μ, σ)
-CPD_E = RootCPD(:E, E_distribution)
-E_node = StdNode(CPD_E)
+CPD_E = RootCPD(:E, [E_distribution])
+E_node = Node(CPD_E)
 
 μ = log(5000^2 / sqrt(400^2 + 5000^2))
 σ = sqrt(log(400^2 / 5000^2 + 1))
 P_distribution = LogNormal(μ, σ)
-CPD_P = RootCPD(:P, P_distribution)
-P_node = StdNode(CPD_P)
+CPD_P = RootCPD(:P, [P_distribution])
+P_node = Node(CPD_P)
 
 μ = log(600^2 / sqrt(140^2 + 600^2))
 σ = sqrt(log(140^2 / 600^2 + 1))
 ρ_distribution = LogNormal(μ, σ)
-CPD_ρ = RootCPD(:ρ, ρ_distribution)
-ρ_node = StdNode(CPD_ρ)
+CPD_ρ = RootCPD(:ρ, [ρ_distribution])
+ρ_node = Node(CPD_ρ)
 ##TODO Continue from here implementing dependency between rvs as an argument of SRP states_dictionary
 
 ## Output Node FunctionalCPD
