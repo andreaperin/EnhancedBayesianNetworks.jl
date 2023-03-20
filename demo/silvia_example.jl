@@ -55,27 +55,9 @@ CPD_debrisflow = CategoricalCPD(
 )
 node_debrisflow = StdNode(CPD_debrisflow, parents_debrisflow)
 
-
-
-
-
-## TODO check from here on
-
-
 windvelocity = NamedCategorical([:slow, :fast], [0.8, 0.2])
-CPD_windvelocity = RootCPD(:windvelocity, windvelocity)
-node_windvelocity = StdNode(CPD_windvelocity)
-# dict_windvelocity = Dict{Symbol,Dict{String,Vector}}(
-#     :slow => Dict(
-#         "UQInputs" => [Parameter(1, :windvelocity)],
-#         "FormatSpec" => [Dict(:windvelocity => FormatSpec(".8e"))]
-#     ),
-#     :fast => Dict(
-#         "UQInputs" => [Parameter(2, :windvelocity)],
-#         "FormatSpec" => [Dict(:windvelocity => FormatSpec(".8e"))]
-#     )
-# )
-
+CPD_windvelocity = RootCPD(:windvelocity, [windvelocity])
+node_windvelocity = RootNode(CPD_windvelocity)
 
 waveraising1 = Rayleigh(0.387)
 waveraising2 = Rayleigh(2.068)
@@ -83,17 +65,23 @@ parents_waveraising = [node_windvelocity]
 CPD_waveraising = CategoricalCPD(:waveraising, name.(parents_waveraising), [2], [waveraising1, waveraising2])
 node_waveraising = StdNode(CPD_waveraising, parents_waveraising)
 
-child1 = Model(df -> df.waverising .+ df.windvelocity, :child1)
-child2 = Model(df -> df.waverising .- df.windvelocity, :child2)
-child_model = [child1, child2]
-## TODO Child new type of node that accept functional relationship as CPD (Struct model node, add check on parents categories as written in notes)
+
+## TODO check from here on
 
 
-nodes = [node_windvelocity, node_waveraising, node_emission, node_debrisflow, node_extremeprecipitation, node_timescenario, node_waterlevel]
-dag = _build_DiAGraph_from_nodes(nodes)
-ordered_cpds, ordered_nodes, ordered_name_to_index, ordered_dag = _topological_ordered_dag(nodes)
-bn = StdBayesNet(ordered_nodes)
-show(bn)
+
+
+# child1 = Model(df -> df.waverising .+ df.windvelocity, :child1)
+# child2 = Model(df -> df.waverising .- df.windvelocity, :child2)
+# child_model = [child1, child2]
+# ## TODO Child new type of node that accept functional relationship as CPD (Struct model node, add check on parents categories as written in notes)
+
+
+# nodes = [node_windvelocity, node_waveraising, node_emission, node_debrisflow, node_extremeprecipitation, node_timescenario, node_waterlevel]
+# dag = _build_DiAGraph_from_nodes(nodes)
+# ordered_cpds, ordered_nodes, ordered_name_to_index, ordered_dag = _topological_ordered_dag(nodes)
+# bn = StdBayesNet(ordered_nodes)
+# show(bn)
 
 
 
