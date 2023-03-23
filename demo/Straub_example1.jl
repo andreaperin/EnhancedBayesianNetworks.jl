@@ -63,29 +63,35 @@ function cpd_r_given_parents(r₁, r₂, r₃, r₄, r₅, h, v, failure1)
 end
 
 parental_ncategoriesₑ = Vector{Int}()
-parentsₑ = [V_node, H_node, R₁_node, R₂_node, R₃_node, R₄_node, R₅_node]
+parentsₑ = [V_node, H_node, R₁_node, R₂_node]
 failuremodel = Model(failure_1, :f1)
 outputmodel = Model(cpd_r_given_parents, :E)
 modelₑ = [failuremodel, outputmodel]
 E_CPD = FunctionalCPD(:E, name.(parentsₑ), parental_ncategoriesₑ, [modelₑ])
 E_node = FunctionalNode(E_CPD, parentsₑ, "discrete")
 
-ebn = EnhancedBayesNet([Uᵣ_node, V_node, H_node, R₁_node, R₂_node, R₃_node, R₄_node, R₅_node, E_node])
-show(ebn)
-
-
-groups = markov_envelopes(ebn)
-
-pr = :Uᵣ
+ebn = EnhancedBayesNet([Uᵣ_node, V_node, H_node, R₁_node, R₂_node, E_node])
+# groups = markov_envelopes(ebn)
+node = :Uᵣ
 ch = :R₄
 ebn1 = ebn
 
-new_dag = invert_nodes_link(ebn, pr, ch)
+# node_index = ebn.name_to_index[node]
+# child_nodes = children(ebn, node)
+# new_dag = ebn.dag
+# for child in child_nodes
+#     new_dag = _invert_nodes_link(new_dag, ebn.name_to_index[node], ebn.name_to_index[child])
+# end
+# dag = copy(new_dag)
+# barren_index = 3
+# new_dag = invert_nodes_link(ebn, pr, ch)
+
+new_dag, new_names = _eliminate_node(ebn, node)
 
 graphplot(
     new_dag,
     method=:tree,
-    names=name.(ebn.nodes),
+    names=new_names,
     fontsize=9,
     nodeshape=:ellipse,
     markercolor=map(x -> x.type == "discrete" ? "lightgreen" : "orange", ebn.nodes),
