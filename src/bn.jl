@@ -372,7 +372,7 @@ function _remove_barren_nodes(dag::SimpleDiGraph, barren_index::Int64)
     for i in dag.fadjlist
         push!(new_fadjlist, i .- Int.(i .> barren_index))
     end
-    return SimpleDiGraph(5, new_fadjlist, new_badjlist)
+    return SimpleDiGraph(dag.nv - 1, new_fadjlist, new_badjlist)
 end
 
 function _eliminate_node(ebn::M, node::NodeName) where {M<:AbstractBayesNet}
