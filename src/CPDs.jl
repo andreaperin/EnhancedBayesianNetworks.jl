@@ -5,8 +5,7 @@ using UncertaintyQuantification
 
 const global NodeName = Symbol
 const global NodeNames = AbstractVector{NodeName}
-const global FunctionalModelCPD = Vector{<:UQModel}
-
+const global FunctionalModelCPD = Vector{M} where {M<:UQModel}
 abstract type CPD end
 
 """
@@ -74,24 +73,24 @@ X,Y,Z
 
 Discrete Parents ONLY
 """
-struct CategoricalCPD <: CPD
+struct StdCPD <: CPD
     target::NodeName
     parents::NodeNames
     parental_ncategories::Vector{Int}
     distributions::Vector{<:Distribution}
 
-    function CategoricalCPD(target::NodeName, parents::NodeNames, parental_ncategories::Vector{Int}, distribution::Vector{<:Distribution})
+    function StdCPD(target::NodeName, parents::NodeNames, parental_ncategories::Vector{Int}, distribution::Vector{<:Distribution})
         length(parents) == length(parental_ncategories) ? new(target, parents, parental_ncategories, distribution) : throw(DomainError(target, "parents-parental_ncategories length missmatch"))
         prod(parental_ncategories) == length(distribution) ? new(target, parents, parental_ncategories, distribution) : throw(DomainError(target, "parental_ncategories-distributions length missmatch"))
     end
 end
 
-name(cpd::CategoricalCPD) = cpd.target
-parents(cpd::CategoricalCPD) = cpd.parents
-nparams(cpd::CategoricalCPD) = sum(d -> paramcount(params(d)), cpd.distributions)
+name(cpd::StdCPD) = cpd.target
+parents(cpd::StdCPD) = cpd.parents
+nparams(cpd::StdCPD) = sum(d -> paramcount(params(d)), cpd.distributions)
 
 
-mutable struct FunctionalCPD <: CPD
+struct FunctionalCPD <: CPD
     target::NodeName
     parents::NodeNames
     parental_ncategories::Vector{Int}
@@ -108,7 +107,7 @@ parents(cpd::FunctionalCPD) = cpd.parents
 nparams(cpd::FunctionalCPD) = sum(d -> paramcount(params(d)), cpd.distributions)
 
 
-function _get_type_of_cpd(cpd::Union{RootCPD,CategoricalCPD})
+function _get_type_of_cpd(cpd::Union{RootCPD,StdCPD})
     isa(cpd.distributions, Vector{<:ContinuousUnivariateDistribution}) ? type = "continuous" : type = "discrete"
     return type
 end
