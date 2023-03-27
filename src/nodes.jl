@@ -13,13 +13,21 @@ mutable struct EvidenceTable
     evidence::Assignment
     distribution::Union{<:Distribution,FunctionalModelCPD}
 end
+mutable struct ModelParametersTable
+    evidence::Assignment
+    parameters::Dict{String,Vector{Parameter}}
+end
 
 function _build_evidencetable_from_cpd(cpd::RootCPD)
     [EvidenceTable(nothing, cpd.distributions[1])]
 end
 
+function _build_modelparametertable(cpd::Union{RootCPD,StdCPD}, parameters_vector::Vector{Dict{String,Vector{Parameter}}})
+    map(x -> ModelParametersTable([Dict(cpd.target => findall(y -> y == x, parameters_vector)[1])], x), parameters_vector)
+end
+
 """
-    Definition of Node Struct for RootCPD and CategoricalCPD (No continuous parents)
+    Definition of Node Struct for RootCPD and StdCPD (No continuous parents)
 """
 
 struct RootNode <: AbstractNode
@@ -27,9 +35,17 @@ struct RootNode <: AbstractNode
     parents::Vector{<:AbstractNode}
     type::String
     evidence_table::Vector{EvidenceTable}
+    model_paramenters::Union{Vector{ModelParametersTable},Nothing}
 
-    function RootNode(cpd::RootCPD, parents::Vector{<:AbstractNode}, type::String, evidence_table::Vector{EvidenceTable})
-        isempty(parents) ? new(cpd, parents, type, evidence_table) : throw(DomainError(cpd.target, "RootNode have no parents"))
+    function RootNode(
+        cpd::RootCPD,
+        parents::Vector{<:AbstractNode},
+        type::String,
+        evidence_table::Vector{EvidenceTable},
+        model_paramenters::Union{Vector{ModelParametersTable},Nothing}
+    )
+        isempty(parents) ? new(cpd, parents, type, evidence_table, model_paramenters) : throw(DomainError(cpd.target, "RootNode have no parents"))
+
     end
 end
 
@@ -37,11 +53,21 @@ function RootNode(cpd::RootCPD)
     parents = Vector{AbstractNode}()
     type = _get_type_of_cpd(cpd)
     evidence_table = _build_evidencetable_from_cpd(cpd)
-    RootNode(cpd, parents, type, evidence_table)
+    RootNode(cpd, parents, type, evidence_table, nothing)
+end
+
+function RootNode(cpd::RootCPD, parameters_vector::Vector{Dict{String,Vector{Parameter}}})
+    parents = Vector{AbstractNode}()
+    type = _get_type_of_cpd(cpd)
+    evidence_table = _build_evidencetable_from_cpd(cpd)
+    model_paramenters = _build_modelparametertable(cpd, parameters_vector)
+    length(parameters_vector) != length(cpd.distributions[1].items) ? throw(DomainError(cpd.target, "Missmatch between node states and number of defined parameters vectors")) : RootNode(cpd, parents, type, evidence_table, model_paramenters)
 end
 
 
-function _build_evidencetable_from_cpd(cpd::CategoricalCPD, parents::Vector{<:AbstractNode})
+#####
+
+function _build_evidencetable_from_cpd(cpd::StdCPD, parents::Vector{<:AbstractNode})
     f_e = (tup, pare) -> [Dict(name(pare[i]) => tup[i]) for i in range(1, length(tup))]
     f_t = (evid, dist) -> EvidenceTable(evid, dist)
     combinations = _get_nodes_combinations(parents)
@@ -50,25 +76,37 @@ function _build_evidencetable_from_cpd(cpd::CategoricalCPD, parents::Vector{<:Ab
     return evidence_table
 end
 
-
 struct StdNode <: AbstractNode
-    cpd::CategoricalCPD
+    cpd::StdCPD
     parents::Vector{<:AbstractNode}
     type::String
     evidence_table::Vector{EvidenceTable}
+    model_paramenters::Union{Vector{ModelParametersTable},Nothing}
 
-    function StdNode(cpd::CategoricalCPD, parents::Vector{<:AbstractNode}, type::String, evidence_table::Vector{EvidenceTable})
-        ~isempty(filter(x -> x.type == "continuous", parents)) ? throw(DomainError(cpd.target, "CategoricalCPD is for discrete parents only")) : nothing
-        _get_number_of_discretestates.(parents) == cpd.parental_ncategories ? new(cpd, parents, type, evidence_table) : throw(DomainError(cpd.target, "parental_ncategories - parents discrete states missmatch"))
+
+    function StdNode(
+        cpd::StdCPD,
+        parents::Vector{<:AbstractNode},
+        type::String, evidence_table::Vector{EvidenceTable},
+        model_paramenters::Union{Vector{ModelParametersTable},Nothing}
+    )
+        ~isempty(filter(x -> x.type == "continuous", parents)) ? throw(DomainError(cpd.target, "StdCPD is for discrete parents only")) : nothing
+        _get_number_of_discretestates.(parents) == cpd.parental_ncategories ? new(cpd, parents, type, evidence_table, model_paramenters) : throw(DomainError(cpd.target, "parental_ncategories - parents discrete states missmatch"))
     end
 end
 
-function StdNode(cpd::CategoricalCPD, parents::Vector{<:AbstractNode})
+function StdNode(cpd::StdCPD, parents::Vector{<:AbstractNode})
     type = _get_type_of_cpd(cpd)
     evidence_table = _build_evidencetable_from_cpd(cpd, parents)
-    StdNode(cpd, parents, type, evidence_table)
+    StdNode(cpd, parents, type, evidence_table, nothing)
 end
 
+function StdNode(cpd::StdCPD, parents::Vector{<:AbstractNode}, parameters_vector::Vector{Dict{String,Vector{Parameter}}})
+    type = _get_type_of_cpd(cpd)
+    evidence_table = _build_evidencetable_from_cpd(cpd, parents)
+    model_parameters = _build_modelparametertable(cpd, parameters_vector)
+    StdNode(cpd, parents, type, evidence_table, model_parameters)
+end
 
 function _build_evidencetable_from_cpd(cpd::FunctionalCPD, parents::Vector{<:AbstractNode})
     f_e = (tup, pare) -> [Dict(name(pare[i]) => tup[i]) for i in range(1, length(tup))]
@@ -91,6 +129,22 @@ end
 function FunctionalNode(cpd::FunctionalCPD, parents::Vector{<:AbstractNode}, type::String)
     evidence_table = _build_evidencetable_from_cpd(cpd, parents)
     FunctionalNode(cpd, parents, type, evidence_table)
+end
+
+
+struct SystemReliabilityProblem
+    model::Union{Array{<:UQModel},UQModel}
+    parameters::Vector{Parameter}
+    performance::Function
+    simulation::Any
+    function SystemReliabilityProblem(
+        model::Union{Array{<:UQModel},UQModel},
+        parameters::Vector{Parameter},
+        performance::Function,
+        simulation::Any
+    )
+        new(model, parameters, performance, simulation)
+    end
 end
 
 
@@ -143,6 +197,10 @@ function _map_states_to_integer(states::Vector, node::T) where {T<:AbstractNode}
     return new_states
 end
 
+function UQInput(node::RootNode)
+    node.type != "continuous" && throw(DomainError(node.cpd.target, "for discrete node a set of parameter needs to passed"))
+    return map(x -> RandomVariable(x, node.cpd.target), node.cpd.distributions)
+end
 
 
 ## TODO old function Section
@@ -347,28 +405,3 @@ end
 # end
 
 
-# # ##TODO starts from here for building UQinputs when continuous parent of the functional node is not a RootNode!
-
-# function build_UQInputs_singlecase(node::FunctionalNode, prob_dict::ProbabilityDictionaryFunctional)
-#     continuous_parents = get_continuous_parents(node)
-#     non_correlated_continuous_parents = Vector{UQInput}()
-#     joint_rvs = Vector{UQInput}()
-#     for copula in prob_dict.distribution.correlation
-#         continuous_parents = setdiff(continuous_parents, copula.nodes)
-#         if ~isempty(copula.nodes)
-#             rvs = [RandomVariable(evaluate_nodecpd_with_evidence_standard(x, prob_dict.evidence)[1][:all_states], x.cpd.target) for x in copula.nodes]
-#             if all(length.([evaluate_nodecpd_with_evidence_standard(x, prob_dict.evidence) for x in copula.nodes]) .== 1)
-#                 push!(joint_rvs, JointDistribution(rvs, copula.copula))
-#             else
-#                 throw(DomainError(prob_dict.evidence, "Not sufficient evidence condition"))
-#             end
-#         end
-#     end
-#     rvs = [RandomVariable(evaluate_nodecpd_with_evidence_standard(x, prob_dict.evidence)[1][:all_states], x.cpd.target) for x in continuous_parents]
-#     if all(length.([evaluate_nodecpd_with_evidence_standard(x, prob_dict.evidence) for x in continuous_parents]) .== 1)
-#         append!(non_correlated_continuous_parents, rvs)
-#     else
-#         throw(DomainError(prob_dict.evidence, "Not sufficient evidence condition"))
-#     end
-#     return vcat(joint_rvs, non_correlated_continuous_parents)
-# end
