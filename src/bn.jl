@@ -400,7 +400,7 @@ function _get_node_in_rbn(ebn::M) where {M<:AbstractBayesNet}
 end
 
 function _build_node_evidence_after_reduction(ebn::M, rdag::SimpleDiGraph, dag_names::NodeNames, node::FunctionalNode) where {M<:AbstractBayesNet}
-    f_e = (tup, pare) -> [Dict(name(pare[i]) => tup[i]) for i in range(1, length(tup))]
+    f_e = (tup, pare) -> Dict([(name(pare[i]) => tup[i]) for i in range(1, length(tup))])
     rdag_index = findall(x -> x == name(node), dag_names)[1]
     parent_indices = rdag.badjlist[rdag_index]
     parent_nodenames = dag_names[parent_indices]
@@ -410,27 +410,15 @@ function _build_node_evidence_after_reduction(ebn::M, rdag::SimpleDiGraph, dag_n
     map(x -> StructuralReliabilityTable(x, [(Symbol(), StructuralReliabilityProblem())]), evidence)
 end
 
-function _build_srp_rootnode(ebn::M, single_evidence::StructuralReliabilityTable, node::RootNode) where {M<:AbstractBayesNet}
+function _build_srp_single_node(ebn::M, single_evidence::StructuralReliabilityTable, node::Union{StdNode,RootNode}) where {M<:AbstractBayesNet}
     ##TODO check number of Vector{ModelParameters} == number of FunctionalNode children of node
     if node.type == "discrete"
-        single_evidence_parameters = filter(el -> any(∈(el.evidence).(single_evidence.evidence)), node.model_paramenters)[1].parameters
-        return map(s -> (s.node, Dict(s.model .=> s.parameters)), single_evidence_parameters)
+        single_evidence_parameters = _get_model_parameters_given_evidence(single_evidence.evidence, node)
+        return map(s -> (s.node, Dict(s.model .=> s.parameters)), single_evidence_parameters[1].parameters)
     elseif node.type == "continuous"
         functional_children = filter(x -> name(x) ∈ children(ebn, name(node)), ebn.nodes)
-        return map(x -> (x, Dict(:allmodel => [RandomVariable(node.cpd.distributions[1], name(node))])), name.(functional_children))
+        distribution = _get_distriution_table_given_evidence(single_evidence.evidence, node)[1].distribution
+        return map(x -> (x, Dict(:allmodel => [RandomVariable(distribution, name(node))])), name.(functional_children))
     end
 end
 
-_get_distribution_from_evidence(evidence::Any, node::StdNode) = filter(el -> any(∈(el.evidence).(evidence.evidence)), node.evidence_table)
-
-function _build_srp_rootnode(ebn::M, single_evidence::StructuralReliabilityTable, node::StdNode) where {M<:AbstractBayesNet}
-    ##TODO check number of Vector{ModelParameters} == number of FunctionalNode children of node
-    if node.type == "discrete"
-        single_evidence_parameters = filter(el -> any(∈(el.evidence).(single_evidence.evidence)), node.model_paramenters)[1].parameters
-        return map(s -> (s.node, Dict(s.model .=> s.parameters)), single_evidence_parameters)
-    elseif node.type == "continuous"
-        distribution = _get_distribution_from_evidence(single_evidence, node)
-        # functional_children = filter(x -> name(x) ∈ children(ebn, name(node)), ebn.nodes)
-        # return map(x -> (x, Dict(:allmodel => [RandomVariable(node.cpd.distributions[1], name(node))])), name.(functional_children))
-    end
-end

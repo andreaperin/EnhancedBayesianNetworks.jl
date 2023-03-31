@@ -7,8 +7,8 @@ using ProgressMeter
 include("CPDs.jl")
 
 abstract type AbstractNode end
-const global Assignment = Vector{Dict{NodeName,Int}}
-EmptyAssignment() = Vector{Dict{NodeName,Int}}()
+const global Assignment = Dict{NodeName,Int}
+
 mutable struct EvidenceTable
     evidence::Assignment
     distribution::Union{<:Distribution,FunctionalModelCPD}
@@ -28,20 +28,20 @@ mutable struct ModelParametersTable
 end
 
 function _build_evidencetable_from_cpd(cpd::RootCPD)
-    [EvidenceTable(EmptyAssignment(), cpd.distributions[1])]
+    [EvidenceTable(Assignment(), cpd.distributions[1])]
 end
 
-function _build_evidencetable_from_cpd(cpd::StdCPD, parents::Vector{<:AbstractNode})
-    f_e = (tup, pare) -> [Dict(name(pare[i]) => tup[i]) for i in range(1, length(tup))]
+function _build_evidencetable_from_cpd(cpd::StdCPD, pare::Vector{<:AbstractNode})
+    f_e = (tup, pare) -> Dict([(name(pare[i]) => tup[i]) for i in range(1, length(tup))])
     f_t = (evid, dist) -> EvidenceTable(evid, dist)
-    combinations = _get_nodes_combinations(parents)
-    evidences = f_e.(combinations, repeat([parents], length(combinations)))
+    combinations = _get_nodes_combinations(pare)
+    evidences = f_e.(combinations, repeat([pare], length(combinations)))
     evidence_table = f_t.(evidences, cpd.distributions)
     return evidence_table
 end
 
 function _build_evidencetable_from_cpd(cpd::FunctionalCPD, parents::Vector{<:AbstractNode})
-    f_e = (tup, pare) -> [Dict(name(pare[i]) => tup[i]) for i in range(1, length(tup))]
+    f_e = (tup, pare) -> Dict([(name(pare[i]) => tup[i]) for i in range(1, length(tup))])
     f_t = (evid, dist) -> EvidenceTable(evid, dist)
     discrete_parents = filter(x -> x.type == "discrete", parents)
     combinations = _get_nodes_combinations(discrete_parents)
@@ -51,7 +51,7 @@ function _build_evidencetable_from_cpd(cpd::FunctionalCPD, parents::Vector{<:Abs
 end
 
 function _build_modelparametertable(cpd::Union{RootCPD,StdCPD}, parameters_vector::Vector{Vector{ModelParameters}})
-    map(x -> ModelParametersTable([Dict(cpd.target => findall(y -> y == x, parameters_vector)[1])], x), parameters_vector)
+    map(x -> ModelParametersTable(Dict([(cpd.target => findall(y -> y == x, parameters_vector)[1])]), x), parameters_vector)
 end
 """
     Definition of Node Struct for RootCPD and StdCPD (No continuous parents)
@@ -62,19 +62,19 @@ struct RootNode <: AbstractNode
     parents::Vector{<:AbstractNode}
     type::String
     evidence_table::Vector{EvidenceTable}
-    model_paramenters::Vector{ModelParametersTable}
+    model_parameters::Vector{ModelParametersTable}
 
     function RootNode(
         cpd::RootCPD,
         parents::Vector{<:AbstractNode},
         type::String,
         evidence_table::Vector{EvidenceTable},
-        model_paramenters::Vector{ModelParametersTable}
+        model_parameters::Vector{ModelParametersTable}
     )
         if ~isempty(parents)
             throw(DomainError(cpd.target, "RootNode have no parents"))
         else
-            new(cpd, parents, type, evidence_table, model_paramenters)
+            new(cpd, parents, type, evidence_table, model_parameters)
         end
     end
 end
@@ -83,19 +83,19 @@ function RootNode(cpd::RootCPD)
     parents = AbstractNode[]
     type = _get_type_of_cpd(cpd)
     evidence_table = _build_evidencetable_from_cpd(cpd)
-    model_paramenters = [ModelParametersTable(EmptyAssignment(), [ModelParameters()])]
-    RootNode(cpd, parents, type, evidence_table, model_paramenters)
+    model_parameters = [ModelParametersTable(Assignment(), [ModelParameters()])]
+    RootNode(cpd, parents, type, evidence_table, model_parameters)
 end
 
 function RootNode(cpd::RootCPD, parameters_vector::Vector{Vector{ModelParameters}})
     parents = AbstractNode[]
     type = _get_type_of_cpd(cpd)
     evidence_table = _build_evidencetable_from_cpd(cpd)
-    model_paramenters = _build_modelparametertable(cpd, parameters_vector)
+    model_parameters = _build_modelparametertable(cpd, parameters_vector)
     if length(parameters_vector) != length(cpd.distributions[1].items)
         throw(DomainError(cpd.target, "Missmatch between node states and number of defined parameters vectors"))
     else
-        RootNode(cpd, parents, type, evidence_table, model_paramenters)
+        RootNode(cpd, parents, type, evidence_table, model_parameters)
     end
 end
 
@@ -104,14 +104,14 @@ struct StdNode <: AbstractNode
     parents::Vector{<:AbstractNode}
     type::String
     evidence_table::Vector{EvidenceTable}
-    model_paramenters::Vector{ModelParametersTable}
+    model_parameters::Vector{ModelParametersTable}
 
     function StdNode(
         cpd::StdCPD,
         parents::Vector{<:AbstractNode},
         type::String,
         evidence_table::Vector{EvidenceTable},
-        model_paramenters::Vector{ModelParametersTable}
+        model_parameters::Vector{ModelParametersTable}
     )
         if ~isempty(filter(x -> x.type == "continuous", parents))
             throw(DomainError(cpd.target, "StdCPD is for discrete parents only"))
@@ -119,15 +119,15 @@ struct StdNode <: AbstractNode
         if _get_number_of_discretestates.(parents) != cpd.parental_ncategories
             throw(DomainError(cpd.target, "parental_ncategories - parents discrete states missmatch"))
         end
-        new(cpd, parents, type, evidence_table, model_paramenters)
+        new(cpd, parents, type, evidence_table, model_parameters)
     end
 end
 
 function StdNode(cpd::StdCPD, parents::Vector{<:AbstractNode})
     type = _get_type_of_cpd(cpd)
     evidence_table = _build_evidencetable_from_cpd(cpd, parents)
-    model_paramenters = [ModelParametersTable(EmptyAssignment(), [ModelParameters()])]
-    StdNode(cpd, parents, type, evidence_table, model_paramenters)
+    model_parameters = [ModelParametersTable(Assignment(), [ModelParameters()])]
+    StdNode(cpd, parents, type, evidence_table, model_parameters)
 end
 
 function StdNode(cpd::StdCPD, parents::Vector{<:AbstractNode}, parameters_vector::Vector{Vector{ModelParameters}})
@@ -136,8 +136,6 @@ function StdNode(cpd::StdCPD, parents::Vector{<:AbstractNode}, parameters_vector
     model_parameters = _build_modelparametertable(cpd, parameters_vector)
     StdNode(cpd, parents, type, evidence_table, model_parameters)
 end
-
-_get_distribution_from_evidence(evidence::Assignment, node::StdNode) = filter(el -> any(∈(el.evidence).(evidence.evidence)), node.evidence_table)
 
 mutable struct FunctionalNode <: AbstractNode
     cpd::FunctionalCPD
@@ -170,6 +168,30 @@ function _get_states_or_distributions(node::T) where {T<:AbstractNode}
         return node.cpd.distributions
     elseif node.type == "discrete"
         return collect(values(node.cpd.distributions[1].map.d2n))
+    end
+end
+
+function _get_model_parameters_given_evidence(assignment::Assignment, node::T) where {T<:AbstractNode}
+    filter(
+        el -> begin
+            key = collect(keys(el.evidence))[1]
+            return haskey(assignment, key) && el.evidence[key] == assignment[key]
+        end,
+        node.model_parameters
+    )
+end
+
+function _get_distriution_table_given_evidence(assignment::Assignment, node::T) where {T<:AbstractNode}
+    if isa(node, RootNode)
+        return node.evidence_table
+    else
+        return filter(
+            el -> begin
+                key = collect(keys(el.evidence))[1]
+                return haskey(assignment, key) && el.evidence[key] == assignment[key]
+            end,
+            node.evidence_table
+        )
     end
 end
 
