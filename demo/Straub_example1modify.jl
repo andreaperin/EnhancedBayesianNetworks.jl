@@ -34,26 +34,9 @@ V_node = StdNode(V_CPD, [node_timescenario])
 # node_V = StdNode(V_CPD, [node_timescenario], parameters_vector)
 
 
-# ## DiscreteNode 2
-# emission = NamedCategorical([:nothappen, :happen], [0.0, 1.0])
-# CPD_emission = RootCPD(:emission, [emission])
-# emission1 = [
-#     ModelParameters(:E, [:model1], [[Parameter(2, :ro)]]),
-#     ModelParameters(:PO, [:model3, :model4], [[Parameter(5.8, :fu)], [Parameter(8, :t)]])
-# ]
-# emission2 = [
-#     ModelParameters(:E, [:model2], [[Parameter(3, :ro)]]),
-#     ModelParameters(:PO, [:model4, :model6], [[Parameter(2, :ro)], [Parameter(9, :fu)]])
-# ]
-# parameters_vector = [emission1, emission2]
-# node_emission = RootNode(CPD_emission, parameters_vector)
-
-
-
 ## DiscreteNode 2
-emission_ts1 = NamedCategorical([:nothappen, :happen], [0.0, 1.0])
-emission_ts2 = NamedCategorical([:nothappen, :happen], [0.0, 0.1])
-CPD_emission = StdCPD(:emission, [name(node_timescenario)], [2], [emission_ts1, emission_ts2])
+emission = NamedCategorical([:nothappen, :happen], [0.0, 1.0])
+CPD_emission = RootCPD(:emission, [emission])
 emission1 = [
     ModelParameters(:E, [:model1], [[Parameter(2, :ro)]]),
     ModelParameters(:PO, [:model3, :model4], [[Parameter(5.8, :fu)], [Parameter(8, :t)]])
@@ -63,7 +46,24 @@ emission2 = [
     ModelParameters(:PO, [:model4, :model6], [[Parameter(2, :ro)], [Parameter(9, :fu)]])
 ]
 parameters_vector = [emission1, emission2]
-node_emission = StdNode(CPD_emission, [node_timescenario], parameters_vector)
+node_emission = RootNode(CPD_emission, parameters_vector)
+
+
+
+## DiscreteNode 2
+# emission_ts1 = NamedCategorical([:nothappen, :happen], [0.0, 1.0])
+# emission_ts2 = NamedCategorical([:nothappen, :happen], [0.0, 0.1])
+# CPD_emission = StdCPD(:emission, [name(node_timescenario)], [2], [emission_ts1, emission_ts2])
+# emission1 = [
+#     ModelParameters(:E, [:model1], [[Parameter(2, :ro)]]),
+#     ModelParameters(:PO, [:model3, :model4], [[Parameter(5.8, :fu)], [Parameter(8, :t)]])
+# ]
+# emission2 = [
+#     ModelParameters(:E, [:model2], [[Parameter(3, :ro)]]),
+#     ModelParameters(:PO, [:model4, :model6], [[Parameter(2, :ro)], [Parameter(9, :fu)]])
+# ]
+# parameters_vector = [emission1, emission2]
+# node_emission = StdNode(CPD_emission, [node_timescenario], parameters_vector)
 
 ## R Nodes
 ρᵣ = 0.3
@@ -161,5 +161,6 @@ for (i, single_evidence) in enumerate(empty_srp_table_with_evidence)
 end
 
 
-
+evidence = single_evidence
+node = V_node
 
