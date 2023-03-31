@@ -16,7 +16,7 @@ extremeprecipitation4 = NamedCategorical([:lev1, :lev2, :lev3, :lev4, :lev5], [0
 extremeprecipitation5 = NamedCategorical([:lev1, :lev2, :lev3, :lev4, :lev5], [0.39, 0.37, 0.15, 0.07, 0.01])
 extremeprecipitation6 = NamedCategorical([:lev1, :lev2, :lev3, :lev4, :lev5], [0.39, 0.37, 0.15, 0.03, 0.06])
 parents_extremeprecipitation = [node_emission, node_timescenario]
-CPD_extremeprecipitation = CategoricalCPD(
+CPD_extremeprecipitation = StdCPD(
     :extremeprecipitation, [:emission, :timescenario], [2, 3],
     [extremeprecipitation1,
         extremeprecipitation2,
@@ -34,10 +34,21 @@ distribution_waterlevel = [
     NamedCategorical([:low, :high], [0.2, 0.8]),
     NamedCategorical([:low, :high], [0.1, 0.9])
 ]
+
 parents_waterlevel = [node_extremeprecipitation]
 parental_ncategories_waterlevel = [5]
-CPD_waterlevel = CategoricalCPD(:waterlevel, name.(parents_waterlevel), parental_ncategories_waterlevel, distribution_waterlevel)
-node_waterlevel = StdNode(CPD_waterlevel, parents_waterlevel)
+CPD_waterlevel = StdCPD(:waterlevel, name.(parents_waterlevel), parental_ncategories_waterlevel, distribution_waterlevel)
+waterlevel_parameters1 = Dict(
+    "model1" => [Parameter(1, :E)],
+    "model2" => [Parameter(2, :E)]
+)
+waterlavel_parameters2 = Dict(
+    "model1" => [Parameter(5, :E)],
+    "model2" => [Parameter(6, :E)]
+)
+parameters_vector = [waterlevel_parameters1, waterlavel_parameters2]
+
+node_waterlevel = StdNode(CPD_waterlevel, parents_waterlevel, parameters_vector)
 
 debrisflow1 = NamedCategorical([:state1, :state2, :state3, :state4], [0.444, 0.519, 0.027, 0.01])
 debrisflow2 = NamedCategorical([:state1, :state2, :state3, :state4], [0.4, 0.543, 0.04, 0.017])
@@ -45,7 +56,7 @@ debrisflow3 = NamedCategorical([:state1, :state2, :state3, :state4], [0.2, 0.3, 
 debrisflow4 = NamedCategorical([:state1, :state2, :state3, :state4], [0.0, 0.0, 0.852, 0.148])
 debrisflow5 = NamedCategorical([:state1, :state2, :state3, :state4], [0.0, 0.0, 0.0, 1.0])
 parents_debrisflow = [node_extremeprecipitation]
-CPD_debrisflow = CategoricalCPD(
+CPD_debrisflow = StdCPD(
     :debrisflow, name.(parents_debrisflow), [5],
     [debrisflow1,
         debrisflow2,
@@ -62,7 +73,7 @@ node_windvelocity = RootNode(CPD_windvelocity)
 waveraising1 = Rayleigh(0.387)
 waveraising2 = Rayleigh(2.068)
 parents_waveraising = [node_windvelocity]
-CPD_waveraising = CategoricalCPD(:waveraising, name.(parents_waveraising), [2], [waveraising1, waveraising2])
+CPD_waveraising = StdCPD(:waveraising, name.(parents_waveraising), [2], [waveraising1, waveraising2])
 node_waveraising = StdNode(CPD_waveraising, parents_waveraising)
 
 
