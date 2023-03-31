@@ -12,36 +12,12 @@ abstract type ProbabilisticGraphicalModel end
 abstract type AbstractBayesNet <: ProbabilisticGraphicalModel end
 
 
-# """
-# A Standard Bayes Network Struct to be used when there are no Functional Nodes.
-# """
-# mutable struct StdBayesNet <: AbstractBayesNet
-#     dag::DiGraph
-#     nodes::Vector{T} where {T<:AbstractNode}
-#     cpds::Vector{CPD}
-#     name_to_index::Dict{NodeName,Int}
-#     ## Check none of the nodes is FunctionalNode
-#     function StdBayesNet(dag::DiGraph, nodes::Vector{T}, cpds::Vector{CPD}, name_to_index::Dict{NodeName,Int}) where {T<:AbstractNode}
-#         if isa.(nodes, FunctionalNode) == zeros(length(nodes))
-#             new(dag, nodes, cpds, name_to_index)
-#         else
-#             nodes_names = name.(nodes[isa.(nodes, FunctionalNode)])
-#             throw(DomainError(nodes_names, "StdBayesNet cannot handle Functional Nodes => Pass to EnhancedBayesNet"))
-#         end
-#     end
-# end
-
-# function StdBayesNet(nodes::Vector{F}) where {F<:AbstractNode}
-#     dag = _build_DiAGraph(nodes)
-#     ## Check Graph's a-cyclicity
-#     !is_cyclic(dag) || throw(DomainError(dag, "BayesNet graph is non-acyclic!"))
-#     ordered_cpds, ordered_nodes, ordered_name_to_index, ordered_dag = _topological_ordered_dag(nodes)
-#     return StdBayesNet(ordered_dag, ordered_nodes, ordered_cpds, ordered_name_to_index)
-# end
-
-# Base.get(bn::StdBayesNet, i::Int) = bn.cpds[i]
-# Base.get(bn::StdBayesNet, nodename::NodeName) = bn.cpds[bn.name_to_index[nodename]]
-# Base.length(bn::StdBayesNet) = length(bn.cpds)
+const global StructuralReliabilityProblem = Dict{Symbol,Vector}
+# EmptyStructuralReliabilityProblem = (Symbol, Dict(Symbol => []))
+mutable struct StructuralReliabilityTable
+    evidence::Assignment
+    srp::Vector{Tuple{NodeName,StructuralReliabilityProblem}}
+end
 
 """
 An Enhanced Bayes Network Struct to be used when there is at least one Functional Nodes.
@@ -52,7 +28,6 @@ mutable struct EnhancedBayesNet <: AbstractBayesNet
     cpds::Vector{CPD}
     name_to_index::Dict{NodeName,Int}
 end
-
 
 function EnhancedBayesNet(nodes::Vector{F}) where {F<:AbstractNode}
     dag = _build_DiAGraph(nodes)
@@ -329,7 +304,7 @@ end
 ## TODO add function revert single node based on DiGraph (adjacent forward node fadj or badj)
 function _invert_link(dag::SimpleDiGraph, parent_index::Int64, child_index::Int64)
     new_dag = copy(dag)
-    child_index ∉ ebn.dag.fadjlist[parent_index] && throw(DomainError("$parent_index is not a parent of $child_index"))
+    child_index ∉ dag.fadjlist[parent_index] && throw(DomainError("$parent_index is not a parent of $child_index"))
     rem_edge!(new_dag, parent_index, child_index)
     add_edge!(new_dag, child_index, parent_index)
     is_cyclic(new_dag) ? throw(DomainError(new_dag, "BayesNet graph is non-acyclic!")) : return new_dag
@@ -372,17 +347,90 @@ function _remove_barren_nodes(dag::SimpleDiGraph, barren_index::Int64)
     for i in dag.fadjlist
         push!(new_fadjlist, i .- Int.(i .> barren_index))
     end
-    number_of_vertex = ebn.dag.ne - 1
-    return SimpleDiGraph(number_of_vertex, new_fadjlist, new_badjlist)
+    return SimpleDiGraph(dag.ne, new_fadjlist, new_badjlist)
 end
 
-function _eliminate_node(ebn::M, node::NodeName) where {M<:AbstractBayesNet}
-    node_index = ebn.name_to_index[node]
-    child_nodes = children(ebn, node)
-    new_dag = ebn.dag
-    for child in child_nodes
-        new_dag = _invert_nodes_link(new_dag, ebn.name_to_index[node], ebn.name_to_index[child])
+function _eliminate_node(dag::SimpleDiGraph, node_index::Int64)
+    child_indices = dag.fadjlist[node_index]
+    new_dag = copy(dag)
+    for child_index in child_indices
+        new_dag = _invert_nodes_link(new_dag, node_index, child_index)
     end
     _is_barren_node(new_dag, node_index) ? new_dag = _remove_barren_nodes(new_dag, node_index) : new_dag = new_dag
-    return new_dag, deleteat!(name.(ebn.nodes), node_index)
+    return new_dag
+end
+
+function _reduce_ebn_to_rbn(ebn::M) where {M<:AbstractBayesNet}
+    ## Search for the continuous node with fewest parents
+    continuous_nodenames = name.(filter(x -> x.type == "continuous", ebn.nodes))
+    index = findmin(map(x -> length(parents(ebn, x)), continuous_nodenames))[2]
+    node_index = ebn.name_to_index[continuous_nodenames[index]]
+    rdag = copy(ebn.dag)
+    dag_names = name.(ebn.nodes)
+    while ~isempty(continuous_nodenames)
+        rdag = _eliminate_node(rdag, node_index)
+        dag_names = deleteat!(dag_names, findall(x -> x == continuous_nodenames[index], dag_names))
+        deleteat!(continuous_nodenames, index)
+        # graphplot(
+        #     rdag,
+        #     method=:tree,
+        #     names=dag_names,
+        #     fontsize=9,
+        #     nodeshape=:ellipse,
+        #     markercolor=map(x -> x.type == "discrete" ? "lightgreen" : "orange", filter(x -> x.cpd.target ∈ dag_names, ebn.nodes)),
+        #     linecolor=:darkgrey,
+        # )
+        if ~isempty(continuous_nodenames)
+            index = findmin(map(x -> length(parents(ebn, x)), continuous_nodenames))[2]
+            node_index = findall(x -> x == continuous_nodenames[index], dag_names)[1]
+        else
+            break
+        end
+    end
+    return rdag, dag_names
+end
+
+function _get_node_in_rbn(ebn::M) where {M<:AbstractBayesNet}
+    _, rdag_names = _reduce_ebn_to_rbn(ebn)
+    rdag_nodes = Vector()
+    for rdag_name in rdag_names
+        push!(rdag_nodes, filter(x -> x.cpd.target == rdag_name, ebn.nodes)[1])
+    end
+    return rdag_nodes
+end
+
+function _build_node_evidence_after_reduction(ebn::M, rdag::SimpleDiGraph, dag_names::NodeNames, node::FunctionalNode) where {M<:AbstractBayesNet}
+    f_e = (tup, pare) -> [Dict(name(pare[i]) => tup[i]) for i in range(1, length(tup))]
+    rdag_index = findall(x -> x == name(node), dag_names)[1]
+    parent_indices = rdag.badjlist[rdag_index]
+    parent_nodenames = dag_names[parent_indices]
+    parent_nodes = filter(x -> name(x) ∈ parent_nodenames, ebn.nodes)
+    combination = _get_nodes_combinations(parent_nodes)
+    evidence = f_e.(combination, repeat([parent_nodes], length(combination)))
+    map(x -> StructuralReliabilityTable(x, [(Symbol(), StructuralReliabilityProblem())]), evidence)
+end
+
+function _build_srp_rootnode(ebn::M, single_evidence::StructuralReliabilityTable, node::RootNode) where {M<:AbstractBayesNet}
+    ##TODO check number of Vector{ModelParameters} == number of FunctionalNode children of node
+    if node.type == "discrete"
+        single_evidence_parameters = filter(el -> any(∈(el.evidence).(single_evidence.evidence)), node.model_paramenters)[1].parameters
+        return map(s -> (s.node, Dict(s.model .=> s.parameters)), single_evidence_parameters)
+    elseif node.type == "continuous"
+        functional_children = filter(x -> name(x) ∈ children(ebn, name(node)), ebn.nodes)
+        return map(x -> (x, Dict(:allmodel => [RandomVariable(node.cpd.distributions[1], name(node))])), name.(functional_children))
+    end
+end
+
+_get_distribution_from_evidence(evidence::Any, node::StdNode) = filter(el -> any(∈(el.evidence).(evidence.evidence)), node.evidence_table)
+
+function _build_srp_rootnode(ebn::M, single_evidence::StructuralReliabilityTable, node::StdNode) where {M<:AbstractBayesNet}
+    ##TODO check number of Vector{ModelParameters} == number of FunctionalNode children of node
+    if node.type == "discrete"
+        single_evidence_parameters = filter(el -> any(∈(el.evidence).(single_evidence.evidence)), node.model_paramenters)[1].parameters
+        return map(s -> (s.node, Dict(s.model .=> s.parameters)), single_evidence_parameters)
+    elseif node.type == "continuous"
+        distribution = _get_distribution_from_evidence(single_evidence, node)
+        # functional_children = filter(x -> name(x) ∈ children(ebn, name(node)), ebn.nodes)
+        # return map(x -> (x, Dict(:allmodel => [RandomVariable(node.cpd.distributions[1], name(node))])), name.(functional_children))
+    end
 end
