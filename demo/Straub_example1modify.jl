@@ -38,12 +38,12 @@ V_node = StdNode(V_CPD, [node_timescenario])
 emission = NamedCategorical([:nothappen, :happen], [0.0, 1.0])
 CPD_emission = RootCPD(:emission, [emission])
 emission1 = [
-    ModelParameters(:E, [:model1], [[Parameter(2, :ro)]]),
-    ModelParameters(:PO, [:model3, :model4], [[Parameter(5.8, :fu)], [Parameter(8, :t)]])
+    ModelParameters(:E, :failure1, [Parameter(2, :ro), Parameter(3, :i), Parameter(9, :l)]),
+    ModelParameters(:PO, :failure3, [Parameter(5.8, :fu)])
 ]
 emission2 = [
-    ModelParameters(:E, [:model2], [[Parameter(3, :ro)]]),
-    ModelParameters(:PO, [:model4, :model6], [[Parameter(2, :ro)], [Parameter(9, :fu)]])
+    ModelParameters(:E, :failure2, [Parameter(3, :ro), Parameter(3, :i), Parameter(9, :l)]),
+    ModelParameters(:PO, :failure4, [Parameter(2, :ro)])
 ]
 parameters_vector = [emission1, emission2]
 node_emission = RootNode(CPD_emission, parameters_vector)
@@ -79,23 +79,23 @@ function cpd_r_given_u(uᵣ)
 end
 
 ## node R₁
-model₁ = [Model(cpd_r_given_u, :R₁)]
+model₁ = ModelWithName(:model1, [Model(cpd_r_given_u, :R₁)])
 R₁_CPD = FunctionalCPD(:R₁, name.(parentsᵣ), parental_ncategoriesᵣ, [model₁])
 R₁_node = FunctionalNode(R₁_CPD, parentsᵣ, "continuous")
 ## node R₂
-model₂ = [Model(cpd_r_given_u, :R₂)]
+model₂ = ModelWithName(:model2, [Model(cpd_r_given_u, :R₂)])
 R₂_CPD = FunctionalCPD(:R₂, name.(parentsᵣ), parental_ncategoriesᵣ, [model₂])
 R₂_node = FunctionalNode(R₂_CPD, parentsᵣ, "continuous")
 ## node R₃
-model₃ = [Model(cpd_r_given_u, :R₃)]
+model₃ = ModelWithName(:model3, [Model(cpd_r_given_u, :R₃)])
 R₃_CPD = FunctionalCPD(:R₃, name.(parentsᵣ), parental_ncategoriesᵣ, [model₃])
 R₃_node = FunctionalNode(R₃_CPD, parentsᵣ, "continuous")
 ## node R₁
-model₄ = [Model(cpd_r_given_u, :R₄)]
+model₄ = ModelWithName(:model4, [Model(cpd_r_given_u, :R₄)])
 R₄_CPD = FunctionalCPD(:R₄, name.(parentsᵣ), parental_ncategoriesᵣ, [model₄])
 R₄_node = FunctionalNode(R₄_CPD, parentsᵣ, "continuous")
 ## node R₁
-model₅ = [Model(cpd_r_given_u, :R₅)]
+model₅ = ModelWithName(:model5, [Model(cpd_r_given_u, :R₅)])
 R₅_CPD = FunctionalCPD(:R₅, name.(parentsᵣ), parental_ncategoriesᵣ, [model₅])
 R₅_node = FunctionalNode(R₅_CPD, parentsᵣ, "continuous")
 
@@ -127,10 +127,10 @@ parental_ncategoriesₑ = [2]
 parentsₑ = [V_node, H_node, R₁_node, R₂_node, R₃_node, R₄_node, R₅_node, node_emission]
 failuremodel1 = Model(failure_1, :f1)
 outputmodel1 = Model(cpd_r_given_parents1, :E)
-modelₑ1 = [failuremodel1, outputmodel1]
+modelₑ1 = ModelWithName(:failure1, [failuremodel1, outputmodel1])
 failuremodel2 = Model(failure_2, :f1)
 outputmodel2 = Model(cpd_r_given_parents2, :E)
-modelₑ2 = [failuremodel2, outputmodel2]
+modelₑ2 = ModelWithName(:failure2, [failuremodel2, outputmodel2])
 
 
 E_CPD = FunctionalCPD(:E, name.(parentsₑ), parental_ncategoriesₑ, [modelₑ1, modelₑ2])
@@ -148,19 +148,14 @@ graphplot(
     markercolor=map(x -> x.type == "discrete" ? "lightgreen" : "orange", filter(x -> x.cpd.target ∈ dag_names, ebn.nodes)),
     linecolor=:darkgrey,
 )
+
+
 empty_srp_table_with_evidence = _build_node_evidence_after_reduction(ebn, rdag, dag_names, E_node)
 r_nodes = _get_node_in_rbn(ebn)
-single_evidence = empty_srp_table_with_evidence[2]
-node = node_emission
+nodes_to_be_evaluated = filter(x -> isa(x, FunctionalNode), r_nodes)
+node = nodes_to_be_evaluated[1]
+empty_srp = empty_srp_table_with_evidence[1]
+uqinputs = _build_uqinputs_vector_single_evidence(ebn, empty_srp, E_node)
 
-
-new_srp_table = copy(empty_srp_table_with_evidence)
-for (i, single_evidence) in enumerate(empty_srp_table_with_evidence)
-    srp_i = map(l -> (l[1], l[2]), _build_srp_rootnode(ebn, single_evidence, node_emission))
-    new_srp_table[i].srp = srp_i
-end
-
-
-evidence = single_evidence
-node = V_node
-
+a = _functional_node_after_reduction(ebn, empty_srp_table_with_evidence, E_node)
+##TODO create function for unify parameters and random variables of all the parents node (in ebn) before mapping to the empty_srp_table_with_evidence
