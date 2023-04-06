@@ -11,16 +11,16 @@ const global Assignment = Dict{NodeName,Int}
 
 mutable struct EvidenceTable
     evidence::Assignment
-    distribution::Union{<:Distribution,FunctionalModelCPD}
+    distribution::Union{<:Distribution,ModelWithName}
 end
 
 mutable struct ModelParameters
     node::NodeName
-    model::Vector{Symbol}
-    parameters::Vector{Vector{Parameter}}
+    model::Symbol
+    parameters::Vector{Parameter}
 end
 
-ModelParameters() = ModelParameters(Symbol(), Symbol[], [Parameter[]])
+ModelParameters() = ModelParameters(Symbol(), Symbol(), Parameter[])
 
 mutable struct ModelParametersTable
     evidence::Assignment
@@ -223,10 +223,10 @@ function _map_states_to_integer(states::Vector, node::T) where {T<:AbstractNode}
     return new_states
 end
 
-function UQInput(node::RootNode)
-    node.type != "continuous" && throw(DomainError(node.cpd.target, "for discrete node a set of parameter needs to passed"))
-    return map(x -> RandomVariable(x, node.cpd.target), node.cpd.distributions)
-end
+# function _get_uqinput_from_continuous_root_node(node::RootNode)
+#     node.type != "continuous" && throw(DomainError(node.cpd.target, "for discrete node a set of parameter needs to passed"))
+#     return map(x -> RandomVariable(x, node.cpd.target), node.cpd.distributions)
+# end
 
 
 ## TODO old function Section

@@ -5,8 +5,17 @@ using UncertaintyQuantification
 
 const global NodeName = Symbol
 const global NodeNames = AbstractVector{NodeName}
-const global FunctionalModelCPD = Vector{M} where {M<:UQModel}
 abstract type CPD end
+
+const global NodeName = Symbol
+const global NodeNames = AbstractVector{NodeName}
+const global ModelName = Symbol
+
+struct ModelWithName
+    name::ModelName
+    model::Vector{<:UQModel}
+end
+
 
 """
     An Object for mapping each distribution to a MapableTypes::Union{AbstractString, Symbol}
@@ -94,9 +103,9 @@ struct FunctionalCPD <: CPD
     target::NodeName
     parents::NodeNames
     parental_ncategories::Vector{Int}
-    distributions::Vector{<:FunctionalModelCPD}
+    distributions::Vector{<:ModelWithName}
 
-    function FunctionalCPD(target::NodeName, parents::NodeNames, parental_ncategories::Vector{Int}, distributions::Vector{<:FunctionalModelCPD})
+    function FunctionalCPD(target::NodeName, parents::NodeNames, parental_ncategories::Vector{Int}, distributions::Vector{<:ModelWithName})
         prod(parental_ncategories) == length(distributions) ? new(target, parents, parental_ncategories, distributions) : throw(DomainError(target, "parental_ncategories-distributions length missmatch"))
     end
 end
