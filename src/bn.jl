@@ -452,6 +452,9 @@ end
 
 function _build_uqinputs_vector_single_evidence(ebn::M, single_evidence::StructuralReliabilityTable, node::FunctionalNode) where {M<:AbstractBayesNet}
     # for parent_nodes in node.parents ##TODO for this _build_srp_single_node needs to take into account functional nodes too
+    ## TODO very important
+    ## to treat functionalnodes build them put their values into the input dataframe after sampling
+
     for parent_node in filter!(x -> isa(x, Union{RootNode,StdNode}), node.parents)
         model = single_evidence.srp[2][1]
         tup = filter(x -> x[1] == name(node), _build_srp_single_node(ebn, single_evidence, parent_node))[1]
