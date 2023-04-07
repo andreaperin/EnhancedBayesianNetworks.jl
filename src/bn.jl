@@ -450,19 +450,25 @@ function _build_srp_single_node_single_evidence(ebn::M, single_evidence::Assignm
     end
 end
 
-##TODO test this function when a parent node is functionalnode
-function _get_ancestors_distribution_4sampling(node::FunctionalNode)
-    nodename_list = [name(node)]
-    parent_nodes = node.parents
-    for node in parent_nodes
-        if isa(node, FunctionalNode)
-            ## not working (missing update in of parents nodes in the for loop)
-            _get_ancestors_distribution_4sampling(node)
-            push!(name(node), nodename_list)
+function _get_ancestors_distribution_4sampling(node::AbstractNode)
+    node_parents = node.parents
+    functional_parents = filter(x -> isa(x, FunctionalNode), node_parents)
+    parents_with_distribution = filter(x -> ~isa(x, FunctionalNode), node_parents)
+    list_of_names = name.(functional_parents)
+    while ~isempty(functional_parents)
+        for single_parent in functional_parents
+            single_parent_parents = single_parent.parents
+            single_parent_functional_parents = filter(x -> isa(x, FunctionalNode), single_parent_parents)
+            single_parent_parents_with_distribution = filter(x -> ~isa(x, FunctionalNode), single_parent_parents)
+            setdiff!(functional_parents, [single_parent])
+            append!(functional_parents, single_parent_functional_parents)
+            append!(parents_with_distribution, single_parent_parents_with_distribution)
+            append!(list_of_names, name.(single_parent_functional_parents))
         end
     end
-    return parent_nodes, nodename_list
+    return unique(parents_with_distribution), list_of_names
 end
+
 
 function _build_srp_single_node_single_evidence(ebn::M, single_evidence::Assignment, node::FunctionalNode) where {M<:AbstractBayesNet}
     ##TODO check number of Vector{ModelParameters} == number of FunctionalNode children of node

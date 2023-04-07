@@ -150,12 +150,12 @@ graphplot(
 )
 
 
-empty_srp_table_with_evidence = _build_node_evidence_after_reduction(ebn, rdag, dag_names, E_node)
-r_nodes = _get_node_in_rbn(ebn)
-nodes_to_be_evaluated = filter(x -> isa(x, FunctionalNode), r_nodes)
-node = nodes_to_be_evaluated[1]
-empty_srp = empty_srp_table_with_evidence[1]
-uqinputs = _build_uqinputs_vector_single_evidence(ebn, empty_srp, E_node)
+# empty_srp_table_with_evidence = _build_node_evidence_after_reduction(ebn, rdag, dag_names, E_node)
+# r_nodes = _get_node_in_rbn(ebn)
+# nodes_to_be_evaluated = filter(x -> isa(x, FunctionalNode), r_nodes)
+# node = nodes_to_be_evaluated[1]
+# empty_srp = empty_srp_table_with_evidence[1]
+# uqinputs = _build_uqinputs_vector_single_evidence(ebn, empty_srp, E_node)
 
-a = _functional_node_after_reduction(ebn, empty_srp_table_with_evidence, E_node)
+# a = _functional_node_after_reduction(ebn, empty_srp_table_with_evidence, E_node)
 ##TODO create function for unify parameters and random variables of all the parents node (in ebn) before mapping to the empty_srp_table_with_evidence 
