@@ -158,4 +158,4 @@ empty_srp = empty_srp_table_with_evidence[1]
 uqinputs = _build_uqinputs_vector_single_evidence(ebn, empty_srp, E_node)
 
 a = _functional_node_after_reduction(ebn, empty_srp_table_with_evidence, E_node)
-##TODO create function for unify parameters and random variables of all the parents node (in ebn) before mapping to the empty_srp_table_with_evidence
+##TODO create function for unify parameters and random variables of all the parents node (in ebn) before mapping to the empty_srp_table_with_evidence 

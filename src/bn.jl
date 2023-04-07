@@ -432,17 +432,17 @@ function _build_node_evidence_after_reduction(ebn::M, rdag::SimpleDiGraph, dag_n
     map(x -> StructuralReliabilityTable(x, (name(node), StructuralReliabilityProblem(_get_distriution_table_given_evidence(x, node)[1].distribution.name => []))), evidence)
 end
 
-function _build_srp_single_node(ebn::M, single_evidence::StructuralReliabilityTable, node::Union{StdNode,RootNode}) where {M<:AbstractBayesNet}
+function _build_srp_single_node_single_evidence(ebn::M, single_evidence::Assignment, node::Union{StdNode,RootNode}) where {M<:AbstractBayesNet}
     ##TODO check number of Vector{ModelParameters} == number of FunctionalNode children of node
     if node.type == "discrete"
-        single_evidence_parameters = _get_model_parameters_given_evidence(single_evidence.evidence, node)
+        single_evidence_parameters = _get_model_parameters_given_evidence(single_evidence, node)
         if length(single_evidence_parameters) != 1
             throw(DomainError([single_evidence, node], "With the evidence $single_evidence node $node has more than 1 distribution"))
         end
         return map(s -> (s.node, (s.model, s.parameters)), single_evidence_parameters[1].parameters)
     elseif node.type == "continuous"
         functional_children = filter(x -> name(x) ∈ children(ebn, name(node)), ebn.nodes)
-        distribution = _get_distriution_table_given_evidence(single_evidence.evidence, node)
+        distribution = _get_distriution_table_given_evidence(single_evidence, node)
         if length(distribution) != 1
             throw(DomainError([single_evidence, node], "With the evidence $single_evidence node $node has more than 1 distribution"))
         end
@@ -450,21 +450,55 @@ function _build_srp_single_node(ebn::M, single_evidence::StructuralReliabilityTa
     end
 end
 
-function _build_uqinputs_vector_single_evidence(ebn::M, single_evidence::StructuralReliabilityTable, node::FunctionalNode) where {M<:AbstractBayesNet}
-    # for parent_nodes in node.parents ##TODO for this _build_srp_single_node needs to take into account functional nodes too
+##TODO test this function when a parent node is functionalnode
+function _get_ancestors_distribution_4sampling(node::FunctionalNode)
+    nodename_list = [name(node)]
+    parent_nodes = node.parents
+    for node in parent_nodes
+        if isa(node, FunctionalNode)
+            ## not working (missing update in of parents nodes in the for loop)
+            _get_ancestors_distribution_4sampling(node)
+            push!(name(node), nodename_list)
+        end
+    end
+    return parent_nodes, nodename_list
+end
+
+function _build_srp_single_node_single_evidence(ebn::M, single_evidence::Assignment, node::FunctionalNode) where {M<:AbstractBayesNet}
+    ##TODO check number of Vector{ModelParameters} == number of FunctionalNode children of node
+
+
+    if node.type == "discrete"
+        single_evidence_parameters = _get_model_parameters_given_evidence(single_evidence, node)
+        if length(single_evidence_parameters) != 1
+            throw(DomainError([single_evidence, node], "With the evidence $single_evidence node $node has more than 1 distribution"))
+        end
+        return map(s -> (s.node, (s.model, s.parameters)), single_evidence_parameters[1].parameters)
+    elseif node.type == "continuous"
+        functional_children = filter(x -> name(x) ∈ children(ebn, name(node)), ebn.nodes)
+        distribution = _get_distriution_table_given_evidence(single_evidence, node)
+        if length(distribution) != 1
+            throw(DomainError([single_evidence, node], "With the evidence $single_evidence node $node has more than 1 distribution"))
+        end
+        return map(x -> (x, (:allmodel, [RandomVariable(distribution[1].distribution, name(node))])), name.(functional_children))
+    end
+end
+
+function _build_uqinputs_vector_single_evidence(ebn::M, single_struc_table::StructuralReliabilityTable, node::FunctionalNode) where {M<:AbstractBayesNet}
+    # for parent_nodes in node.parents ##TODO for this _build_srp_single_node_single_evidence needs to take into account functional nodes too
     ## TODO very important
     ## to treat functionalnodes build them put their values into the input dataframe after sampling
 
     for parent_node in filter!(x -> isa(x, Union{RootNode,StdNode}), node.parents)
-        model = single_evidence.srp[2][1]
-        tup = filter(x -> x[1] == name(node), _build_srp_single_node(ebn, single_evidence, parent_node))[1]
+        model = single_struc_table.srp[2][1]
+        tup = filter(x -> x[1] == name(node), _build_srp_single_node_single_evidence(ebn, single_struc_table.evidence, parent_node))[1]
         if tup[2][1] ∈ [model, :allmodel]
-            append!(single_evidence.srp[2][2], tup[2][2])
+            append!(single_struc_table.srp[2][2], tup[2][2])
         else
             throw(DomainError([name(parent_node), name(node)], "missmatch in models"))
         end
     end
-    return single_evidence
+    return single_struc_table
 end
 
 
