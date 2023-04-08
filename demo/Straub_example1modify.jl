@@ -150,12 +150,17 @@ graphplot(
 )
 
 
-# empty_srp_table_with_evidence = _build_node_evidence_after_reduction(ebn, rdag, dag_names, E_node)
-# r_nodes = _get_node_in_rbn(ebn)
-# nodes_to_be_evaluated = filter(x -> isa(x, FunctionalNode), r_nodes)
-# node = nodes_to_be_evaluated[1]
-# empty_srp = empty_srp_table_with_evidence[1]
-# uqinputs = _build_uqinputs_vector_single_evidence(ebn, empty_srp, E_node)
+empty_srp_table_with_evidence = _build_node_evidence_after_reduction(ebn, rdag, dag_names, E_node)
+r_nodes = _get_node_in_rbn(ebn)
+nodes_to_be_evaluated = filter(x -> isa(x, FunctionalNode), r_nodes)
+# a, b = _get_ancestors_distribution_4sampling(nodes_to_be_evaluated[1])
+# # node = nodes_to_be_evaluated[1]
+empty_srp = empty_srp_table_with_evidence[1]
+# parent_node = V_node
+# a = _build_srp_single_node_single_evidence(ebn, empty_srp.evidence, parent_node)
+uqinputs = _build_uqinputs_vector_single_evidence(ebn, empty_srp, E_node)
 
-# a = _functional_node_after_reduction(ebn, empty_srp_table_with_evidence, E_node)
-##TODO create function for unify parameters and random variables of all the parents node (in ebn) before mapping to the empty_srp_table_with_evidence 
+a = _functional_node_after_reduction(ebn, empty_srp_table_with_evidence, E_node)
+a.evidence_table[1].srp[2][2]
+##TODO push! new_symbols and name of direct parents that are functional nodes into a vector of symbol with their functions!
+

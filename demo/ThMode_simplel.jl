@@ -1,4 +1,4 @@
-include("../bn.jl")
+include("../src/bn.jl")
 Sys.isapple() ? include("../model_TH_macos/buildmodel_TH.jl") : include("../model_TH_win/buildmodel_TH.jl")
 
 # timescenario = NamedCategorical([:first, :second, :third], [0.34, 0.33, 0.33])
@@ -7,15 +7,15 @@ Sys.isapple() ? include("../model_TH_macos/buildmodel_TH.jl") : include("../mode
 
 earthquake = NamedCategorical([:happen, :nothappen], [0.5, 0.5])
 CPD_earthquake = RootCPD(:earthquake, earthquake)
-earthquake_node = StdNode(CPD_earthquake)
+earthquake_node = RootNode(CPD_earthquake)
 
 extremerain = NamedCategorical([:low, :high], [0.5, 0.5])
 CPD_extremerain = RootCPD(:extremerain, extremerain)
-extremerain_node = StdNode(CPD_extremerain)
+extremerain_node = RootNode(CPD_extremerain)
 
 disp_longv_distribution = truncated(Normal(1, 1), lower=0)
 CPD_disp_longv = RootCPD(:disp_longv, disp_longv_distribution)
-disp_longv_node = StdNode(CPD_disp_longv)
+disp_longv_node = RootNode(CPD_disp_longv)
 
 Kz_parents = [extremerain_node]
 Kz_distribution1 = truncated(Normal(1, 1), lower=0)

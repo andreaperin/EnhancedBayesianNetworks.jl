@@ -1,31 +1,31 @@
 using UncertaintyQuantification
-include("../bn.jl")
+include("../src/bn.jl")
 
 emission = NamedCategorical([:nothappen, :happen], [0.3, 0.7])
 CPD_emission = RootCPD(:emission, emission)
-emission_node = StdNode(CPD_emission)
+emission_node = RootNode(CPD_emission)
 
 h_distribution = Normal(0.24, 0.01)
 CPD_h = RootCPD(:h, h_distribution)
-h_node = StdNode(CPD_h)
+h_node = RootNode(CPD_h)
 
 μ = log(10e9^2 / sqrt(1.6e9^2 + 10e9^2))
 σ = sqrt(log(1.6e9^2 / 10e9^2 + 1))
 E_distribution = LogNormal(μ, σ)
 CPD_E = RootCPD(:E, E_distribution)
-E_node = StdNode(CPD_E)
+E_node = RootNode(CPD_E)
 
 μ = log(5000^2 / sqrt(400^2 + 5000^2))
 σ = sqrt(log(400^2 / 5000^2 + 1))
 P_distribution = LogNormal(μ, σ)
 CPD_P = RootCPD(:P, P_distribution)
-P_node = StdNode(CPD_P)
+P_node = RootNode(CPD_P)
 
 μ = log(600^2 / sqrt(140^2 + 600^2))
 σ = sqrt(log(140^2 / 600^2 + 1))
 ρ_distribution = LogNormal(μ, σ)
 CPD_ρ = RootCPD(:ρ, ρ_distribution)
-ρ_node = StdNode(CPD_ρ)
+ρ_node = RootNode(CPD_ρ)
 
 ##TODO Continue from here implementing dependency between rvs as an argument of SRP states_dictionary
 
