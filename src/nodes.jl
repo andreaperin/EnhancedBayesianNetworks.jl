@@ -181,8 +181,8 @@ function _get_model_parameters_given_evidence(assignment::Assignment, node::T) w
     )
 end
 
-function _get_distriution_table_given_evidence(assignment::Assignment, node::T) where {T<:AbstractNode}
-    if isa(node, RootNode)
+function _get_distribution_table_given_evidence(assignment::Assignment, node::T) where {T<:AbstractNode}
+    if length(node.evidence_table) == 1
         return node.evidence_table
     else
         return filter(

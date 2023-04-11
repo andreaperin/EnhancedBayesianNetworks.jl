@@ -10,14 +10,22 @@ include("nodes.jl")
 
 abstract type ProbabilisticGraphicalModel end
 abstract type AbstractBayesNet <: ProbabilisticGraphicalModel end
+mutable struct AuxiliarySampleDataFrameElement
+    node::NodeName
+    sampling_function::Union{Function,Nothing}
+end
+mutable struct StructuralReliabilityProblem
+    model::Symbol
+    inputs::Vector{UQInput}
+    aux_df::Vector{AuxiliarySampleDataFrameElement}
+end
 
+function StructuralReliabilityProblem(model::Symbol)
+    inputs = Vector{UQInput}()
+    aux_df = [AuxiliarySampleDataFrameElement(Symbol(), nothing)]
+    return StructuralReliabilityProblem(model, inputs, aux_df)
+end
 
-const global StructuralReliabilityProblem = Tuple{Symbol,Vector{UQInput}}
-
-# function StructuralReliabilityProblem(node::N) where {N<:AbstractNode}
-#     name = _get_distriution_table_given_evidence ## Nope need to be checkes
-# end
-# EmptyStructuralReliabilityProblem = (Symbol, Dict(Symbol => []))
 mutable struct StructuralReliabilityTable
     evidence::Assignment
     srp::Tuple{NodeName,StructuralReliabilityProblem}
@@ -421,6 +429,7 @@ function _get_node_in_rbn(ebn::M) where {M<:AbstractBayesNet}
     return rdag_nodes
 end
 
+## To build empty evidence table after reduction
 function _build_node_evidence_after_reduction(ebn::M, rdag::SimpleDiGraph, dag_names::NodeNames, node::FunctionalNode) where {M<:AbstractBayesNet}
     f_e = (tup, pare) -> Dict([(name(pare[i]) => tup[i]) for i in range(1, length(tup))])
     rdag_index = findall(x -> x == name(node), dag_names)[1]
@@ -429,14 +438,17 @@ function _build_node_evidence_after_reduction(ebn::M, rdag::SimpleDiGraph, dag_n
     parent_nodes = filter(x -> name(x) ∈ parent_nodenames, ebn.nodes)
     combination = _get_nodes_combinations(parent_nodes)
     evidence = f_e.(combination, repeat([parent_nodes], length(combination)))
-    map(x -> StructuralReliabilityTable(x, (name(node), StructuralReliabilityProblem(_get_distriution_table_given_evidence(x, node)[1].distribution.name => []))), evidence)
+    map(x -> StructuralReliabilityTable(x, (name(node), StructuralReliabilityProblem(_get_distribution_table_given_evidence(x, node)[1].distribution.name))), evidence)
 end
 
-
+## To identify nodes for sampling functional node in the srp 
 function _get_ancestors_distribution_4sampling(node::AbstractNode)
-    node_parents = node.parents
-    functional_parents = filter(x -> isa(x, FunctionalNode), node_parents)
-    parents_with_distribution = filter(x -> ~isa(x, FunctionalNode), node_parents)
+    node_parents = Vector{AbstractNode}()
+    functional_parents = Vector{AbstractNode}()
+    parents_with_distribution = Vector{AbstractNode}()
+    append!(node_parents, node.parents)
+    append!(functional_parents, filter(x -> isa(x, FunctionalNode), node_parents))
+    append!(parents_with_distribution, filter(x -> ~isa(x, FunctionalNode), node_parents))
     list_of_names = name.(functional_parents)
     while ~isempty(functional_parents)
         for single_parent in functional_parents
@@ -452,7 +464,7 @@ function _get_ancestors_distribution_4sampling(node::AbstractNode)
     return unique(parents_with_distribution), list_of_names
 end
 
-function _build_srp_single_node_single_evidence(ebn::M, single_evidence::Assignment, node::Union{RootNode,StdNode}) where {M<:AbstractBayesNet}
+function _build_srp_single_evidence(ebn::M, single_evidence::Assignment, node::Union{RootNode,StdNode}) where {M<:AbstractBayesNet}
     ##TODO check number of Vector{ModelParameters} == number of FunctionalNode children of node
     if node.type == "discrete"
         single_evidence_parameters = _get_model_parameters_given_evidence(single_evidence, node)
@@ -462,7 +474,7 @@ function _build_srp_single_node_single_evidence(ebn::M, single_evidence::Assignm
         return map(s -> (s.node, (s.model, s.parameters)), single_evidence_parameters[1].parameters)
     elseif node.type == "continuous"
         functional_children = filter(x -> name(x) ∈ children(ebn, name(node)), ebn.nodes)
-        distribution = _get_distriution_table_given_evidence(single_evidence, node)
+        distribution = _get_distribution_table_given_evidence(single_evidence, node)
         if length(distribution) != 1
             throw(DomainError([single_evidence, node], "With the evidence $single_evidence node $node has more than 1 distribution"))
         end
@@ -470,11 +482,12 @@ function _build_srp_single_node_single_evidence(ebn::M, single_evidence::Assignm
     end
 end
 
-function _build_srp_single_node_single_evidence(ebn::M, single_evidence::Assignment, node::FunctionalNode) where {M<:AbstractBayesNet}
+function _build_srp_single_evidence(ebn::M, single_evidence::Assignment, node::FunctionalNode) where {M<:AbstractBayesNet}
     if node.type == "continuous"
         parents_sampling, new_symbols = _get_ancestors_distribution_4sampling(node)
         n = length(parents_sampling)
-        srp_single_evidence = filter(x -> x[1] == name(node), _build_srp_single_node_single_evidence.(repeat([ebn], n), repeat([single_evidence], n), parents_sampling)[1])[1]
+        srps_vector = _build_srp_single_evidence.(repeat([ebn], n), repeat([single_evidence], n), parents_sampling)[1]
+        srp_single_evidence = filter(x -> x[1] ∈ vcat(new_symbols, name(node)), srps_vector)[1]
         return (srp_single_evidence, new_symbols)
     end
     if node.type == "discrete"
@@ -483,34 +496,27 @@ function _build_srp_single_node_single_evidence(ebn::M, single_evidence::Assignm
 end
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 function _build_uqinputs_vector_single_evidence(ebn::M, single_struc_table::StructuralReliabilityTable, node::FunctionalNode) where {M<:AbstractBayesNet}
     for parent_node in filter(x -> isa(x, Union{RootNode,StdNode}), node.parents)
-        model = single_struc_table.srp[2][1]
-        tup = filter(x -> x[1] == name(node), _build_srp_single_node_single_evidence(ebn, single_struc_table.evidence, parent_node))[1]
+        model = single_struc_table.srp[2].model
+        tup = filter(x -> x[1] == name(node), _build_srp_single_evidence(ebn, single_struc_table.evidence, parent_node))[1]
         if tup[2][1] ∈ [model, :allmodel]
-            append!(single_struc_table.srp[2][2], tup[2][2])
+            append!(single_struc_table.srp[2].inputs, tup[2][2])
         else
             throw(DomainError([name(parent_node), name(node)], "missmatch in models"))
         end
     end
     for parent_node in filter(x -> isa(x, FunctionalNode), node.parents)
-        model = single_struc_table.srp[2][1]
-        tup, intermediate_symbols = _build_srp_single_node_single_evidence(ebn, single_struc_table.evidence, parent_node)
-        if tup[2][1] ∈ [model, :allmodel] && tup[2][2][1] ∉ single_struc_table.srp[2][2]
-            append!(single_struc_table.srp[2][2], tup[2][2])
+        model = single_struc_table.srp[2].model
+        tup, intermediate_symbols = _build_srp_single_evidence(ebn, single_struc_table.evidence, parent_node)
+        if tup[2][1] ∈ [model, :allmodel] && tup[2][2][1] ∉ single_struc_table.srp[2].inputs
+            append!(single_struc_table.srp[2].inputs, tup[2][2])
+            intermediate_nodes = filter(x -> name(x) ∈ intermediate_symbols, ebn.nodes)
+            n = length(intermediate_nodes)
+            distributions = _get_distribution_table_given_evidence.(repeat([single_struc_table.evidence], n), intermediate_nodes)[1]
+            length(distributions) == 1 ? distributions = distributions[1] : throw(DomainError)
+            ## TODO find the proper way to insert the aux_df element
+            append!(single_struc_table.srp[2].aux_df, AuxiliarySampleDataFrameElement())
         end
     end
     return single_struc_table
@@ -520,5 +526,6 @@ end
 function _functional_node_after_reduction(ebn::M, srp_table::Vector{StructuralReliabilityTable}, node::FunctionalNode) where {M<:AbstractBayesNet}
     n = length(srp_table)
     evidence_table = _build_uqinputs_vector_single_evidence.(repeat([ebn], n), srp_table, repeat([node], n))
-    return ReducedFunctionalNode(node, evidence_table)
+    # return ReducedFunctionalNode(node, evidence_table)
+    return evidence_table
 end

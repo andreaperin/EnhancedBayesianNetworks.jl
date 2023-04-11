@@ -48,8 +48,12 @@ emission2 = [
 parameters_vector = [emission1, emission2]
 node_emission = RootNode(CPD_emission, parameters_vector)
 
-model_o = ModelWithName(:model_o, [Model(cpd_r_given_u, :o)])
-o_CPD = FunctionaLlCPD(:O, name(Uᵣ_node), [1], [model_o])
+function cpd_r_given_o(o)
+    return r -> cdf(Normal(), (ln(r) - o * sqrt(ρᵣ) - λᵣ) / sqrt(ζᵣ^2 - ρᵣ))
+end
+
+model_o = ModelWithName(:model_o, [Model(cpd_r_given_o, :o)])
+o_CPD = FunctionalCPD(:O, name.([Uᵣ_node]), [1], [model_o])
 o_node = FunctionalNode(o_CPD, [Uᵣ_node], "continuous")
 
 ## DiscreteNode 2
@@ -81,9 +85,9 @@ function cpd_r_given_u(uᵣ)
 end
 
 ## node R₁
-model₁ = ModelWithName(:model1, [Model(cpd_r_given_u, :R₁)])
-R₁_CPD = FunctionalCPD(:R₁, name.(parentsᵣ), parental_ncategoriesᵣ, [model₁])
-R₁_node = FunctionalNode(R₁_CPD, parentsᵣ, "continuous")
+model₁ = ModelWithName(:model1, [Model(cpd_r_given_o, :R₁)])
+R₁_CPD = FunctionalCPD(:R₁, name.([o_node]), parental_ncategoriesᵣ, [model₁])
+R₁_node = FunctionalNode(R₁_CPD, [o_node], "continuous")
 ## node R₂
 model₂ = ModelWithName(:model2, [Model(cpd_r_given_u, :R₂)])
 R₂_CPD = FunctionalCPD(:R₂, name.(parentsᵣ), parental_ncategoriesᵣ, [model₂])
@@ -141,7 +145,7 @@ E_CPD = FunctionalCPD(:E, name.(parentsₑ), parental_ncategoriesₑ, [modelₑ1
 E_node = FunctionalNode(E_CPD, parentsₑ, "discrete")
 
 # ebn = EnhancedBayesNet([Uᵣ_node, V_node, H_node, R₁_node, R₂_node, R₃_node, R₄_node, R₅_node, E_node, node_emission, node_timescenario])
-ebn = EnhancedBayesNet([Uᵣ_node, V_node, H_node, R₁_node, R₂_node, R₃_node, R₄_node, R₅_node, E_node, node_emission, node_timescenario])
+ebn = EnhancedBayesNet([Uᵣ_node, o_node, V_node, H_node, R₁_node, R₂_node, R₃_node, R₄_node, R₅_node, E_node, node_emission, node_timescenario])
 
 groups = markov_envelopes(ebn)
 rdag, dag_names = _reduce_ebn_to_rbn(ebn)
@@ -158,7 +162,7 @@ graphplot(
 
 empty_srp_table_with_evidence = _build_node_evidence_after_reduction(ebn, rdag, dag_names, E_node)
 r_nodes = _get_node_in_rbn(ebn)
-nodes_to_be_evaluated = filter(x -> isa(x, FunctionalNode), r_nodes)
+# nodes_to_be_evaluated = filter(x -> isa(x, FunctionalNode), r_nodes)
 # a, b = _get_ancestors_distribution_4sampling(nodes_to_be_evaluated[1])
 # # node = nodes_to_be_evaluated[1]
 empty_srp = empty_srp_table_with_evidence[1]
