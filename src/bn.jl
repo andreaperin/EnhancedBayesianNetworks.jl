@@ -492,30 +492,41 @@ end
 
 
 function _build_uqinputs_vector_single_evidence(ebn::M, single_struc_table::StructuralReliabilityTable, node::FunctionalNode) where {M<:AbstractBayesNet}
+    table_inputs = Vector{UQInput}()
+    table_ancestors_models = Vector{Vector{UQModel}}()
     for parent_node in filter(x -> isa(x, Union{RootNode,StdNode}), node.parents)
         model = single_struc_table.srp[2].model
         tup = filter(x -> x[1] == name(node), _build_srp_single_evidence(ebn, single_struc_table.evidence, parent_node))[1]
         if tup[2][1] ∈ [model, :allmodel]
-            append!(single_struc_table.srp[2].inputs, tup[2][2])
+            # append!(table_inputs, tup[2][2])
+            append!(table_inputs, tup[2][2])
         else
             throw(DomainError([name(parent_node), name(node)], "missmatch in models"))
         end
     end
     for parent_node in filter(x -> isa(x, FunctionalNode), node.parents)
-        model = single_struc_table.srp[2].model
+        # model = single_struc_table.srp[2].model
         tup, intermediate_symbols = _build_srp_single_evidence(ebn, single_struc_table.evidence, parent_node)
-        if tup[2][1] ∈ [model, :allmodel] && tup[2][2][1] ∉ single_struc_table.srp[2].inputs
-            append!(single_struc_table.srp[2].inputs, tup[2][2])
-            intermediate_nodes = filter(x -> name(x) ∈ intermediate_symbols, ebn.nodes)
-            n = length(intermediate_nodes)
-            distributions = _get_distribution_table_given_evidence.(repeat([single_struc_table.evidence], n), intermediate_nodes)
-            distributions = map(x -> x[1].distribution.model, distributions)
-            ## TODO find the proper way to insert the aux_df element
-            # f_aux = (node, dist) -> ([Model(dist[i][1].distribution.model.func, name(node[i])) for i in range(1, length(node))])
-            # c = f_aux(intermediate_nodes, distributions)
-            append!(single_struc_table.srp[2].ancestors_models, distributions)
-        end
+        # if tup[2][1] ∈ [model, :allmodel] && tup[2][2][1] ∉ single_struc_table.srp[2].inputs
+        # append!(table_inputs, tup[2][2])
+        append!(table_inputs, tup[2][2])
+
+        # end
+        intermediate_nodes = filter(x -> name(x) ∈ intermediate_symbols, ebn.nodes)
+        n = length(intermediate_nodes)
+        distributions = _get_distribution_table_given_evidence.(repeat([single_struc_table.evidence], n), intermediate_nodes)
+        distributions = map(x -> x[1].distribution.model, distributions)
+        # if    
+        # append!(table_ancestors_models, distributions)
+        append!(table_ancestors_models, distributions)
+        # end
+        parent_node_model = _get_distribution_table_given_evidence(single_struc_table.evidence, parent_node)
+        parent_node_model = map(x -> x.distribution.model, parent_node_model)
+        # append!(table_ancestors_models, parent_node_model)
+        append!(table_ancestors_models, parent_node_model)
     end
+    append!(single_struc_table.srp[2].inputs, unique!(table_inputs))
+    append!(single_struc_table.srp[2].ancestors_models, unique!(table_ancestors_models))
     return single_struc_table
 end
 

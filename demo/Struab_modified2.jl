@@ -53,24 +53,31 @@ node_emission = RootNode(CPD_emission, parameters_vector)
 cov = 0.2
 ζᵣ = cov * λᵣ
 
+# function cpd_f_given_ur(df)
+#     return r -> cdf(Normal(), (log(r) - df.Uᵣ * sqrt(ρᵣ) - λᵣ) / sqrt(ζᵣ^2 - ρᵣ))
+# end
+
 function cpd_f_given_ur(df)
-    return r -> cdf(Normal(), (log(r) - df.Uᵣ * sqrt(ρᵣ) - λᵣ) / sqrt(ζᵣ^2 - ρᵣ))
+    cdf(Normal(), (log(1) .- df.Uᵣ * sqrt(ρᵣ) .- λᵣ) / sqrt(ζᵣ^2 - ρᵣ))
 end
+
 model_f = ModelWithName(:model_f, [Model(cpd_f_given_ur, :f)])
 f_CPD = FunctionalCPD(:f, name.([Uᵣ_node]), [1], [model_f])
 f_node = FunctionalNode(f_CPD, [Uᵣ_node], "continuous")
 
-function cpd_o_given_f(f)
-    return r -> cdf(Normal(), (log(r) - f * sqrt(ρᵣ) - λᵣ) / sqrt(ζᵣ^2 - ρᵣ))
+function cpd_o_given_f(df)
+    cdf(Normal(), (log(1) .- df.f * sqrt(ρᵣ) .- λᵣ) / sqrt(ζᵣ^2 - ρᵣ))
 end
+
 model_o1 = ModelWithName(:model_o1, [Model(cpd_o_given_f, :o1)])
 o1_CPD = FunctionalCPD(:o1, name.([f_node]), [1], [model_o1])
 o1_node = FunctionalNode(o1_CPD, [f_node], "continuous")
 
-function cpd_o_given_ur(ur)
-    return r -> cdf(Normal(), (log(r) - ur * sqrt(ρᵣ) - λᵣ) / sqrt(ζᵣ^2 - ρᵣ))
+function cpd_o2_given_ur(df)
+    cdf(Normal(), (log(1) .- df.Uᵣ * sqrt(ρᵣ) .- λᵣ) / sqrt(ζᵣ^2 - ρᵣ))
 end
-model_o2 = ModelWithName(:model_o2, [Model(cpd_o_given_ur, :o2)])
+
+model_o2 = ModelWithName(:model_o2, [Model(cpd_o2_given_ur, :o2)])
 o2_CPD = FunctionalCPD(:o2, name.([Uᵣ_node]), [1], [model_o2])
 o2_node = FunctionalNode(o2_CPD, [Uᵣ_node], "continuous")
 
@@ -95,8 +102,8 @@ parental_ncategoriesᵣ = Vector{Int}()
 
 
 ## Function for returning cpd of node Rᵢ ∀ i in [1;5]
-function cpd_r_given_o1(o1)
-    return r -> cdf(Normal(), (log(r) - o1 * sqrt(ρᵣ) - λᵣ) / sqrt(ζᵣ^2 - ρᵣ))
+function cpd_r_given_o1(df)
+    cdf(Normal(), (log(1) .- df.o1 * sqrt(ρᵣ) .- λᵣ) / sqrt(ζᵣ^2 - ρᵣ))
 end
 
 ## node R₁
@@ -104,8 +111,8 @@ model₁ = ModelWithName(:model1, [Model(cpd_r_given_o1, :R₁)])
 R₁_CPD = FunctionalCPD(:R₁, name.([o1_node]), parental_ncategoriesᵣ, [model₁])
 R₁_node = FunctionalNode(R₁_CPD, [o1_node], "continuous")
 
-function cpd_r_given_o2(o2)
-    return r -> cdf(Normal(), (log(r) - o2 * sqrt(ρᵣ) - λᵣ) / sqrt(ζᵣ^2 - ρᵣ))
+function cpd_r_given_o2(df)
+    cdf(Normal(), (log(1) .- df.o2 * sqrt(ρᵣ) .- λᵣ) / sqrt(ζᵣ^2 - ρᵣ))
 end
 
 model₂ = ModelWithName(:model2, [Model(cpd_r_given_o2, :R₂)])
@@ -113,9 +120,10 @@ R₂_CPD = FunctionalCPD(:R₂, name.([o2_node]), parental_ncategoriesᵣ, [mode
 R₂_node = FunctionalNode(R₂_CPD, [o2_node], "continuous")
 
 ## node R₂
-function cpd_r_given_u(ur)
-    return r -> cdf(Normal(), (log(r) - ur * sqrt(ρᵣ) - λᵣ) / sqrt(ζᵣ^2 - ρᵣ))
+function cpd_r_given_u(df)
+    cdf(Normal(), (log(1) .- df.Uᵣ * sqrt(ρᵣ) .- λᵣ) / sqrt(ζᵣ^2 - ρᵣ))
 end
+
 ## node R₃
 model₃ = ModelWithName(:model3, [Model(cpd_r_given_u, :R₃)])
 R₃_CPD = FunctionalCPD(:R₃, name.(parentsᵣ), parental_ncategoriesᵣ, [model₃])
@@ -168,7 +176,6 @@ modelₑ2 = ModelWithName(:failure2, [failuremodel2, outputmodel2])
 E_CPD = FunctionalCPD(:E, name.(parentsₑ), parental_ncategoriesₑ, [modelₑ1, modelₑ2])
 E_node = FunctionalNode(E_CPD, parentsₑ, "discrete")
 
-# ebn = EnhancedBayesNet([Uᵣ_node, V_node, H_node, R₁_node, R₂_node, R₃_node, R₄_node, R₅_node, E_node, node_emission, node_timescenario])
 ebn = EnhancedBayesNet([Uᵣ_node, f_node, o1_node, o2_node, V_node, H_node, R₁_node, R₂_node, R₃_node, R₄_node, R₅_node, E_node, node_emission, node_timescenario])
 show(ebn)
 groups = markov_envelopes(ebn)
@@ -197,8 +204,11 @@ node = E_node
 
 
 # uqinputs = _build_uqinputs_vector_single_evidence(ebn, empty_srp, E_node)
+# uqinputs.srp[2].ancestors_models
 
 a = _functional_node_after_reduction(ebn, empty_srp_table_with_evidence, E_node)
 df = UncertaintyQuantification.sample(a[1].srp[2].inputs, 2)
 
-aux = a[1].srp[2].ancestors_models[1]
+for aux in a[1].srp[2].ancestors_models
+    evaluate!(aux, df)
+end
