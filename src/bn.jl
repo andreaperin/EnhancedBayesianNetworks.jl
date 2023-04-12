@@ -132,7 +132,7 @@ Utilisties Function
 function show(bn::AbstractBayesNet)
     graphplot(
         bn.dag,
-        method=:tree,
+        # method=:tree, ## TODO ':tree' mothod gives error wich big dag
         names=name.(bn.nodes),
         fontsize=9,
         nodeshape=:ellipse,
@@ -514,9 +514,11 @@ function _build_uqinputs_vector_single_evidence(ebn::M, single_struc_table::Stru
             intermediate_nodes = filter(x -> name(x) ∈ intermediate_symbols, ebn.nodes)
             n = length(intermediate_nodes)
             distributions = _get_distribution_table_given_evidence.(repeat([single_struc_table.evidence], n), intermediate_nodes)[1]
-            length(distributions) == 1 ? distributions = distributions[1] : throw(DomainError)
             ## TODO find the proper way to insert the aux_df element
-            append!(single_struc_table.srp[2].aux_df, AuxiliarySampleDataFrameElement())
+            f_aux = (node, dist) -> ([(name(node[i]), dist[i].distribution.model) for i in range(1, length(node))])
+            a = f_aux(intermediate_nodes, distributions)
+            AuxiliarySampleDataFrameElement(a[1][1], a[1][2].distribution)
+            # append!(single_struc_table.srp[2].aux_df, AuxiliarySampleDataFrameElement())
         end
     end
     return single_struc_table
