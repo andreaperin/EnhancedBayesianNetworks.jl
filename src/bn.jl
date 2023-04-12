@@ -12,7 +12,7 @@ abstract type ProbabilisticGraphicalModel end
 abstract type AbstractBayesNet <: ProbabilisticGraphicalModel end
 mutable struct AuxiliarySampleDataFrameElement
     node::NodeName
-    sampling_function::Union{Function,Nothing}
+    sampling_function::Function
 end
 mutable struct StructuralReliabilityProblem
     model::Symbol
@@ -22,7 +22,7 @@ end
 
 function StructuralReliabilityProblem(model::Symbol)
     inputs = Vector{UQInput}()
-    aux_df = [AuxiliarySampleDataFrameElement(Symbol(), nothing)]
+    aux_df = Vector{AuxiliarySampleDataFrameElement2}()
     return StructuralReliabilityProblem(model, inputs, aux_df)
 end
 
@@ -513,12 +513,11 @@ function _build_uqinputs_vector_single_evidence(ebn::M, single_struc_table::Stru
             append!(single_struc_table.srp[2].inputs, tup[2][2])
             intermediate_nodes = filter(x -> name(x) ∈ intermediate_symbols, ebn.nodes)
             n = length(intermediate_nodes)
-            distributions = _get_distribution_table_given_evidence.(repeat([single_struc_table.evidence], n), intermediate_nodes)[1]
+            distributions = _get_distribution_table_given_evidence.(repeat([single_struc_table.evidence], n), intermediate_nodes)
             ## TODO find the proper way to insert the aux_df element
-            f_aux = (node, dist) -> ([(name(node[i]), dist[i].distribution.model) for i in range(1, length(node))])
-            a = f_aux(intermediate_nodes, distributions)
-            AuxiliarySampleDataFrameElement(a[1][1], a[1][2].distribution)
-            # append!(single_struc_table.srp[2].aux_df, AuxiliarySampleDataFrameElement())
+            f_aux = (node, dist) -> ([(name(node[i]), dist[i][1].distribution.model) for i in range(1, length(node))])
+            aux_df = map((x) -> AuxiliarySampleDataFrameElement(x[1], x[2][1].func), f_aux(intermediate_nodes, distributions))
+            append!(single_struc_table.srp[2].aux_df, aux_df)
         end
     end
     return single_struc_table
