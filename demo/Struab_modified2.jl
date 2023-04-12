@@ -48,23 +48,27 @@ emission2 = [
 parameters_vector = [emission1, emission2]
 node_emission = RootNode(CPD_emission, parameters_vector)
 
+ρᵣ = 0.3
+λᵣ = 150
+cov = 0.2
+ζᵣ = cov * λᵣ
 
-function cpd_f_given_ur(ur)
-    return r -> cdf(Normal(), (ln(r) - ur * sqrt(ρᵣ) - λᵣ) / sqrt(ζᵣ^2 - ρᵣ))
+function cpd_f_given_ur(df)
+    return r -> cdf(Normal(), (log(r) - df.Uᵣ * sqrt(ρᵣ) - λᵣ) / sqrt(ζᵣ^2 - ρᵣ))
 end
 model_f = ModelWithName(:model_f, [Model(cpd_f_given_ur, :f)])
 f_CPD = FunctionalCPD(:f, name.([Uᵣ_node]), [1], [model_f])
 f_node = FunctionalNode(f_CPD, [Uᵣ_node], "continuous")
 
 function cpd_o_given_f(f)
-    return r -> cdf(Normal(), (ln(r) - f * sqrt(ρᵣ) - λᵣ) / sqrt(ζᵣ^2 - ρᵣ))
+    return r -> cdf(Normal(), (log(r) - f * sqrt(ρᵣ) - λᵣ) / sqrt(ζᵣ^2 - ρᵣ))
 end
 model_o1 = ModelWithName(:model_o1, [Model(cpd_o_given_f, :o1)])
 o1_CPD = FunctionalCPD(:o1, name.([f_node]), [1], [model_o1])
 o1_node = FunctionalNode(o1_CPD, [f_node], "continuous")
 
 function cpd_o_given_ur(ur)
-    return r -> cdf(Normal(), (ln(r) - ur * sqrt(ρᵣ) - λᵣ) / sqrt(ζᵣ^2 - ρᵣ))
+    return r -> cdf(Normal(), (log(r) - ur * sqrt(ρᵣ) - λᵣ) / sqrt(ζᵣ^2 - ρᵣ))
 end
 model_o2 = ModelWithName(:model_o2, [Model(cpd_o_given_ur, :o2)])
 o2_CPD = FunctionalCPD(:o2, name.([Uᵣ_node]), [1], [model_o2])
@@ -86,16 +90,13 @@ o2_node = FunctionalNode(o2_CPD, [Uᵣ_node], "continuous")
 # node_emission = StdNode(CPD_emission, [node_timescenario], parameters_vector)
 
 ## R Nodes
-ρᵣ = 0.3
-γᵣ = 150
-ζᵣ = 0.2
 parentsᵣ = [Uᵣ_node]
 parental_ncategoriesᵣ = Vector{Int}()
 
 
 ## Function for returning cpd of node Rᵢ ∀ i in [1;5]
 function cpd_r_given_o1(o1)
-    return r -> cdf(Normal(), (ln(r) - o1 * sqrt(ρᵣ) - λᵣ) / sqrt(ζᵣ^2 - ρᵣ))
+    return r -> cdf(Normal(), (log(r) - o1 * sqrt(ρᵣ) - λᵣ) / sqrt(ζᵣ^2 - ρᵣ))
 end
 
 ## node R₁
@@ -104,7 +105,7 @@ R₁_CPD = FunctionalCPD(:R₁, name.([o1_node]), parental_ncategoriesᵣ, [mode
 R₁_node = FunctionalNode(R₁_CPD, [o1_node], "continuous")
 
 function cpd_r_given_o2(o2)
-    return r -> cdf(Normal(), (ln(r) - o2 * sqrt(ρᵣ) - λᵣ) / sqrt(ζᵣ^2 - ρᵣ))
+    return r -> cdf(Normal(), (log(r) - o2 * sqrt(ρᵣ) - λᵣ) / sqrt(ζᵣ^2 - ρᵣ))
 end
 
 model₂ = ModelWithName(:model2, [Model(cpd_r_given_o2, :R₂)])
@@ -113,7 +114,7 @@ R₂_node = FunctionalNode(R₂_CPD, [o2_node], "continuous")
 
 ## node R₂
 function cpd_r_given_u(ur)
-    return r -> cdf(Normal(), (ln(r) - ur * sqrt(ρᵣ) - λᵣ) / sqrt(ζᵣ^2 - ρᵣ))
+    return r -> cdf(Normal(), (log(r) - ur * sqrt(ρᵣ) - λᵣ) / sqrt(ζᵣ^2 - ρᵣ))
 end
 ## node R₃
 model₃ = ModelWithName(:model3, [Model(cpd_r_given_u, :R₃)])
@@ -188,16 +189,16 @@ r_nodes = _get_node_in_rbn(ebn)
 # nodes_to_be_evaluated = filter(x -> isa(x, FunctionalNode), r_nodes)
 # a, b = _get_ancestors_distribution_4sampling(nodes_to_be_evaluated[1])
 # # node = nodes_to_be_evaluated[1]
-# empty_srp = empty_srp_table_with_evidence[1]
+empty_srp = empty_srp_table_with_evidence[1]
 # # parent_node = V_node
 # # a = _build_srp_single_node_single_evidence(ebn, empty_srp.evidence, parent_node)
-# single_struc_table = empty_srp
-# node = E_node
+single_struc_table = empty_srp
+node = E_node
 
 
 # uqinputs = _build_uqinputs_vector_single_evidence(ebn, empty_srp, E_node)
 
 a = _functional_node_after_reduction(ebn, empty_srp_table_with_evidence, E_node)
-# a.evidence_table[1].srp[2][2]
-##TODO push! new_symbols and name of direct parents that are functional nodes into a vector of symbol with their functions!
+df = UncertaintyQuantification.sample(a[1].srp[2].inputs, 2)
 
+aux = a[1].srp[2].ancestors_models[1]
