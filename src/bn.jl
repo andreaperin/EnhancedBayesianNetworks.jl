@@ -10,20 +10,16 @@ include("nodes.jl")
 
 abstract type ProbabilisticGraphicalModel end
 abstract type AbstractBayesNet <: ProbabilisticGraphicalModel end
-mutable struct AuxiliarySampleDataFrameElement
-    node::NodeName
-    sampling_function::Function
-end
 mutable struct StructuralReliabilityProblem
     model::Symbol
     inputs::Vector{UQInput}
-    aux_df::Vector{AuxiliarySampleDataFrameElement}
+    ancestors_models::Vector{Vector{<:UQModel}}
 end
 
 function StructuralReliabilityProblem(model::Symbol)
     inputs = Vector{UQInput}()
-    aux_df = Vector{AuxiliarySampleDataFrameElement2}()
-    return StructuralReliabilityProblem(model, inputs, aux_df)
+    ancestors_models = Vector{Vector{UQModel}}()
+    return StructuralReliabilityProblem(model, inputs, ancestors_models)
 end
 
 mutable struct StructuralReliabilityTable
@@ -31,22 +27,21 @@ mutable struct StructuralReliabilityTable
     srp::Tuple{NodeName,StructuralReliabilityProblem}
 end
 
-
 """
 A Node Struct to be used after reduction
 """
 
-mutable struct ReducedFunctionalNode
-    parents::Vector{<:AbstractNode}
-    type::String
-    evidence_table::Vector{StructuralReliabilityTable}
-end
+# mutable struct ReducedFunctionalNode
+#     parents::Vector{<:AbstractNode}
+#     type::String
+#     evidence_table::Vector{StructuralReliabilityTable}
+# end
 
-function ReducedFunctionalNode(node::FunctionalNode, evidence_table::Vector{StructuralReliabilityTable})
-    parents = node.parents
-    type = node.type
-    ReducedFunctionalNode(parents, type, evidence_table)
-end
+# function ReducedFunctionalNode(node::FunctionalNode, evidence_table::Vector{StructuralReliabilityTable})
+#     parents = node.parents
+#     type = node.type
+#     ReducedFunctionalNode(parents, type, evidence_table)
+# end
 
 
 """
@@ -514,10 +509,11 @@ function _build_uqinputs_vector_single_evidence(ebn::M, single_struc_table::Stru
             intermediate_nodes = filter(x -> name(x) ∈ intermediate_symbols, ebn.nodes)
             n = length(intermediate_nodes)
             distributions = _get_distribution_table_given_evidence.(repeat([single_struc_table.evidence], n), intermediate_nodes)
+            distributions = map(x -> x[1].distribution.model, distributions)
             ## TODO find the proper way to insert the aux_df element
-            f_aux = (node, dist) -> ([(name(node[i]), dist[i][1].distribution.model) for i in range(1, length(node))])
-            aux_df = map((x) -> AuxiliarySampleDataFrameElement(x[1], x[2][1].func), f_aux(intermediate_nodes, distributions))
-            append!(single_struc_table.srp[2].aux_df, aux_df)
+            # f_aux = (node, dist) -> ([Model(dist[i][1].distribution.model.func, name(node[i])) for i in range(1, length(node))])
+            # c = f_aux(intermediate_nodes, distributions)
+            append!(single_struc_table.srp[2].ancestors_models, distributions)
         end
     end
     return single_struc_table
