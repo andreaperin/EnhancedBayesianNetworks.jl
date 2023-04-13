@@ -4,10 +4,10 @@ using DataFrames
 
 function parameters4UQ(param_list::Vector)
     par = Vector{Parameter}()
-    frmt = Dict{Symbol,FormatSpec}()
+    frmt = Dict{Symbol,String}()
     for i in range(1, length(param_list))
         push!(par, Parameter(param_list[i][1]["value"], param_list[i][2]))
-        frmt[param_list[i][2]] = FormatSpec(param_list[i][1]["format"])
+        frmt[param_list[i][2]] = param_list[i][1]["format"]
     end
     return par, frmt
 end

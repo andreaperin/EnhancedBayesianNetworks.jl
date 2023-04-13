@@ -12,9 +12,12 @@ function readxlsxinput(input_file::String)
     parameters_list = xlsx2parameters(input_file)
     variables_list = xlsx2variables(input_file)
     par, numberformats = parameters4UQ(parameters_list)
-    total_list = par
-    for rv in variables_list
-        push!(total_list, rv)
+    total_list = Vector{UQInput}()
+    if ~isempty(par)
+        append!(total_list, par)
+    end
+    if ~isempty(variables_list)
+        append!(total_list, variables_list)
     end
     return variables_list, par, numberformats, total_list
 end
@@ -143,8 +146,34 @@ function _build_head_extractor2D(output_file::String)
     return extractors
 end
 
+# function build_specific_extractor(outputfile::String, x_range::Vector{Int64}, z_range::Vector{Int64}, qtyofinterest::String)
+#     regexs = Dict(
+#         "variable_regex" => r"(?<=\")[^,]*?(?=\")",
+#         "day_regex" => r"\d*\.\d{2,5}",
+#         "x_regex" => r"(?<=i=).*?(?=[,j=])",
+#         "z_regex" => r"(?<=j=).*?(?=,)",
+#     )
+#     extractors = Extractor(
+#         base -> begin
+#             file = joinpath(base, outputfile)
+#             result, var, x, z = concentrationplt2dict(
+#                 file,
+#                 regexs["variable_regex"],
+#                 regexs["day_regex"],
+#                 regexs["x_regex"],
+#                 regexs["z_regex"],
+#             )
+#             return [result]
+#         end,
+#         Symbol("$qtyofinterest"),
+#     )
+#     return [extractors]
+# end
+
 
 ## TODO add 3D concentration and 2/3D Temperature
+
+
 function build_performances(output_parameters::Dict)
     thresholds = Vector()
     for (key, val) in output_parameters
@@ -168,11 +197,18 @@ function build_performances(output_parameters::Dict)
     return performances
 end
 
-function _get_th_model(sourcedir::String, format_dict::Dict{Symbol,FormatSpec}, uqinputs::Vector{Q}, extractor::Vector{Extractor}, cleanup::Bool) where {Q<:UQInput}
+function _get_th_model(
+    sourcedir::String,
+    uqinputs::Vector{UQInput},
+    format::Dict{Symbol,String},
+    extractor::Vector{Extractor},
+    cleanup::Bool
+)
     sourcefile = "smoker.data"
     extras = String[]
     workdir = get_workdir(uqinputs, sourcedir)
     solvername = "smokerV3TC"
     solver = Solver(joinpath(sourcedir, solvername), "", sourcefile)
-    return ExternalModel(sourcedir, [sourcefile], extras, format_dict, workdir, extractor, solver, cleanup)
+    return ExternalModel(sourcedir, [sourcefile], extractor, solver, workdir, extras, format, cleanup)
 end
+

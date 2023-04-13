@@ -6,24 +6,26 @@ Sys.isapple() ? include("../model_TH_macos/buildmodel_TH.jl") : include("../mode
 # timescenario_node = StdNode(CPD_timescenario)
 
 earthquake = NamedCategorical([:happen, :nothappen], [0.5, 0.5])
-CPD_earthquake = RootCPD(:earthquake, earthquake)
+CPD_earthquake = RootCPD(:earthquake, [earthquake])
 earthquake_node = RootNode(CPD_earthquake)
 
 extremerain = NamedCategorical([:low, :high], [0.5, 0.5])
-CPD_extremerain = RootCPD(:extremerain, extremerain)
+CPD_extremerain = RootCPD(:extremerain, [extremerain])
 extremerain_node = RootNode(CPD_extremerain)
 
 disp_longv_distribution = truncated(Normal(1, 1), lower=0)
-CPD_disp_longv = RootCPD(:disp_longv, disp_longv_distribution)
+CPD_disp_longv = RootCPD(:disp_longv, [disp_longv_distribution])
 disp_longv_node = RootNode(CPD_disp_longv)
 
 Kz_parents = [extremerain_node]
 Kz_distribution1 = truncated(Normal(1, 1), lower=0)
 Kz_distribution2 = truncated(Normal(4, 2), lower=0)
-CPD_Kz = CategoricalCPD(:Kz, name.(Kz_parents), [2], [Kz_distribution1, Kz_distribution2])
+CPD_Kz = StdCPD(:Kz, name.(Kz_parents), [2], [Kz_distribution1, Kz_distribution2])
 Kz_node = StdNode(CPD_Kz, Kz_parents)
 
 ## Model Node
+
+
 
 output_target = :output
 output_parents = [earthquake_node, disp_longv_node, Kz_node]
@@ -64,6 +66,8 @@ function max_h(df::DataFrame)
     end
     return max_head
 end
+
+
 
 ## Scenario 1
 correlated_nodes1 = name.([disp_longv_node, Kz_node])
