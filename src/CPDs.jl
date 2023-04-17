@@ -10,16 +10,13 @@ abstract type CPD end
 const global NodeName = Symbol
 const global NodeNames = AbstractVector{NodeName}
 const global ModelName = Symbol
+const global AbstractDistribution = Union{Distribution,JointDistribution}
 
 struct ModelWithName
     name::ModelName
     model::Vector{<:UQModel}
 end
 
-
-"""
-    An Object for mapping each distribution to a MapableTypes::Union{AbstractString, Symbol}
-"""
 const global MapableTypes = Union{AbstractString,Symbol}
 
 struct MappedAliasTable <: Sampleable{Univariate,Discrete}
@@ -42,28 +39,20 @@ end
 Distributions.ncategories(s::MappedAliasTable) = Distributions.ncategories(s.alias)
 Distributions.ncategories(d::NamedCategorical) = Distributions.ncategories(d.cat)
 
-"""
-A CPD for which the distribution never changes.
-    target: name of the CPD's variable
-    parents: list of parent variables.
-    distributions: a Distributions.jl distribution
-While a RootCPD can have parents, their assignments will not affect the distribution.
-"""
 struct RootCPD <: CPD
     target::NodeName
     parents::NodeNames
     parental_ncategories::Vector{Int}
-    distributions::Vector{<:Distribution}
-    function RootCPD(target::NodeName, parents::NodeNames, parental_ncategories::Vector{Int}, distributions::Vector{<:Distribution})
+    distributions::Vector{<:AbstractDistribution}
+    function RootCPD(target::NodeName, parents::NodeNames, parental_ncategories::Vector{Int}, distributions::Vector{<:AbstractDistribution})
         isempty(parents) ? new(target, parents, parental_ncategories, distributions) : throw(DomainError(target, "Is a RootNode with non empty parents argument"))
         isempty(parental_ncategories) ? new(target, parents, parental_ncategories, distributions) : throw(DomainError(target, "Is a RootNode with non empty parental_ncategories"))
         length(distributions) == 1 ? new(target, parents, parental_ncategories, distributions) : throw(DomainError(target, "Is a RootNode with more than 1 distribution"))
     end
 end
 
-function RootCPD(target::NodeName, distributions::Vector{<:Distribution})
-    RootCPD(target, NodeName[], Int[], distributions)
-end
+RootCPD(target::NodeName, distributions::Vector{<:AbstractDistribution}) = RootCPD(target, NodeName[], Int[], distributions)
+RootCPD(target::NodeName, distributions::D) where {D<:AbstractDistribution} = RootCPD(target, NodeName[], Int[], [distributions])
 
 name(cpd::RootCPD) = cpd.target
 parents(cpd::RootCPD) = cpd.parents
@@ -80,25 +69,31 @@ X,Y,Z
 1,1,2
 ...
 
-Discrete Parents ONLY
+For Discrete and continuous nodes with known distributions and parents.
 """
 struct StdCPD <: CPD
     target::NodeName
     parents::NodeNames
     parental_ncategories::Vector{Int}
-    distributions::Vector{<:Distribution}
+    distributions::Vector{<:AbstractDistribution}
 
-    function StdCPD(target::NodeName, parents::NodeNames, parental_ncategories::Vector{Int}, distribution::Vector{<:Distribution})
-        length(parents) == length(parental_ncategories) ? new(target, parents, parental_ncategories, distribution) : throw(DomainError(target, "parents-parental_ncategories length missmatch"))
+    function StdCPD(target::NodeName, parents::NodeNames, parental_ncategories::Vector{Int}, distribution::Vector{<:AbstractDistribution})
         prod(parental_ncategories) == length(distribution) ? new(target, parents, parental_ncategories, distribution) : throw(DomainError(target, "parental_ncategories-distributions length missmatch"))
     end
 end
+
+StdCPD(target::NodeName, parents::NodeNames, distributions::Vector{<:AbstractDistribution}) = StdCPD(target, parents, Int[], distributions)
+StdCPD(target::NodeName, parents::NodeNames, distributions::D) where {D<:AbstractDistribution} = StdCPD(target, parents, Int[], [distributions])
+
 
 name(cpd::StdCPD) = cpd.target
 parents(cpd::StdCPD) = cpd.parents
 nparams(cpd::StdCPD) = sum(d -> paramcount(params(d)), cpd.distributions)
 
-
+"""
+For Discrete and continuous nodes with AT LEAST one continuous parents and UNKNOWN Distribution. 
+The Function or model return a SINGLE VALUE not a Distribution.
+"""
 struct FunctionalCPD <: CPD
     target::NodeName
     parents::NodeNames
@@ -117,6 +112,6 @@ nparams(cpd::FunctionalCPD) = sum(d -> paramcount(params(d)), cpd.distributions)
 
 
 function _get_type_of_cpd(cpd::Union{RootCPD,StdCPD})
-    isa(cpd.distributions, Vector{<:ContinuousUnivariateDistribution}) ? type = "continuous" : type = "discrete"
+    isa(cpd.distributions, Union{Vector{<:JointDistribution},Vector{<:ContinuousUnivariateDistribution}}) ? type = "continuous" : type = "discrete"
     return type
 end

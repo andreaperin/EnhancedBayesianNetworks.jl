@@ -1,6 +1,7 @@
-include("../src/bn.jl")
-Sys.isapple() ? include("../model_TH_macos/buildmodel_TH.jl") : include("../model_TH_win/buildmodel_TH.jl")
+using EnhancedBayesianNetworks
+using GraphRecipes
 
+Sys.isapple() ? include("../model_TH_macos/buildmodel_TH.jl") : include("../model_TH_win/buildmodel_TH.jl")
 
 ## EarthquakeNode
 earthquake = NamedCategorical([:happen, :nothappen], [0.5, 0.5])
@@ -130,7 +131,7 @@ function update_model_parameter_for_given_evidence(default_parameters::Vector{UQ
     return updated_uqinputs
 end
 
-n = 800
+n = 1
 result = Dict()
 for evaluation in a
     df = UncertaintyQuantification.sample(update_model_parameter_for_given_evidence(uqinputs, evaluation.srp[2].inputs), n)

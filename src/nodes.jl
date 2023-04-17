@@ -11,7 +11,7 @@ const global Assignment = Dict{NodeName,Int}
 
 mutable struct EvidenceTable
     evidence::Assignment
-    distribution::Union{<:Distribution,ModelWithName}
+    distribution::Union{<:AbstractDistribution,ModelWithName}
 end
 
 mutable struct ModelParameters
@@ -31,16 +31,16 @@ function _build_evidencetable_from_cpd(cpd::RootCPD)
     [EvidenceTable(Assignment(), cpd.distributions[1])]
 end
 
-function _build_evidencetable_from_cpd(cpd::StdCPD, pare::Vector{<:AbstractNode})
-    f_e = (tup, pare) -> Dict([(name(pare[i]) => tup[i]) for i in range(1, length(tup))])
-    f_t = (evid, dist) -> EvidenceTable(evid, dist)
-    combinations = _get_nodes_combinations(pare)
-    evidences = f_e.(combinations, repeat([pare], length(combinations)))
-    evidence_table = f_t.(evidences, cpd.distributions)
-    return evidence_table
-end
+# function _build_evidencetable_from_cpd(cpd::StdCPD, pare::Vector{<:AbstractNode})
+#     f_e = (tup, pare) -> Dict([(name(pare[i]) => tup[i]) for i in range(1, length(tup))])
+#     f_t = (evid, dist) -> EvidenceTable(evid, dist)
+#     combinations = _get_nodes_combinations(pare)
+#     evidences = f_e.(combinations, repeat([pare], length(combinations)))
+#     evidence_table = f_t.(evidences, cpd.distributions)
+#     return evidence_table
+# end
 
-function _build_evidencetable_from_cpd(cpd::FunctionalCPD, parents::Vector{<:AbstractNode})
+function _build_evidencetable_from_cpd(cpd::C, parents::Vector{<:AbstractNode}) where {C<:CPD}
     f_e = (tup, pare) -> Dict([(name(pare[i]) => tup[i]) for i in range(1, length(tup))])
     f_t = (evid, dist) -> EvidenceTable(evid, dist)
     discrete_parents = filter(x -> x.type == "discrete", parents)
@@ -113,10 +113,14 @@ struct StdNode <: AbstractNode
         evidence_table::Vector{EvidenceTable},
         model_parameters::Vector{ModelParametersTable}
     )
-        if ~isempty(filter(x -> x.type == "continuous", parents))
-            throw(DomainError(cpd.target, "StdCPD is for discrete parents only"))
+        # if ~isempty(filter(x -> x.type == "continuous", parents))
+        #     throw(DomainError(cpd.target, "StdCPD is for discrete parents only"))
+        # end
+        discrete_parents = filter(x -> x.type == "discrete", parents)
+        if length(discrete_parents) != length(cpd.parental_ncategories)
+            throw(DomainError(cpd.target, "parents-parental_ncategories length missmatch"))
         end
-        if _get_number_of_discretestates.(parents) != cpd.parental_ncategories
+        if _get_number_of_discretestates.(discrete_parents) != cpd.parental_ncategories
             throw(DomainError(cpd.target, "parental_ncategories - parents discrete states missmatch"))
         end
         new(cpd, parents, type, evidence_table, model_parameters)
