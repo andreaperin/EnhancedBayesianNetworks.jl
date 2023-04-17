@@ -1,5 +1,6 @@
 module EnhancedBayesianNetworks
 
+using Graphs
 using Reexport
 
 @reexport using UncertaintyQuantification
@@ -21,6 +22,9 @@ export markov_envelopes
 export name
 export _reduce_ebn_to_rbn
 
+include("CPDs.jl")
+
+include("nodes/nodes.jl")
 include("bn.jl")
 
 end

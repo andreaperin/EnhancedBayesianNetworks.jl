@@ -88,7 +88,7 @@ function max_h(df::DataFrame)
     end
     return max_head
 end
-performance = df -> 2.2 .- df.c_max
+performance = df -> 1.2 .- df.c_max
 
 
 output_target = :output
