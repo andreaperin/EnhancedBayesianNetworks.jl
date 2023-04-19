@@ -6,8 +6,6 @@ using Graphs: DiGraph, SimpleEdge, add_edge!, rem_edge!,
     outneighbors, is_cyclic, nv, ne,
     outdegree, bfs_tree, dst
 
-include("nodes.jl")
-
 abstract type ProbabilisticGraphicalModel end
 abstract type AbstractBayesNet <: ProbabilisticGraphicalModel end
 mutable struct StructuralReliabilityProblem

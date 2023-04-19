@@ -4,27 +4,26 @@ using Graphs
 using Reexport
 
 @reexport using UncertaintyQuantification
+@reexport using OrderedCollections
 
-export EnhancedBayesNet
-export FunctionalCPD
-export FunctionalNode
-export ModelParameters
-export ModelWithName
-export NamedCategorical
-export RootCPD
+# Types
+export AbstractNode
+export ContinuousNode
+export DiscreteNode
+
+# struct
+export ContinuousRootNode
+export ContinuousStandardNode
+export DiscreteRootNode
+export DiscreteStandardNode
 export RootNode
-export StdCPD
-export StdNode
+export StandardNode
 
-export _build_node_evidence_after_reduction
-export _functional_node_after_reduction
-export markov_envelopes
-export name
-export _reduce_ebn_to_rbn
 
-include("CPDs.jl")
+# Methods
+export _get_states
+
 
 include("nodes/nodes.jl")
-include("bn.jl")
 
 end

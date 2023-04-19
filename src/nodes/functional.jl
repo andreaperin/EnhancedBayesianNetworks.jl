@@ -3,6 +3,7 @@ mutable struct FunctionalNode <: AbstractNode
     parents::Vector{<:AbstractNode}
     type::String
     evidence_table::Vector{EvidenceTable}
+
 end
 
 function FunctionalNode(cpd::FunctionalCPD, parents::Vector{<:AbstractNode}, type::String)

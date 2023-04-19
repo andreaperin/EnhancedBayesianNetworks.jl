@@ -64,6 +64,13 @@ CPD_debrisflow = StdCPD(
         debrisflow4,
         debrisflow5]
 )
+
+function cpd(parents::Dict{Symbol,Any})
+    if parents[:a] == 2 && parents[:b] == 1
+        return NamedCategorical([:state1, :state2, :state3, :state4], [0.444, 0.519, 0.027, 0.01])
+    end
+end
+
 node_debrisflow = StdNode(CPD_debrisflow, parents_debrisflow)
 
 windvelocity = NamedCategorical([:slow, :fast], [0.8, 0.2])
