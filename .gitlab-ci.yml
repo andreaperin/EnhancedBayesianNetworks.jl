@@ -9,9 +9,16 @@
     # want coverage results.
     - julia -e 'using Pkg; Pkg.activate("."); Pkg.test("EnhancedBayesianNetworks"; coverage = true)'
     # Comment out below if you do not want coverage results.
-    - julia -e 'using Pkg; Pkg.add("Coverage");
-      using Coverage; cl, tl = get_summary(process_folder());
-      println("(", cl/tl*100, "%) covered")'
+    - julia -e 'using Pkg; Pkg.add("Coverage"); Pkg.add("LocalCoverage");
+      using Coverage; using LocalCoverage;
+      coverage = process_folder();
+      LCOV.writefile("coverage-lcov.info", coverage);
+      write_lcov_to_xml("cobertura.xml", "coverage-lcov.info");'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: cobertura.xml
 
 # Name a test and select an appropriate image.
 # images comes from Docker hub
