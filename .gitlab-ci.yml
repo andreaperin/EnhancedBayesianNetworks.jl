@@ -13,7 +13,9 @@
       using Coverage; using LocalCoverage;
       coverage = process_folder();
       LCOV.writefile("coverage-lcov.info", coverage);
-      write_lcov_to_xml("cobertura.xml", "coverage-lcov.info");'
+      write_lcov_to_xml("cobertura.xml", "coverage-lcov.info");
+      cl, tl = get_summary(coverage);
+      println("(", cl/tl*100, "%) covered")'
   artifacts:
     reports:
       coverage_report:
