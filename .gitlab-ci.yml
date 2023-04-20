@@ -10,7 +10,6 @@
     - julia -e 'using Pkg; Pkg.activate("."); Pkg.test("EnhancedBayesianNetworks"; coverage = true)'
     # Comment out below if you do not want coverage results.
     - julia -e 'using Pkg; Pkg.add("Coverage");
-      import EnhancedBayesianNetworks; cd(joinpath(dirname(pathof(EnhancedBayesianNetworks)), ".."));
       using Coverage; cl, tl = get_summary(process_folder());
       println("(", cl/tl*100, "%) covered")'
 
