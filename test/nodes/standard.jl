@@ -34,7 +34,7 @@
             [:no, :no] => Normal(3, 1)
         )
         node = ContinuousStandardNode(name, parents, distribution)
-        @test _get_states(node) == [Normal(), Normal(1, 1), Normal(2, 1), Normal(3, 1)]
+        @test EnhancedBayesianNetworks._get_states(node) == [Normal(), Normal(1, 1), Normal(2, 1), Normal(3, 1)]
 
     end
 
@@ -90,8 +90,7 @@
             [:yes, :no] => Dict(:yes => 0.2, :no => 0.8),
             [:no, :no] => Dict(:yes => 0.2, :no => 0.8)
         )
-        node = DiscreteStandardNode(name, parents, states)
-        @test_throws ErrorException("non coherent definition of nodes states in the ordered dict") _get_states(node) == [:yes, :no]
+        @test_throws ErrorException("non coherent definition of nodes states in the ordered dict") DiscreteStandardNode(name, parents, states)
 
         states = OrderedDict(
             [:yes, :yes] => Dict(:a => 0.2, :b => 0.8),
@@ -100,7 +99,7 @@
             [:no, :no] => Dict(:a => 0.2, :b => 0.8)
         )
         node = DiscreteStandardNode(name, parents, states)
-        @test _get_states(node) == [:a, :b]
+        @test EnhancedBayesianNetworks._get_states(node) == [:a, :b]
     end
 end
 

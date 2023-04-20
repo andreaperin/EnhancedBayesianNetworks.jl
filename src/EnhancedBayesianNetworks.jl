@@ -21,7 +21,7 @@ export StandardNode
 
 
 # Methods
-export _get_states
+# export _get_states
 
 
 include("nodes/nodes.jl")

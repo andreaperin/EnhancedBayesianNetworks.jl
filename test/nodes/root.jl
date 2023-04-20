@@ -2,7 +2,7 @@
     @testset "ContinuesRootNode" begin
         rv = RandomVariable(Normal(), :x)
         node = ContinuousRootNode(rv)
-        @test _get_states(node) == Normal()
+        @test EnhancedBayesianNetworks._get_states(node) == Normal()
     end
 
     @testset "DiscreteRootNode" begin
@@ -19,6 +19,6 @@
 
         states = Dict(:yes => 0.2, :no => 0.8)
         node = DiscreteRootNode(name, states)
-        @test _get_states(node) == [:yes, :no]
+        @test EnhancedBayesianNetworks._get_states(node) == [:yes, :no]
     end
 end
