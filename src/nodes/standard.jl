@@ -7,7 +7,7 @@ struct ContinuousStandardNode <: ContinuousNode
 
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
 
-        for (key, val) in distribution
+        for (key, _) in distribution
             length(discrete_parents) != length(key) && error("defined parent nodes states must be equal to the number of discrete parent nodes")
         end
 
