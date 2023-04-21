@@ -1,9 +1,9 @@
 struct ContinuousStandardNode <: ContinuousNode
     name::Symbol
-    parents::Vector{N} where {N<:AbstractNode}
+    parents::Vector{<:AbstractNode}
     distribution::OrderedDict{Vector{Symbol},D} where {D<:Distribution}
 
-    function ContinuousStandardNode(name::Symbol, parents::Vector{N}, distribution::OrderedDict{Vector{Symbol},D}) where {N<:AbstractNode,D<:Distribution}
+    function ContinuousStandardNode(name::Symbol, parents::Vector{<:AbstractNode}, distribution::OrderedDict{Vector{Symbol},D}) where {D<:Distribution}
 
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
 
@@ -27,11 +27,11 @@ end
 
 struct DiscreteStandardNode <: DiscreteNode
     name::Symbol
-    parents::Vector{N} where {N<:AbstractNode}
+    parents::Vector{<:AbstractNode}
     states::OrderedDict{Vector{Symbol},Dict{Symbol,T}} where {T<:Real}
     parameters::Dict{Symbol,Vector{Parameter}}
 
-    function DiscreteStandardNode(name::Symbol, parents::Vector{N}, states::OrderedDict{Vector{Symbol},Dict{Symbol,T}}, parameters::Dict{Symbol,Vector{Parameter}}) where {N<:AbstractNode,T<:Real}
+    function DiscreteStandardNode(name::Symbol, parents::Vector{<:AbstractNode}, states::OrderedDict{Vector{Symbol},Dict{Symbol,T}}, parameters::Dict{Symbol,Vector{Parameter}}) where {T<:Real}
 
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
 
@@ -57,7 +57,7 @@ struct DiscreteStandardNode <: DiscreteNode
     end
 end
 
-function DiscreteStandardNode(name::Symbol, parents::Vector{N}, states::OrderedDict{Vector{Symbol},Dict{Symbol,T}}) where {N<:AbstractNode,T<:Real}
+function DiscreteStandardNode(name::Symbol, parents::Vector{<:AbstractNode}, states::OrderedDict{Vector{Symbol},Dict{Symbol,T}}) where {T<:Real}
     DiscreteStandardNode(name, parents, states, Dict{Symbol,Vector{Parameter}}())
 end
 
