@@ -19,9 +19,6 @@ struct ContinuousStandardNode <: ContinuousNode
         return new(name, parents, distribution)
     end
 end
-
-_get_states(node::ContinuousStandardNode) = collect(values(node.distribution))
-
 struct DiscreteStandardNode <: DiscreteNode
     name::Symbol
     parents::Vector{<:AbstractNode}

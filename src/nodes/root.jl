@@ -4,8 +4,6 @@ struct ContinuousRootNode <: ContinuousNode
 end
 
 ContinuousRootNode(rv::RandomVariable) = ContinuousRootNode(rv.name, rv.dist)
-
-_get_states(node::ContinuousNode) = node.distribution
 struct DiscreteRootNode <: DiscreteNode
     name::Symbol
     states::Dict{Symbol,<:Real}

@@ -1,9 +1,5 @@
 @testset "Root Nodes" begin
-    @testset "ContinuesRootNode" begin
-        rv = RandomVariable(Normal(), :x)
-        node = ContinuousRootNode(rv)
-        @test EnhancedBayesianNetworks._get_states(node) == Normal()
-    end
+    @testset "ContinuesRootNode" begin end
 
     @testset "DiscreteRootNode" begin
         name = :x

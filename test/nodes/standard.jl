@@ -26,16 +26,6 @@
             [:no, :no] => Normal(3, 1)
         )
         @test_throws ErrorException("missmatch in defined parents combinations states and states of the parents") ContinuousStandardNode(name, parents, distribution)
-
-        distribution = OrderedDict(
-            [:yes, :yes] => Normal(),
-            [:no, :yes] => Normal(1, 1),
-            [:yes, :no] => Normal(2, 1),
-            [:no, :no] => Normal(3, 1)
-        )
-        node = ContinuousStandardNode(name, parents, distribution)
-        @test EnhancedBayesianNetworks._get_states(node) == [Normal(), Normal(1, 1), Normal(2, 1), Normal(3, 1)]
-
     end
 
     @testset "DiscreteStandardNode" begin
