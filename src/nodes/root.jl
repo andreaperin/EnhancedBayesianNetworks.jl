@@ -13,9 +13,9 @@ struct DiscreteRootNode <: DiscreteNode
 
     function DiscreteRootNode(name::Symbol, states::Dict{Symbol,<:Real}, parameters::Dict{Symbol,Vector{Parameter}})
 
-        any(values(states) .< 0.0) && error("Probabilites must be nonnegative")
-        any(values(states) .> 1.0) && error("Probabilites must be less or equal to 1.0")
-        sum(values(states)) > 1.0 && error("Probabilites must sum up to 1.0")
+        _not_negative(states) && error("Probabilites must be nonnegative")
+        _less_than_one(states) && error("Probabilites must be less or equal to 1.0")
+        _sum_up_to_one(states) && error("Probabilites must sum up to 1.0")
 
         return new(name, states, parameters)
     end

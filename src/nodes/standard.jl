@@ -8,12 +8,12 @@ struct ContinuousStandardNode <: ContinuousNode
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
 
         for (key, _) in distribution
-            length(discrete_parents) != length(key) && error("defined parent nodes states must be equal to the number of discrete parent nodes")
+            length(discrete_parents) != length(key) && error("number of symbols per parent in node.states must be equal to the number of discrete parents")
         end
 
         discrete_parents_combination = vec(collect(Iterators.product(_get_states.(discrete_parents)...)))
         discrete_parents_combination = map(x -> [i for i in x], discrete_parents_combination)
-        length(discrete_parents_combination) != length(distribution) && error("defined combinations must be equal to the discrete parents combinations")
+        length(discrete_parents_combination) != length(distribution) && error("defined combinations in node.states must be equal to the theorical discrete parents combinations")
         any(discrete_parents_combination .∉ [keys(distribution)]) && error("missmatch in defined parents combinations states and states of the parents")
 
         return new(name, parents, distribution)
@@ -36,21 +36,21 @@ struct DiscreteStandardNode <: DiscreteNode
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
 
         for (key, val) in states
-            any(values(val) .< 0.0) && error("Probabilites must be nonnegative")
-            any(values(val) .> 1.0) && error("Probabilites must be less or equal to 1.0")
-            sum(values(val)) > 1.0 && error("Probabilites must sum up to 1.0")
+            _not_negative(val) && error("Probabilites must be nonnegative")
+            _less_than_one(val) && error("Probabilites must be less or equal to 1.0")
+            _sum_up_to_one(val) && error("Probabilites must sum up to 1.0")
 
-            length(discrete_parents) != length(key) && error("defined parent nodes states must be equal to the number of discrete parent nodes")
+            length(discrete_parents) != length(key) && error("number of symbols per parent in node.states must be equal to the number of discrete parents")
         end
 
         node_states = [keys(s) for s in values(states)]
         if length(reduce(intersect, node_states)) != length(reduce(union, node_states))
-            error("non coherent definition of nodes states in the ordered dict")
+            error("NON coherent definition of nodes states in the ordered dict")
         end
 
         discrete_parents_combination = vec(collect(Iterators.product(_get_states.(discrete_parents)...)))
         discrete_parents_combination = map(x -> [i for i in x], discrete_parents_combination)
-        length(discrete_parents_combination) != length(states) && error("defined combinations must be equal to the discrete parents combinations")
+        length(discrete_parents_combination) != length(states) && error("defined combinations in node.states must be equal to the theorical discrete parents combinations")
         any(discrete_parents_combination .∉ [keys(states)]) && error("missmatch in defined parents combinations states and states of the parents")
 
         return new(name, parents, states, parameters)

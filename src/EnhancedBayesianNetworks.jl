@@ -14,6 +14,7 @@ export DiscreteNode
 # struct
 export ContinuousRootNode
 export ContinuousStandardNode
+# export DiscreteFunctionalNode
 export DiscreteRootNode
 export DiscreteStandardNode
 export RootNode
@@ -25,5 +26,5 @@ export StandardNode
 
 
 include("nodes/nodes.jl")
-
+include("util/probabilities.jl")
 end
