@@ -4,4 +4,5 @@ abstract type ContinuousNode <: AbstractNode end
 
 include("root.jl")
 include("standard.jl")
-# include("functional.jl")
+include("functional.jl")
+

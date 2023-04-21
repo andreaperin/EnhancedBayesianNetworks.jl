@@ -14,7 +14,7 @@ export DiscreteNode
 # struct
 export ContinuousRootNode
 export ContinuousStandardNode
-# export DiscreteFunctionalNode
+export DiscreteFunctionalNode
 export DiscreteRootNode
 export DiscreteStandardNode
 export RootNode

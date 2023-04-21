@@ -4,3 +4,4 @@ using EnhancedBayesianNetworks
 
 include("nodes/root.jl")
 include("nodes/standard.jl")
+include("nodes/functional.jl")
