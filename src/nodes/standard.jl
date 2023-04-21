@@ -20,10 +20,7 @@ struct ContinuousStandardNode <: ContinuousNode
     end
 end
 
-function _get_states(node::ContinuousStandardNode)
-    list = collect(values(node.distribution))
-    return list
-end
+_get_states(node::ContinuousStandardNode) = collect(values(node.distribution))
 
 struct DiscreteStandardNode <: DiscreteNode
     name::Symbol
@@ -61,8 +58,7 @@ function DiscreteStandardNode(name::Symbol, parents::Vector{<:AbstractNode}, sta
     DiscreteStandardNode(name, parents, states, Dict{Symbol,Vector{Parameter}}())
 end
 
-function _get_states(node::DiscreteStandardNode)
-    return keys(first(values(node.states))) |> collect
-end
+_get_states(node::DiscreteStandardNode) = keys(first(values(node.states))) |> collect
+
 
 const global StandardNode = Union{DiscreteStandardNode,ContinuousStandardNode}
