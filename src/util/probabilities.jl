@@ -1,3 +1,5 @@
-_not_negative(states::Dict{Symbol,<:Real}) = any(values(states) .< 0.0)
-_less_than_one(states::Dict{Symbol,<:Real}) = any(values(states) .> 1.0)
-_sum_up_to_one(states::Dict{Symbol,<:Real}) = sum(values(states)) != 1
+function verify_probabilities(states::Dict{Symbol,<:Real})
+    any(values(states) .< 0.0) && error("Probabilites must be nonnegative")
+    any(values(states) .> 1.0) && error("Probabilites must be less or equal to 1.0")
+    sum(values(states)) != 1 && error("Probabilites must sum up to 1.0")
+end

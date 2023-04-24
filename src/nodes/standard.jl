@@ -30,10 +30,7 @@ struct DiscreteStandardNode <: DiscreteNode
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
 
         for (key, val) in states
-            _not_negative(val) && error("Probabilites must be nonnegative")
-            _less_than_one(val) && error("Probabilites must be less or equal to 1.0")
-            _sum_up_to_one(val) && error("Probabilites must sum up to 1.0")
-
+            verify_probabilities(val)
             length(discrete_parents) != length(key) && error("number of symbols per parent in node.states must be equal to the number of discrete parents")
         end
 
