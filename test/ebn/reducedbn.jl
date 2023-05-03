@@ -103,8 +103,8 @@
         @test reduce_ebn_markov_envelopes(ebn)[1].name_to_index == Dict(:x => 1, :y => 2, :α => 3, :f2 => 4)
 
         @test reduce_ebn_markov_envelopes(ebn)[2].dag == resulting_dag2
-        @test reduce_ebn_markov_envelopes(ebn)[2].nodes == [root1, root2, functional1_node]
-        @test reduce_ebn_markov_envelopes(ebn)[2].name_to_index == Dict(:x => 1, :y => 2, :f1 => 3)
+        @test reduce_ebn_markov_envelopes(ebn)[2].nodes == [root2, root1, functional1_node]
+        @test reduce_ebn_markov_envelopes(ebn)[2].name_to_index == Dict(:y => 1, :x => 2, :f1 => 3)
 
     end
 end
