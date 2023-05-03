@@ -48,11 +48,15 @@ nodes = [standard1_node, root1, root3, root2, functional1_node, functional2_node
 # a = EnhancedBayesianNetworks._build_digraph(nodes)
 # b = EnhancedBayesianNetworks._topological_ordered_dag(nodes)[1]
 ebn = EnhancedBayesianNetwork(nodes)
-EnhancedBayesianNetworks.plot(ebn)
-childrensr1 = get_children(ebn, root1)
-parentsr1 = get_parents(ebn, root1)
+# EnhancedBayesianNetworks.plot(ebn)
+# childrensr1 = get_children(ebn, root1)
+# parentsr1 = get_parents(ebn, root1)
 
-childrenss1 = get_children(ebn, standard1_node)
-parentss1 = get_parents(ebn, standard1_node)
+# childrenss1 = get_children(ebn, standard1_node)
+# parentss1 = get_parents(ebn, standard1_node)
 
 a = markov_envelope(ebn)
+
+# rdag = copy(ebn.dag)
+
+# rdag = EnhancedBayesianNetworks._invert_link(rdag, 2, 7)
