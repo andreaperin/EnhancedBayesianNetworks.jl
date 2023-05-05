@@ -30,7 +30,10 @@ export ReducedBayesianNetwork
 # Methods
 export get_children
 export get_neighbors
+export get_parameters
 export get_parents
+export get_state_probability
+export get_randomvariable
 export markov_blanket
 export markov_envelope
 export reduce_ebn_markov_envelopes

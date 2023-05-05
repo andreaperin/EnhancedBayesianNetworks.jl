@@ -1,5 +1,3 @@
-## TODO Add check for each standard node for order of the states keys coherent with parents order!
-
 struct ContinuousStandardNode <: ContinuousNode
     name::Symbol
     parents::Vector{<:AbstractNode}
@@ -11,15 +9,13 @@ struct ContinuousStandardNode <: ContinuousNode
 
         for (key, _) in distribution
             length(discrete_parents) != length(key) && error("number of symbols per parent in node.states must be equal to the number of discrete parents")
-            ##TODO test
-            any([key[i] ∉ keys(discrete_parents[i].states) for i in range(1, length(key))]) && error("order of discrete parents must be equal to the order of states")
+
+            any([key[i] ∉ _get_states(discrete_parents[i]) for i in range(1, length(key))]) && error("StandardNode state's keys must contain state from parent and the order of the parents states must be coherent with the order of the parents defined in node.parents")
         end
 
         discrete_parents_combination = vec(collect(Iterators.product(_get_states.(discrete_parents)...)))
         discrete_parents_combination = map(x -> [i for i in x], discrete_parents_combination)
         length(discrete_parents_combination) != length(distribution) && error("defined combinations in node.states must be equal to the theorical discrete parents combinations")
-        any(discrete_parents_combination .∉ [keys(distribution)]) && error("missmatch in defined parents combinations states and states of the parents")
-
         return new(name, parents, distribution)
     end
 end
@@ -58,8 +54,8 @@ struct DiscreteStandardNode <: DiscreteNode
             verify_probabilities(val)
             verify_parameters(val, parameters)
             length(discrete_parents) != length(key) && error("number of symbols per parent in node.states must be equal to the number of discrete parents")
-            ##TODO test
-            any([key[i] ∉ keys(discrete_parents[i].states) for i in range(1, length(key))]) && error("order of discrete parents must be equal to the order of states")
+
+            any([key[i] ∉ _get_states(discrete_parents[i]) for i in range(1, length(key))]) && error("StandardNode state's keys must contain state from parent and the order of the parents states must be coherent with the order of the parents defined in node.parents")
         end
 
         node_states = [keys(s) for s in values(states)]
@@ -70,7 +66,6 @@ struct DiscreteStandardNode <: DiscreteNode
         discrete_parents_combination = vec(collect(Iterators.product(_get_states.(discrete_parents)...)))
         discrete_parents_combination = map(x -> [i for i in x], discrete_parents_combination)
         length(discrete_parents_combination) != length(states) && error("defined combinations in node.states must be equal to the theorical discrete parents combinations")
-        any(discrete_parents_combination .∉ [keys(states)]) && error("missmatch in defined parents combinations states and states of the parents")
 
         return new(name, parents, states, parameters)
     end

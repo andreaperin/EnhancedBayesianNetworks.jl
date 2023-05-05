@@ -38,17 +38,17 @@
     @testset "Reduction of EnhancedBayesianNetworks" begin
 
         root1 = DiscreteRootNode(:x, Dict(:yes => 0.5, :no => 0.5))
-        root2 = DiscreteRootNode(:z, Dict(:yes => 0.2, :no => 0.8))
+        root2 = DiscreteRootNode(:z, Dict(:y => 0.2, :n => 0.8), Dict(:y => [Parameter(1, :z)], :n => [Parameter(0, :z)]))
 
         states_child1 = OrderedDict([:yes] => Dict(:a => 0.5, :b => 0.5), [:no] => Dict(:a => 0.5, :b => 0.5))
-        child1 = DiscreteStandardNode(:child1, [root1], states_child1)
+        child1 = DiscreteStandardNode(:child1, [root1], states_child1, Dict(:a => [Parameter(1, :child1)], :b => [Parameter(0, :child1)]))
 
         distributions_child2 = OrderedDict([:a] => Normal(), [:b] => Normal(2, 2))
         child2 = ContinuousStandardNode(:child2, [child1], distributions_child2)
 
         model = Model(df -> sqrt.(df.child1 .^ 2 + df.child2 .- df.z .^ 2), :value1)
         prf = Model(df -> 1 .- 2 .* df.value1, :value2)
-        models = OrderedDict([:a, :yes] => [model, prf], [:b, :yes] => [model, prf], [:a, :no] => [model, prf], [:b, :no] => [model, prf])
+        models = OrderedDict([:a, :y] => [model, prf], [:b, :y] => [model, prf], [:a, :n] => [model, prf], [:b, :n] => [model, prf])
 
         functional = DiscreteFunctionalNode(:functional, [child1, child2, root2], models)
 
@@ -65,18 +65,18 @@
         @test reduce_ebn_standard(ebn).name_to_index == Dict(:z => 1, :x => 2, :child1 => 3, :functional => 4)
 
         root1 = DiscreteRootNode(:x, Dict(:yes => 0.2, :no => 0.8))
-        root2 = DiscreteRootNode(:y, Dict(:yes => 0.4, :no => 0.6))
+        root2 = DiscreteRootNode(:alpha, Dict(:y => 0.4, :n => 0.6), Dict(:y => [Parameter(1, :alpha)], :n => [Parameter(0, :alpha)]))
         root3 = ContinuousRootNode(RandomVariable(Normal(), :z))
 
-        standard1_states = OrderedDict([:yes, :yes] => Dict(:a => 0.2, :b => 0.8), [:no, :yes] => Dict(:a => 0.3, :b => 0.7), [:yes, :no] => Dict(:a => 0.4, :b => 0.6), [:no, :no] => Dict(:a => 0.5, :b => 0.5))
-        standard1_node = DiscreteStandardNode(:α, [root1, root2], standard1_states)
+        standard1_states = OrderedDict([:yes, :y] => Dict(:a => 0.2, :b => 0.8), [:no, :y] => Dict(:a => 0.3, :b => 0.7), [:yes, :n] => Dict(:a => 0.4, :b => 0.6), [:no, :n] => Dict(:a => 0.5, :b => 0.5))
+        standard1_node = DiscreteStandardNode(:α, [root1, root2], standard1_states, Dict(:a => [Parameter(1, :α)], :b => [Parameter(0, :α)]))
 
         standard2_states = OrderedDict([:yes] => Normal(), [:no] => Normal(2, 2))
         standard2_node = ContinuousStandardNode(:β, [root1], standard2_states)
 
         functional1_model = Model(df -> sqrt.(df.x .^ 2 + df.β .^ 2), :value1)
         functional1_performance = Model(df -> 1 .- 2 .* df.value1, :value2)
-        functional1_models = OrderedDict([:yes] => [functional1_model, functional1_performance], [:no] => [functional1_model, functional1_performance])
+        functional1_models = OrderedDict([:y] => [functional1_model, functional1_performance], [:n] => [functional1_model, functional1_performance])
         functional1_node = DiscreteFunctionalNode(:f1, [root2, standard2_node], functional1_models)
 
 
@@ -100,10 +100,10 @@
 
         @test reduce_ebn_markov_envelopes(ebn)[1].dag == resulting_dag1
         @test Set(reduce_ebn_markov_envelopes(ebn)[1].nodes) == Set([root1, root2, standard1_node, functional2_node])
-        @test reduce_ebn_markov_envelopes(ebn)[1].name_to_index ∈ [Dict(:x => 1, :y => 2, :α => 3, :f2 => 4), Dict(:x => 2, :y => 1, :α => 3, :f2 => 4)]
+        @test reduce_ebn_markov_envelopes(ebn)[1].name_to_index ∈ [Dict(:x => 1, :alpha => 2, :α => 3, :f2 => 4), Dict(:x => 2, :alpha => 1, :α => 3, :f2 => 4)]
 
         @test reduce_ebn_markov_envelopes(ebn)[2].dag == resulting_dag2
         @test Set(reduce_ebn_markov_envelopes(ebn)[2].nodes) == Set([root2, root1, functional1_node])
-        @test reduce_ebn_markov_envelopes(ebn)[2].name_to_index ∈ [Dict(:y => 1, :x => 2, :f1 => 3), Dict(:y => 2, :x => 1, :f1 => 3)]
+        @test reduce_ebn_markov_envelopes(ebn)[2].name_to_index ∈ [Dict(:alpha => 1, :x => 2, :f1 => 3), Dict(:alpha => 2, :x => 1, :f1 => 3)]
     end
 end

@@ -25,7 +25,7 @@
             [:yes, :no] => Normal(2, 1),
             [:no, :no] => Normal(3, 1)
         )
-        @test_throws ErrorException("missmatch in defined parents combinations states and states of the parents") ContinuousStandardNode(name, parents, distribution)
+        @test_throws ErrorException("StandardNode state's keys must contain state from parent and the order of the parents states must be coherent with the order of the parents defined in node.parents") ContinuousStandardNode(name, parents, distribution)
     end
 
     @testset "DiscreteStandardNode" begin
@@ -80,7 +80,7 @@
             [:yes, :no] => Dict(:yes => 0.2, :no => 0.8),
             [:no, :no] => Dict(:yes => 0.2, :no => 0.8),
         )
-        @test_throws ErrorException("missmatch in defined parents combinations states and states of the parents") DiscreteStandardNode(name, parents, states)
+        @test_throws ErrorException("StandardNode state's keys must contain state from parent and the order of the parents states must be coherent with the order of the parents defined in node.parents") DiscreteStandardNode(name, parents, states)
 
         states = OrderedDict(
             [:yes, :yes] => Dict(:a => 0.2, :b => 0.8),

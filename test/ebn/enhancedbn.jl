@@ -1,12 +1,12 @@
 @testset "Enhanced Bayesian Networks" begin
     @testset "DiGraphFunctions" begin
         root1 = DiscreteRootNode(:x, Dict(:yes => 0.5, :no => 0.5))
-        root2 = DiscreteRootNode(:y, Dict(:yes => 0.4, :no => 0.6))
+        root2 = DiscreteRootNode(:y, Dict(:y => 0.4, :n => 0.6))
         root3 = ContinuousRootNode(RandomVariable(Normal(), :z))
 
         name = :child
         parents = [root1, root2, root3]
-        distribution = OrderedDict([:yes, :yes] => Normal(), [:no, :yes] => Normal(1, 1), [:yes, :no] => Normal(2, 1), [:no, :no] => Normal(3, 1))
+        distribution = OrderedDict([:yes, :y] => Normal(), [:no, :y] => Normal(1, 1), [:yes, :n] => Normal(2, 1), [:no, :n] => Normal(3, 1))
         child_node = ContinuousStandardNode(name, parents, distribution)
 
         nodes = [root1, root2, root3, child_node]
@@ -24,7 +24,7 @@
         root1 = DiscreteRootNode(:x, Dict(:yes => 0.5, :no => 0.5))
 
         states_child1 = OrderedDict([:yes] => Dict(:a => 0.5, :b => 0.5), [:no] => Dict(:a => 0.5, :b => 0.5))
-        child1 = DiscreteStandardNode(:child1, [root1], states_child1)
+        child1 = DiscreteStandardNode(:child1, [root1], states_child1, Dict(:a => [Parameter(3, :child1)], :b => [Parameter(0, :child1)]))
 
         distributions_child2 = OrderedDict([:a] => Normal(), [:b] => Normal(2, 2))
         child2 = ContinuousStandardNode(:child2, [child1], distributions_child2)
@@ -58,10 +58,10 @@
 
     @testset "Nodes Operation" begin
         root1 = DiscreteRootNode(:x, Dict(:yes => 0.5, :no => 0.5))
-        root2 = DiscreteRootNode(:z, Dict(:yes => 0.2, :no => 0.8))
+        root2 = DiscreteRootNode(:z, Dict(:yes => 0.2, :no => 0.8), Dict(:yes => [Parameter(3, :z)], :no => [Parameter(0, :z)]))
 
         states_child1 = OrderedDict([:yes] => Dict(:a => 0.5, :b => 0.5), [:no] => Dict(:a => 0.5, :b => 0.5))
-        child1 = DiscreteStandardNode(:child1, [root1], states_child1)
+        child1 = DiscreteStandardNode(:child1, [root1], states_child1, Dict(:a => [Parameter(3, :child1)], :b => [Parameter(0, :child1)]))
 
         distributions_child2 = OrderedDict([:a] => Normal(), [:b] => Normal(2, 2))
         child2 = ContinuousStandardNode(:child2, [child1], distributions_child2)
@@ -71,6 +71,13 @@
         models = OrderedDict([:a, :yes] => [model, prf], [:b, :yes] => [model, prf], [:a, :no] => [model, prf], [:b, :no] => [model, prf])
 
         functional = DiscreteFunctionalNode(:functional, [child1, child2, root2], models)
+
+        @test_throws ErrorException("nodes state must have different symbols") EnhancedBayesianNetwork([root1, root2, child1, child2, functional])
+
+        root1 = DiscreteRootNode(:x, Dict(:y => 0.5, :n => 0.5))
+
+        states_child1 = OrderedDict([:y] => Dict(:a => 0.5, :b => 0.5), [:n] => Dict(:a => 0.5, :b => 0.5))
+        child1 = DiscreteStandardNode(:child1, [root1], states_child1, Dict(:a => [Parameter(3, :child1)], :b => [Parameter(0, :child1)]))
 
         ebn = EnhancedBayesianNetwork([root1, root2, child1, child2, functional])
 
