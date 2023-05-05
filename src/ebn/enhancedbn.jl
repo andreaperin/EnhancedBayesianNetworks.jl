@@ -2,6 +2,11 @@ struct EnhancedBayesianNetwork <: ProbabilisticGraphicalModel
     dag::DiGraph
     nodes::Vector{<:AbstractNode}
     name_to_index::Dict{Symbol,Int}
+
+    function EnhancedBayesianNetwork(dag::DiGraph, nodes::Vector{<:AbstractNode}, name_to_index::Dict{Symbol,Int})
+        all_states = vcat(_get_states.(filter(x -> !isa(x, DiscreteFunctionalNode) && isa(x, DiscreteNode), nodes))...)
+        unique(all_states) != all_states ? error("nodes state must have different symbols") : new(dag, nodes, name_to_index)
+    end
 end
 
 function EnhancedBayesianNetwork(nodes::Vector{<:AbstractNode})
@@ -52,7 +57,6 @@ function plot(ebn::EnhancedBayesianNetwork)
     )
 end
 
-## TODO add test for all the following functions
 function get_children(ebn::EnhancedBayesianNetwork, node::N) where {N<:AbstractNode}
     i = ebn.name_to_index[node.name]
     [ebn.nodes[j] for j in outneighbors(ebn.dag, i)]
@@ -111,4 +115,10 @@ function _create_ebn_from_envelope(ebn::EnhancedBayesianNetwork, envelope::Vecto
         push!(nodes, node)
     end
     EnhancedBayesianNetwork(unique!(nodes))
+end
+
+##TODO test
+function _get_node_given_state(ebn::EnhancedBayesianNetwork, state::Symbol)
+    nodes = filter(x -> !isa(x, DiscreteFunctionalNode) && isa(x, DiscreteNode), ebn.nodes)
+    [node for node in nodes if state ∈ _get_states(node)][1]
 end

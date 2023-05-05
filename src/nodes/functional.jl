@@ -1,3 +1,4 @@
+# const SystemReliabilityProblem = [Vector{<:UQModel}, Vector{<:UQInput}]
 struct DiscreteFunctionalNode <: DiscreteNode
     name::Symbol
     parents::Vector{N} where {N<:AbstractNode}
@@ -5,6 +6,7 @@ struct DiscreteFunctionalNode <: DiscreteNode
 
     function DiscreteFunctionalNode(name::Symbol, parents::Vector{<:AbstractNode}, models::OrderedDict{Vector{Symbol},Vector{M}}) where {M<:UQModel}
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
+        verify_functionalnode_parents(parents)
 
         for (key, _) in models
             length(discrete_parents) != length(key) && error("defined parent nodes states must be equal to the number of discrete parent nodes")
@@ -18,3 +20,9 @@ struct DiscreteFunctionalNode <: DiscreteNode
         return new(name, parents, models)
     end
 end
+
+# struct StructuralReliabilitProblemNode <: DiscreteNode
+#     name::Symbol
+#     parents::Vector{D} where {D<:DiscreteNode}
+#     srps::OrderedDict{Vector{Symbol},SystemReliabilityProblem}
+# end

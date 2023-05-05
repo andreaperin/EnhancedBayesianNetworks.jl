@@ -4,6 +4,21 @@ struct ReducedBayesianNetwork <: ProbabilisticGraphicalModel
     name_to_index::Dict{Symbol,Int}
 end
 
+function get_children(ebn::ReducedBayesianNetwork, node::N) where {N<:AbstractNode}
+    i = ebn.name_to_index[node.name]
+    [ebn.nodes[j] for j in outneighbors(ebn.dag, i)]
+end
+
+function get_parents(ebn::ReducedBayesianNetwork, node::N) where {N<:AbstractNode}
+    i = ebn.name_to_index[node.name]
+    [ebn.nodes[j] for j in inneighbors(ebn.dag, i)]
+end
+
+function get_neighbors(ebn::ReducedBayesianNetwork, node::N) where {N<:AbstractNode}
+    i = ebn.name_to_index[node.name]
+    [ebn.nodes[j] for j in append!(inneighbors(ebn.dag, i), outneighbors(ebn.dag, i))]
+end
+
 function plot(ebn::ReducedBayesianNetwork)
     graphplot(
         ebn.dag,
@@ -18,7 +33,7 @@ end
 
 function reduce_ebn_markov_envelopes(ebn::EnhancedBayesianNetwork)
     markov_envelopes = markov_envelope(ebn)
-    indipendent_ebns = EnhancedBayesianNetworks._create_ebn_from_envelope.(repeat([ebn], length(markov_envelopes)), markov_envelopes)
+    indipendent_ebns = _create_ebn_from_envelope.(repeat([ebn], length(markov_envelopes)), markov_envelopes)
     reduce_ebn_standard.(indipendent_ebns)
 end
 
@@ -43,7 +58,6 @@ end
 ```
 Dag Operations
 ```
-
 function _reduce_continuousnode(dag::SimpleDiGraph, node_index::Int)
     r_dag = copy(dag)
     child_indices = r_dag.fadjlist[node_index]
@@ -88,4 +102,24 @@ function _remove_barren_node(dag::SimpleDiGraph, node_index::Int)
         push!(new_fadjlist, i .- Int.(i .> node_index))
     end
     return SimpleDiGraph(dag.ne, new_fadjlist, new_badjlist)
+end
+
+```
+Reduced BN Operations
+```
+function _build_new_evidence(rbn::ReducedBayesianNetwork)
+    functional_nodes = filter(x -> isa(x, DiscreteFunctionalNode), rbn.nodes)
+    functional_node = functional_nodes[1]
+    new_parents = get_parents(rbn, functional_node)
+    new_discrete_parents = filter(x -> isa(x, DiscreteNode), new_parents)
+
+    discrete_parents_combination = vec(collect(Iterators.product(EnhancedBayesianNetworks._get_states.(new_discrete_parents)...)))
+    discrete_parents_combination = map(x -> [i for i in x], discrete_parents_combination)
+    continuous_parents = filter(x -> isa(x, ContinuousNode), functional_node.parents)
+    # for combination in discrete_parents_combination
+
+    combination = discrete_parents_combination[1]
+    evidence = [(s, EnhancedBayesianNetworks._get_node_given_state(ebn, s)) for s in combination]
+    uq_parameters = vcat([EnhancedBayesianNetworks.get_parameters(p, evidence)[1] for p in new_discrete_parents]...)
+    ## TODO do the same for the random variables and for the models
 end

@@ -39,7 +39,7 @@ export show
 
 
 include("nodes/nodes.jl")
-include("util/probabilities.jl")
+include("util/node_verification.jl")
 include("ebn/ebn.jl")
 
 end

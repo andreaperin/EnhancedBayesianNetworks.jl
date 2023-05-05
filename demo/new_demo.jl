@@ -1,25 +1,30 @@
 using EnhancedBayesianNetworks
 using Plots
 
-root1 = DiscreteRootNode(:x, Dict(:yes => 0.2, :no => 0.8))
-root2 = DiscreteRootNode(:y, Dict(:yes => 0.4, :no => 0.6))
+root1 = DiscreteRootNode(:x, Dict(:y => 0.2, :n => 0.8), Dict(:y => [Parameter(2.2, :x)], :n => [Parameter(5.5, :x), Parameter(5.6, :x1)]))
+root2 = DiscreteRootNode(:y, Dict(:yes => 0.4, :no => 0.6), Dict(:yes => [Parameter(2.2, :y)], :no => [Parameter(5.5, :y)]))
 root3 = ContinuousRootNode(RandomVariable(Normal(), :z))
 
 standard1_name = :α
 standard1_parents = [root1, root2]
 standard1_states = OrderedDict(
-    [:yes, :yes] => Dict(:a => 0.2, :b => 0.8),
-    [:no, :yes] => Dict(:a => 0.3, :b => 0.7),
-    [:yes, :no] => Dict(:a => 0.4, :b => 0.6),
-    [:no, :no] => Dict(:a => 0.5, :b => 0.5)
+    [:y, :yes] => Dict(:a => 0.2, :b => 0.8),
+    [:n, :yes] => Dict(:a => 0.3, :b => 0.7),
+    [:y, :no] => Dict(:a => 0.4, :b => 0.6),
+    [:n, :no] => Dict(:a => 0.5, :b => 0.5)
 )
-standard1_node = DiscreteStandardNode(standard1_name, standard1_parents, standard1_states)
+standard1_parameters = Dict(:a => [Parameter(3, :α)], :b => [Parameter(10, :α)])
+standard1_node = DiscreteStandardNode(standard1_name, standard1_parents, standard1_states, standard1_parameters)
 
 standard2_name = :β
 standard2_parents = [root1]
 standard2_states = OrderedDict(
-    [:yes] => Normal(),
-    [:no] => Normal(2, 2)
+    [:y] => Normal(),
+    [:n] => Normal(2, 2)
+)
+standard2_states = OrderedDict(
+    [:y] => Normal(),
+    [:n] => Normal(2, 2)
 )
 standard2_node = ContinuousStandardNode(standard2_name, standard2_parents, standard2_states)
 
@@ -55,8 +60,12 @@ ebn = EnhancedBayesianNetwork(nodes)
 # childrenss1 = get_children(ebn, standard1_node)
 # parentss1 = get_parents(ebn, standard1_node)
 
-a = markov_envelope(ebn)
+# a = markov_envelope(ebn)
 
 # rdag = copy(ebn.dag)
 
 # rdag = EnhancedBayesianNetworks._invert_link(rdag, 2, 7)
+
+rbns = reduce_ebn_markov_envelopes(ebn)
+
+rbn = rbns[2]
