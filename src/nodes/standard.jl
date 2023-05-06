@@ -10,7 +10,7 @@ struct ContinuousStandardNode <: ContinuousNode
         for (key, _) in distribution
             length(discrete_parents) != length(key) && error("number of symbols per parent in node.states must be equal to the number of discrete parents")
 
-            any([key[i] ∉ _get_states(discrete_parents[i]) for i in range(1, length(key))]) && error("StandardNode state's keys must contain state from parent and the order of the parents states must be coherent with the order of the parents defined in node.parents")
+            any([k ∉ _get_states(discrete_parents[i]) for (i, k) in enumerate(key)]) && error("StandardNode state's keys must contain state from parent and the order of the parents states must be coherent with the order of the parents defined in node.parents")
         end
 
         discrete_parents_combination = vec(collect(Iterators.product(_get_states.(discrete_parents)...)))
@@ -52,8 +52,7 @@ struct DiscreteStandardNode <: DiscreteNode
             verify_probabilities(val)
             verify_parameters(val, parameters)
             length(discrete_parents) != length(key) && error("number of symbols per parent in node.states must be equal to the number of discrete parents")
-
-            any([key[i] ∉ _get_states(discrete_parents[i]) for i in range(1, length(key))]) && error("StandardNode state's keys must contain state from parent and the order of the parents states must be coherent with the order of the parents defined in node.parents")
+            any([k ∉ _get_states(discrete_parents[i]) for (i, k) in enumerate(key)]) && error("StandardNode state's keys must contain state from parent and the order of the parents states must be coherent with the order of the parents defined in node.parents")
         end
 
         node_states = [keys(s) for s in values(states)]
