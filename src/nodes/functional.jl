@@ -1,6 +1,6 @@
 struct DiscreteFunctionalNode <: DiscreteNode
     name::Symbol
-    parents::Vector{N} where {N<:AbstractNode}
+    parents::Vector{<:AbstractNode}
     models::OrderedDict{Vector{Symbol},Vector{M}} where {M<:UQModel}
 
     function DiscreteFunctionalNode(name::Symbol, parents::Vector{<:AbstractNode}, models::OrderedDict{Vector{Symbol},Vector{M}}) where {M<:UQModel}
@@ -19,4 +19,26 @@ struct DiscreteFunctionalNode <: DiscreteNode
 
         return new(name, parents, models)
     end
+end
+
+##TODO this function and add a test!
+function get_models(node::DiscreteFunctionalNode, evidence::Vector{Tuple{Symbol,N}}) where {N<:AbstractNode}
+    all(node.parents .∉ [[x[2] for x in evidence]]) && error("evidence does not contain any parents of the FunctionalNode")
+    node_key = Symbol[]
+    for parent in node.parents
+        append!(node_key, [e[1] for e in evidence if e[2] == parent])
+    end
+    return node.models[node_key]
+end
+
+
+struct StructuralReliabilityProblem
+    models::Vector{<:UQModel}
+    inputs::Vector{<:UQInput}
+end
+
+mutable struct StructuralReliabilityProblemNode
+    name::Symbol
+    parents::Vector{<:AbstractNode}
+    srps::OrderedDict{Vector{Symbol},StructuralReliabilityProblem}
 end

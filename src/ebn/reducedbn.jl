@@ -104,22 +104,38 @@ function _remove_barren_node(dag::SimpleDiGraph, node_index::Int)
     return SimpleDiGraph(dag.ne, new_fadjlist, new_badjlist)
 end
 
+##TODO test
+function _get_node_given_state(rbn::ReducedBayesianNetwork, state::Symbol)
+    nodes = filter(x -> !isa(x, DiscreteFunctionalNode) && isa(x, DiscreteNode), rbn.nodes)
+    [node for node in nodes if state ∈ _get_states(node)][1]
+end
+
 ```
 Reduced BN Operations
 ```
-function _build_new_evidence(rbn::ReducedBayesianNetwork)
-    functional_nodes = filter(x -> isa(x, DiscreteFunctionalNode), rbn.nodes)
-    functional_node = functional_nodes[1]
-    new_parents = get_parents(rbn, functional_node)
-    new_discrete_parents = filter(x -> isa(x, DiscreteNode), new_parents)
 
-    discrete_parents_combination = vec(collect(Iterators.product(EnhancedBayesianNetworks._get_states.(new_discrete_parents)...)))
+function _prepare_rbn_for_evaluation(rbn::ReducedBayesianNetwork)
+    ## find the functional node to start and the apply the function in the box below
+
+end
+
+
+function _build_structuralreliabilityproblem_node(rbn::ReducedBayesianNetwork, node::DiscreteFunctionalNode)
+    discrete_parents = filter(x -> isa(x, DiscreteNode), get_parents(rbn, node))
+    continuous_parents = filter(x -> isa(x, ContinuousNode), node.parents)
+    discrete_parents_combination = vec(collect(Iterators.product(_get_states.(discrete_parents)...)))
     discrete_parents_combination = map(x -> [i for i in x], discrete_parents_combination)
-    continuous_parents = filter(x -> isa(x, ContinuousNode), functional_node.parents)
-    # for combination in discrete_parents_combination
+    srps = OrderedDict{Vector{Symbol},StructuralReliabilityProblem}()
+    for combination in discrete_parents_combination
+        evidence = [(s, _get_node_given_state(rbn, s)) for s in combination]
 
-    combination = discrete_parents_combination[1]
-    evidence = [(s, EnhancedBayesianNetworks._get_node_given_state(ebn, s)) for s in combination]
-    uq_parameters = vcat([EnhancedBayesianNetworks.get_parameters(p, evidence)[1] for p in new_discrete_parents]...)
-    ## TODO do the same for the random variables and for the models
+        uq_parameters = vcat([get_parameters(p, evidence)[1] for p in discrete_parents]...)
+        uq_randomvariables = vcat([get_randomvariable(p, evidence) for p in continuous_parents])
+        uqinputs = vcat(uq_parameters, uq_randomvariables)
+
+        models = get_models(node, evidence)
+
+        srps[combination] = StructuralReliabilityProblem(models, uqinputs)
+    end
+    return StructuralReliabilityProblemNode(node.name, node.parents, srps)
 end

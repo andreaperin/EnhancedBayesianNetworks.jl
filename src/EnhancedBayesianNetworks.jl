@@ -23,12 +23,15 @@ export DiscreteRootNode
 export DiscreteStandardNode
 export EnhancedBayesianNetwork
 export RootNode
-export StandardNode
 export ReducedBayesianNetwork
+export StandardNode
+export StructuralReliabilityProblem
+export StructuralReliabilityProblemNode
 
 
 # Methods
 export get_children
+export get_models
 export get_neighbors
 export get_parameters
 export get_parents

@@ -21,7 +21,7 @@ struct ContinuousStandardNode <: ContinuousNode
 end
 
 function get_state_probability(node::ContinuousStandardNode, evidence::Vector{Tuple{Symbol,N}}) where {N<:AbstractNode}
-    any(node.parents .∉ [[x[2] for x in evidence]]) && error("evidence does not contain any parents of the ContinuousStandardNode")
+    all(node.parents .∉ [[x[2] for x in evidence]]) && error("evidence does not contain any parents of the ContinuousStandardNode")
     node_key = Symbol[]
     for parent in node.parents
         append!(node_key, [e[1] for e in evidence if e[2] == parent])
@@ -30,7 +30,7 @@ function get_state_probability(node::ContinuousStandardNode, evidence::Vector{Tu
 end
 
 function get_randomvariable(node::ContinuousStandardNode, evidence::Vector{Tuple{Symbol,N}}) where {N<:AbstractNode}
-    any(node.parents .∉ [[x[2] for x in evidence]]) && error("evidence does not contain any parents of the ContinuousStandardNode")
+    all(node.parents .∉ [[x[2] for x in evidence]]) && error("evidence does not contain any parents of the ContinuousStandardNode")
     node_key = Symbol[]
     for parent in node.parents
         append!(node_key, [e[1] for e in evidence if e[2] == parent])
@@ -75,7 +75,7 @@ end
 _get_states(node::DiscreteStandardNode) = keys(first(values(node.states))) |> collect
 
 function get_state_probability(node::DiscreteStandardNode, evidence::Vector{Tuple{Symbol,N}}) where {N<:AbstractNode}
-    any(node.parents .∉ [[x[2] for x in evidence]]) && error("evidence does not contain any parents of the DiscreteStandardNode")
+    all(node.parents .∉ [[x[2] for x in evidence]]) && error("evidence does not contain any parents of the DiscreteStandardNode")
     node_key = Symbol[]
     for parent in node.parents
         append!(node_key, [e[1] for e in evidence if e[2] == parent])

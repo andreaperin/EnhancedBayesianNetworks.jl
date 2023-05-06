@@ -1,7 +1,7 @@
 using EnhancedBayesianNetworks
 using Plots
 
-root1 = DiscreteRootNode(:x, Dict(:y => 0.2, :n => 0.8), Dict(:y => [Parameter(2.2, :x)], :n => [Parameter(5.5, :x), Parameter(5.6, :x1)]))
+root1 = DiscreteRootNode(:x, Dict(:y => 0.2, :n => 0.8), Dict(:y => [Parameter(1, :x)], :n => [Parameter(0, :x), Parameter(5.6, :x1)]))
 root2 = DiscreteRootNode(:y, Dict(:yes => 0.4, :no => 0.6), Dict(:yes => [Parameter(2.2, :y)], :no => [Parameter(5.5, :y)]))
 root3 = ContinuousRootNode(RandomVariable(Normal(), :z))
 
@@ -30,11 +30,12 @@ standard2_node = ContinuousStandardNode(standard2_name, standard2_parents, stand
 
 functional1_name = :f1
 functional1_parents = [root2, standard2_node]
-functional1_model = Model(df -> sqrt.(df.x .^ 2 + df.β .^ 2), :value1)
+functional1_model1 = Model(df -> sqrt.(df.x .^ 2 + df.β .^ 2), :value1)
+functional1_model2 = Model(df -> sqrt.(df.x .^ 2 - df.β .^ 2), :value1)
 functional1_performance = Model(df -> 1 .- 2 .* df.value1, :value2)
 functional1_models = OrderedDict(
-    [:yes] => [functional1_model, functional1_performance],
-    [:no] => [functional1_model, functional1_performance],
+    [:yes] => [functional1_model1, functional1_performance],
+    [:no] => [functional1_model2, functional1_performance],
 )
 functional1_node = DiscreteFunctionalNode(functional1_name, functional1_parents, functional1_models)
 
@@ -68,4 +69,5 @@ ebn = EnhancedBayesianNetwork(nodes)
 
 rbns = reduce_ebn_markov_envelopes(ebn)
 
-rbn = rbns[2]
+a = EnhancedBayesianNetworks._build_structuralreliabilityproblem_node(rbns[2], functional1_node)
+b = EnhancedBayesianNetworks._build_structuralreliabilityproblem_node(rbns[1], functional2_node)
