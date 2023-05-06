@@ -10,7 +10,7 @@ struct DiscreteFunctionalNode <: DiscreteNode
         for (key, _) in models
             length(discrete_parents) != length(key) && error("defined parent nodes states must be equal to the number of discrete parent nodes")
 
-            any([key[i] ∉ _get_states(discrete_parents[i]) for i in range(1, length(key))]) && error("StandardNode state's keys must contain state from parent and the order of the parents states must be coherent with the order of the parents defined in node.parents")
+            any([k ∉ _get_states(discrete_parents[i]) for (i, k) in enumerate(key)]) && error("StandardNode state's keys must contain state from parent and the order of the parents states must be coherent with the order of the parents defined in node.parents")
         end
 
         discrete_parents_combination = vec(collect(Iterators.product(_get_states.(discrete_parents)...)))
