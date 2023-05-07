@@ -49,8 +49,8 @@
         model = Model(df -> sqrt.(df.child1 .^ 2 + df.child2 .- df.z .^ 2), :value1)
         prf = Model(df -> 1 .- 2 .* df.value1, :value2)
         models = OrderedDict([:a, :y] => [model, prf], [:b, :y] => [model, prf], [:a, :n] => [model, prf], [:b, :n] => [model, prf])
-
-        functional = DiscreteFunctionalNode(:functional, [child1, child2, root2], models)
+        simulations = OrderedDict([:a, :y] => MonteCarlo(100), [:b, :y] => MonteCarlo(200), [:a, :n] => MonteCarlo(300), [:b, :n] => MonteCarlo(400))
+        functional = DiscreteFunctionalNode(:functional, [child1, child2, root2], models, simulations)
 
         ebn = EnhancedBayesianNetwork([root1, root2, child1, child2, functional])
 
@@ -77,13 +77,15 @@
         functional1_model = Model(df -> sqrt.(df.x .^ 2 + df.β .^ 2), :value1)
         functional1_performance = Model(df -> 1 .- 2 .* df.value1, :value2)
         functional1_models = OrderedDict([:y] => [functional1_model, functional1_performance], [:n] => [functional1_model, functional1_performance])
-        functional1_node = DiscreteFunctionalNode(:f1, [root2, standard2_node], functional1_models)
+        functional1_simulations = OrderedDict([:y] => MonteCarlo(100), [:n] => MonteCarlo(200))
+        functional1_node = DiscreteFunctionalNode(:f1, [root2, standard2_node], functional1_models, functional1_simulations)
 
 
         functional2_model = Model(df -> sqrt.(df.α .^ 2 + df.z .^ 2), :value1)
         functional2_performance = Model(df -> 1 .- 2 .* df.value1, :value2)
         functional2_models = OrderedDict([:a] => [functional2_model, functional2_performance], [:b] => [functional2_model, functional2_performance])
-        functional2_node = DiscreteFunctionalNode(:f2, [standard1_node, root3], functional2_models)
+        functional2_simulations = OrderedDict([:a] => MonteCarlo(150), [:b] => MonteCarlo(250))
+        functional2_node = DiscreteFunctionalNode(:f2, [standard1_node, root3], functional2_models, functional2_simulations)
 
         nodes = [standard1_node, root1, root3, root2, functional1_node, functional2_node, standard2_node]
 

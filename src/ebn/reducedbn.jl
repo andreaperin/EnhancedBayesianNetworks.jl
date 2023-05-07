@@ -113,13 +113,6 @@ end
 ```
 Reduced BN Operations
 ```
-
-function _prepare_rbn_for_evaluation(rbn::ReducedBayesianNetwork)
-    ## find the functional node to start and the apply the function in the box below
-
-end
-
-
 function _build_structuralreliabilityproblem_node(rbn::ReducedBayesianNetwork, node::DiscreteFunctionalNode)
     discrete_parents = filter(x -> isa(x, DiscreteNode), get_parents(rbn, node))
     continuous_parents = filter(x -> isa(x, ContinuousNode), node.parents)
@@ -138,4 +131,16 @@ function _build_structuralreliabilityproblem_node(rbn::ReducedBayesianNetwork, n
         srps[combination] = StructuralReliabilityProblem(models, uqinputs)
     end
     return StructuralReliabilityProblemNode(node.name, node.parents, srps)
+end
+
+function _get_failure_probability(node::StructuralReliabilityProblemNode)
+    # for (comb, srp) in node.srps
+    comb = [:yes, :n]
+    srp = node.srps[comb]
+    UncertaintyQuantification.sample(srp.inputs, 1000)
+
+
+
+
+
 end

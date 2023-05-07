@@ -17,14 +17,26 @@
             [:no] => [model, performance],
             [:no] => [model, performance]
         )
-        @test_throws ErrorException("defined parent nodes states must be equal to the number of discrete parent nodes") DiscreteFunctionalNode(name, parents, models)
+        simulations = OrderedDict(
+            [:yes, :n] => MonteCarlo(100),
+            [:yes, :y] => MonteCarlo(200),
+            [:no, :n] => MonteCarlo(300),
+            [:no, :y] => MonteCarlo(400)
+        )
+        @test_throws ErrorException("defined parent nodes states must be equal to the number of discrete parent nodes") DiscreteFunctionalNode(name, parents, models, simulations)
 
         models = OrderedDict(
             [:yes, :n] => [model, performance],
             [:yes, :y] => [model, performance],
             [:no, :y] => [model, performance]
         )
-        @test_throws ErrorException("defined combinations must be equal to the discrete parents combinations") DiscreteFunctionalNode(name, parents, models)
+        simulations = OrderedDict(
+            [:yes, :n] => MonteCarlo(100),
+            [:yes, :y] => MonteCarlo(200),
+            [:no, :n] => MonteCarlo(300),
+            [:no, :y] => MonteCarlo(400)
+        )
+        @test_throws ErrorException("defined combinations must be equal to the discrete parents combinations") DiscreteFunctionalNode(name, parents, models, simulations)
 
         models = OrderedDict(
             [:yes, :maybe] => [model, performance],
@@ -32,7 +44,13 @@
             [:no, :y] => [model, performance],
             [:no, :n] => [model, performance]
         )
-        @test_throws ErrorException("StandardNode state's keys must contain state from parent and the order of the parents states must be coherent with the order of the parents defined in node.parents") DiscreteFunctionalNode(name, parents, models)
+        simulations = OrderedDict(
+            [:yes, :n] => MonteCarlo(100),
+            [:yes, :y] => MonteCarlo(200),
+            [:no, :n] => MonteCarlo(300),
+            [:no, :y] => MonteCarlo(400)
+        )
+        @test_throws ErrorException("StandardNode state's keys must contain state from parent and the order of the parents states must be coherent with the order of the parents defined in node.parents") DiscreteFunctionalNode(name, parents, models, simulations)
 
         models = OrderedDict(
             [:yes, :n] => [model, performance],
@@ -40,14 +58,20 @@
             [:no, :y] => [model, performance],
             [:no, :n] => [model, performance]
         )
+        simulations = OrderedDict(
+            [:yes, :n] => MonteCarlo(100),
+            [:yes, :y] => MonteCarlo(200),
+            [:no, :n] => MonteCarlo(300),
+            [:no, :y] => MonteCarlo(400)
+        )
+        @test_throws ErrorException("all discrete parents of a functional node must have a non-empty parameters dictionary") DiscreteFunctionalNode(name, [root1, root3, root4], models, simulations)
 
-        @test_throws ErrorException("all discrete parents of a functional node must have a non-empty parameters dictionary") DiscreteFunctionalNode(name, [root1, root3, root4], models)
+        @test DiscreteFunctionalNode(name, [root1, root2, root3], models, simulations).simulations == simulations
 
-        @test DiscreteFunctionalNode(name, [root1, root2, root3], models).models == models
+        @test DiscreteFunctionalNode(name, [root1, root2, root3], models, simulations).models == models
 
-        @test DiscreteFunctionalNode(name, [root1, root2, root3], models).name == :child
+        @test DiscreteFunctionalNode(name, [root1, root2, root3], models, simulations).name == :child
 
-        @test Set(DiscreteFunctionalNode(name, [root1, root2, root3], models).parents) == Set([root1, root2, root3])
+        @test Set(DiscreteFunctionalNode(name, [root1, root2, root3], models, simulations).parents) == Set([root1, root2, root3])
     end
 end
-## TODO add Test when a StdNode has a StdNode as parents (the same for FunctionalNodes)
