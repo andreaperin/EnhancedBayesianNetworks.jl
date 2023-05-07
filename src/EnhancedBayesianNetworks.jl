@@ -35,6 +35,8 @@ export get_models
 export get_neighbors
 export get_parameters
 export get_parents
+export get_performance
+export get_simulation
 export get_state_probability
 export get_randomvariable
 export markov_blanket

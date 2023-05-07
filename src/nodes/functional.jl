@@ -3,13 +3,21 @@ struct DiscreteFunctionalNode <: DiscreteNode
     name::Symbol
     parents::Vector{<:AbstractNode}
     models::OrderedDict{Vector{Symbol},Vector{M}} where {M<:UQModel}
+    performances::OrderedDict{Vector{Symbol},Function}
     simulations::OrderedDict{Vector{Symbol},S} where {S<:AbstractSimulation}
 
-    function DiscreteFunctionalNode(name::Symbol, parents::Vector{<:AbstractNode}, models::OrderedDict{Vector{Symbol},Vector{M}}, simulations::OrderedDict{Vector{Symbol},S}) where {M<:UQModel,S<:AbstractSimulation}
+    function DiscreteFunctionalNode(
+        name::Symbol,
+        parents::Vector{<:AbstractNode},
+        models::OrderedDict{Vector{Symbol},Vector{M}},
+        performances::OrderedDict{Vector{Symbol},Function},
+        simulations::OrderedDict{Vector{Symbol},S}
+    ) where {M<:UQModel,S<:AbstractSimulation}
+
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
         verify_functionalnode_parents(parents)
 
-        for i in [models, simulations]
+        for i in [models, performances, simulations]
             for (key, _) in i
                 length(discrete_parents) != length(key) && error("defined parent nodes states must be equal to the number of discrete parent nodes")
 
@@ -21,7 +29,7 @@ struct DiscreteFunctionalNode <: DiscreteNode
             length(discrete_parents_combination) != length(i) && error("defined combinations must be equal to the discrete parents combinations")
         end
 
-        return new(name, parents, models, simulations)
+        return new(name, parents, models, performances, simulations)
     end
 end
 
@@ -33,6 +41,15 @@ function get_models(node::DiscreteFunctionalNode, evidence::Vector{Tuple{Symbol,
         append!(node_key, [e[1] for e in evidence if e[2] == parent])
     end
     return node.models[node_key]
+end
+
+function get_performance(node::DiscreteFunctionalNode, evidence::Vector{Tuple{Symbol,N}}) where {N<:AbstractNode}
+    all(node.parents .∉ [[x[2] for x in evidence]]) && error("evidence does not contain any parents of the FunctionalNode")
+    node_key = Symbol[]
+    for parent in node.parents
+        append!(node_key, [e[1] for e in evidence if e[2] == parent])
+    end
+    return node.performances[node_key]
 end
 
 function get_simulation(node::DiscreteFunctionalNode, evidence::Vector{Tuple{Symbol,N}}) where {N<:AbstractNode}
@@ -47,7 +64,8 @@ end
 struct StructuralReliabilityProblem
     models::Vector{<:UQModel}
     inputs::Vector{<:UQInput}
-    simulations::Vector{<:AbstractSimulation}
+    performance::Function
+    simulation::AbstractSimulation
 end
 
 mutable struct StructuralReliabilityProblemNode

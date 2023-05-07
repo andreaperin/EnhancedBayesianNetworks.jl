@@ -30,10 +30,11 @@
         child2 = ContinuousStandardNode(:child2, [child1], distributions_child2)
 
         model = Model(df -> sqrt.(df.child1 .^ 2 + df.child2 .^ 2), :value1)
-        prf = Model(df -> 1 .- 2 .* df.value1, :value2)
-        models = OrderedDict([:a] => [model, prf], [:b] => [model, prf])
+        df -> 1 .- 2 .* df.v
+        models = OrderedDict([:a] => [model], [:b] => [model])
         simulations = OrderedDict([:a] => MonteCarlo(100), [:b] => MonteCarlo(200))
-        functional = DiscreteFunctionalNode(:functional, [child1, child2], models, simulations)
+        performances = OrderedDict([:a] => df -> 1 .- 2 .* df.v, [:b] => df -> 1 .- 2 .* df.v)
+        functional = DiscreteFunctionalNode(:functional, [child1, child2], models, performances, simulations)
 
         badjlist = Vector{Vector{Int}}([[], [1], [2], [2, 3]])
         fadjlist = Vector{Vector{Int}}([[2], [3, 4], [4], []])
@@ -67,10 +68,16 @@
         child2 = ContinuousStandardNode(:child2, [child1], distributions_child2)
 
         model = Model(df -> sqrt.(df.child1 .^ 2 + df.child2 .- df.z .^ 2), :value1)
-        prf = Model(df -> 1 .- 2 .* df.value1, :value2)
-        models = OrderedDict([:a, :yes] => [model, prf], [:b, :yes] => [model, prf], [:a, :no] => [model, prf], [:b, :no] => [model, prf])
+
+        models = OrderedDict([:a, :yes] => [model], [:b, :yes] => [model], [:a, :no] => [model], [:b, :no] => [model])
+        performances = OrderedDict(
+            [:a, :yes] => df -> 1 .- 2 .* df.value1,
+            [:b, :yes] => df -> 1 .- 2 .* df.value1,
+            [:a, :no] => df -> 1 .- 2 .* df.value1,
+            [:b, :no] => df -> 1 .- 2 .* df.value1
+        )
         simulations = OrderedDict([:a, :yes] => MonteCarlo(100), [:b, :yes] => MonteCarlo(200), [:a, :no] => MonteCarlo(300), [:b, :no] => MonteCarlo(400))
-        functional = DiscreteFunctionalNode(:functional, [child1, child2, root2], models, simulations)
+        functional = DiscreteFunctionalNode(:functional, [child1, child2, root2], models, performances, simulations)
 
         @test_throws ErrorException("nodes state must have different symbols") EnhancedBayesianNetwork([root1, root2, child1, child2, functional])
 

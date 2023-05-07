@@ -128,7 +128,9 @@ function _build_structuralreliabilityproblem_node(rbn::ReducedBayesianNetwork, n
 
         models = get_models(node, evidence)
 
-        srps[combination] = StructuralReliabilityProblem(models, uqinputs)
+        simulations = get_simulation(node, evidence)
+
+        srps[combination] = StructuralReliabilityProblem(models, uqinputs, simulations)
     end
     return StructuralReliabilityProblemNode(node.name, node.parents, srps)
 end
@@ -137,7 +139,8 @@ function _get_failure_probability(node::StructuralReliabilityProblemNode)
     # for (comb, srp) in node.srps
     comb = [:yes, :n]
     srp = node.srps[comb]
-    UncertaintyQuantification.sample(srp.inputs, 1000)
+    UncertaintyQuantification.sample(srp.inputs, srp.simulations)
+
 
 
 
