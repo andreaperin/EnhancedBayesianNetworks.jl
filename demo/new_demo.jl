@@ -30,24 +30,39 @@ standard2_node = ContinuousStandardNode(standard2_name, standard2_parents, stand
 
 functional1_name = :f1
 functional1_parents = [root2, standard2_node]
-functional1_model1 = Model(df -> sqrt.(df.x .^ 2 + df.β .^ 2), :value1)
-functional1_model2 = Model(df -> sqrt.(df.x .^ 2 - df.β .^ 2), :value1)
-functional1_performance = Model(df -> 1 .- 2 .* df.value1, :value2)
+functional1_model1 = Model(df -> (df.x .^ 2 + df.β .^ 2) ./ 2, :value1)
+functional1_model2 = Model(df -> (df.x .^ 2 - df.β .^ 2) ./ 2, :value1)
 functional1_models = OrderedDict(
-    [:yes] => [functional1_model1, functional1_performance],
-    [:no] => [functional1_model2, functional1_performance],
+    [:yes] => [functional1_model1],
+    [:no] => [functional1_model2],
 )
-functional1_node = DiscreteFunctionalNode(functional1_name, functional1_parents, functional1_models)
+functional1_simulations = OrderedDict(
+    [:yes] => MonteCarlo(200),
+    [:no] => MonteCarlo(300),
+)
+functional1_performances = OrderedDict(
+    [:yes] => df -> 1 .- 2 .* df.value1,
+    [:no] => df -> 1 .- 2 .* df.value1,
+)
+functional1_node = DiscreteFunctionalNode(functional1_name, functional1_parents, functional1_models, functional1_performances, functional1_simulations)
 
 functional2_name = :f2
 functional2_parents = [standard1_node, root3]
-functional2_model = Model(df -> sqrt.(df.α .^ 2 + df.z .^ 2), :value1)
-functional2_performance = Model(df -> 1 .- 2 .* df.value1, :value2)
+functional2_model = Model(df -> (df.α .^ 2 + df.z .^ 2) ./ 2, :value1)
 functional2_models = OrderedDict(
-    [:a] => [functional2_model, functional2_performance],
-    [:b] => [functional2_model, functional2_performance]
+    [:a] => [functional2_model],
+    [:b] => [functional2_model]
 )
-functional2_node = DiscreteFunctionalNode(functional2_name, functional2_parents, functional2_models)
+functional2_simulations = OrderedDict(
+    [:a] => MonteCarlo(600),
+    [:b] => MonteCarlo(800)
+)
+functional2_performances = OrderedDict(
+    [:a] => df -> 1 .- 2 .* df.value1,
+    [:b] => df -> 1 .- 2 .* df.value1
+)
+
+functional2_node = DiscreteFunctionalNode(functional2_name, functional2_parents, functional2_models, functional2_performances, functional2_simulations)
 
 
 nodes = [standard1_node, root1, root3, root2, functional1_node, functional2_node, standard2_node]
@@ -71,3 +86,6 @@ rbns = reduce_ebn_markov_envelopes(ebn)
 
 a = EnhancedBayesianNetworks._build_structuralreliabilityproblem_node(rbns[2], functional1_node)
 b = EnhancedBayesianNetworks._build_structuralreliabilityproblem_node(rbns[1], functional2_node)
+
+pf_a = EnhancedBayesianNetwork._get_failure_probability(a)
+pf_b = EnhancedBayesianNetwork._get_failure_probability(b)
