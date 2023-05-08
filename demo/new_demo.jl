@@ -84,8 +84,9 @@ ebn = EnhancedBayesianNetwork(nodes)
 
 rbns = reduce_ebn_markov_envelopes(ebn)
 
-a = EnhancedBayesianNetworks._build_structuralreliabilityproblem_node(rbns[2], functional1_node)
-b = EnhancedBayesianNetworks._build_structuralreliabilityproblem_node(rbns[1], functional2_node)
+# a = EnhancedBayesianNetworks._build_structuralreliabilityproblem_node(rbns[2], functional1_node)
+# b = EnhancedBayesianNetworks._build_structuralreliabilityproblem_node(rbns[1], functional2_node)
 
-pf_a = EnhancedBayesianNetwork._get_failure_probability(a)
-pf_b = EnhancedBayesianNetwork._get_failure_probability(b)
+# pf, cov, samples = EnhancedBayesianNetworks._get_failure_probability(a)
+
+evaluate_rbn(rbns)

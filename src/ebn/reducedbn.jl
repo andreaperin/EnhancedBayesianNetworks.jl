@@ -104,7 +104,6 @@ function _remove_barren_node(dag::SimpleDiGraph, node_index::Int)
     return SimpleDiGraph(dag.ne, new_fadjlist, new_badjlist)
 end
 
-##TODO test
 function _get_node_given_state(rbn::ReducedBayesianNetwork, state::Symbol)
     nodes = filter(x -> !isa(x, DiscreteFunctionalNode) && isa(x, DiscreteNode), rbn.nodes)
     [node for node in nodes if state ∈ _get_states(node)][1]
@@ -113,6 +112,28 @@ end
 ```
 Reduced BN Operations
 ```
+function evaluate_rbn(rbn::ReducedBayesianNetwork)
+    functional_nodes = filter(x -> isa(x, DiscreteFunctionalNode), rbn.nodes)
+    while !isempty(functional_nodes)
+        node = functional_nodes[1]
+        if isempty(filter(x -> isa(x, DiscreteFunctionalNode), node.parents))
+            srp_node = EnhancedBayesianNetworks._build_structuralreliabilityproblem_node(rbn, node)
+            node.pf, node.cov, node.samples = EnhancedBayesianNetworks._get_failure_probability(srp_node)
+            popfirst!(functional_nodes)
+        else
+            push!(functional_nodes, node)
+            popfirst!(functional_nodes)
+        end
+    end
+end
+
+function evaluate_rbn(rbns::Vector{ReducedBayesianNetwork})
+    for rbn in rbns
+        evaluate_rbn(rbn)
+    end
+end
+
+
 function _build_structuralreliabilityproblem_node(rbn::ReducedBayesianNetwork, node::DiscreteFunctionalNode)
     discrete_parents = filter(x -> isa(x, DiscreteNode), get_parents(rbn, node))
     continuous_parents = filter(x -> isa(x, ContinuousNode), node.parents)
@@ -139,9 +160,12 @@ end
 
 function _get_failure_probability(node::StructuralReliabilityProblemNode)
     pf = Dict()
+    cov = Dict()
+    samples = Dict()
     for (comb, srp) in node.srps
-        pf[comb] = probability_of_failure(srp.models, srp.performance, srp.inputs, srp.simulation)
+        pf[comb] = probability_of_failure(srp.models, srp.performance, srp.inputs, srp.simulation)[1]
+        cov[comb] = probability_of_failure(srp.models, srp.performance, srp.inputs, srp.simulation)[2]
+        samples[comb] = probability_of_failure(srp.models, srp.performance, srp.inputs, srp.simulation)[3]
     end
-    return pf
-
+    return pf, cov, samples
 end

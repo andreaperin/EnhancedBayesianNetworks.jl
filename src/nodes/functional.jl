@@ -1,10 +1,12 @@
-const AbstractSimulation = Union{MonteCarlo,LineSampling,SubSetSimulation}
-struct DiscreteFunctionalNode <: DiscreteNode
+mutable struct DiscreteFunctionalNode <: DiscreteNode
     name::Symbol
     parents::Vector{<:AbstractNode}
     models::OrderedDict{Vector{Symbol},Vector{M}} where {M<:UQModel}
     performances::OrderedDict{Vector{Symbol},Function}
     simulations::OrderedDict{Vector{Symbol},S} where {S<:AbstractSimulation}
+    pf::Dict{Vector{Symbol},Real}
+    cov::Dict{Vector{Symbol},Real}
+    samples::Dict{Vector{Symbol},Any}
 
     function DiscreteFunctionalNode(
         name::Symbol,
@@ -28,8 +30,10 @@ struct DiscreteFunctionalNode <: DiscreteNode
             discrete_parents_combination = map(x -> [i for i in x], discrete_parents_combination)
             length(discrete_parents_combination) != length(i) && error("defined combinations must be equal to the discrete parents combinations")
         end
-
-        return new(name, parents, models, performances, simulations)
+        pf = Dict{Vector{Symbol},Real}()
+        cov = Dict{Vector{Symbol},Real}()
+        samples = Dict{Vector{Symbol},Any}()
+        return new(name, parents, models, performances, simulations, pf, cov, samples)
     end
 end
 
@@ -59,17 +63,4 @@ function get_simulation(node::DiscreteFunctionalNode, evidence::Vector{Tuple{Sym
         append!(node_key, [e[1] for e in evidence if e[2] == parent])
     end
     return node.simulations[node_key]
-end
-
-struct StructuralReliabilityProblem
-    models::Vector{<:UQModel}
-    inputs::Vector{<:UQInput}
-    performance::Function
-    simulation::AbstractSimulation
-end
-
-mutable struct StructuralReliabilityProblemNode
-    name::Symbol
-    parents::Vector{<:AbstractNode}
-    srps::OrderedDict{Vector{Symbol},StructuralReliabilityProblem}
 end

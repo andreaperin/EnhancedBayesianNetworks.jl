@@ -25,11 +25,13 @@ export EnhancedBayesianNetwork
 export RootNode
 export ReducedBayesianNetwork
 export StandardNode
-export StructuralReliabilityProblem
-export StructuralReliabilityProblemNode
+# export StructuralReliabilityProblem
+# export StructuralReliabilityProblemNode
+
 
 
 # Methods
+export evaluate_rbn
 export get_children
 export get_models
 export get_neighbors
