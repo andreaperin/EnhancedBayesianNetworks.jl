@@ -83,24 +83,24 @@ function markov_blanket(ebn::EnhancedBayesianNetwork, node::N) where {N<:Abstrac
     return setdiff(Set(blanket), Set([node]))
 end
 
-##TODO find a way to add node of the markov blanket at the end of the groups
 function markov_envelope(ebn::EnhancedBayesianNetwork)
     continuous_nodes = filter(x -> isa(x, ContinuousNode), ebn.nodes)
     groups = []
     for node in continuous_nodes
-        new_continuous_nodes = filter(x -> isa(x, ContinuousNode), markov_blanket(ebn, node))
+        new_continuous_nodes = filter(x -> isa(x, ContinuousNode), markov_blanket(ebn, node)) |> collect
         isempty(new_continuous_nodes) ? group = [node] : group = vcat(node, new_continuous_nodes)
         while !isempty(new_continuous_nodes)
             blanket_i = filter(x -> isa(x, ContinuousNode), markov_blanket(ebn, new_continuous_nodes[1]))
             popfirst!(new_continuous_nodes)
-            new_continuous_nodes_i = collect(setdiff(blanket_i, new_continuous_nodes))
+            new_continuous_nodes_i = setdiff(blanket_i, new_continuous_nodes) |> collect
             vcat(new_continuous_nodes, new_continuous_nodes_i)
             vcat(group, collect(setdiff(blanket_i, group)))
         end
         push!(groups, group)
     end
     envelope = []
-    for group in unique(sort.(groups))
+    for group in unique(Set.(groups))
+        group = group |> collect
         all_blankets = markov_blanket.(repeat([ebn], length(group)), group)
         single_envelope = vcat(unique(Iterators.flatten(all_blankets)), group)
         push!(envelope, single_envelope)
