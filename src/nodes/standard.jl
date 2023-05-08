@@ -1,9 +1,9 @@
 struct ContinuousStandardNode <: ContinuousNode
     name::Symbol
     parents::Vector{<:AbstractNode}
-    distribution::OrderedDict{Vector{Symbol},D} where {D<:Distribution}
+    distribution::OrderedDict{Vector{Symbol},D} where {D<:AbstractDistribution}
 
-    function ContinuousStandardNode(name::Symbol, parents::Vector{<:AbstractNode}, distribution::OrderedDict{Vector{Symbol},D}) where {D<:Distribution}
+    function ContinuousStandardNode(name::Symbol, parents::Vector{<:AbstractNode}, distribution::OrderedDict{Vector{Symbol},D}) where {D<:AbstractDistribution}
 
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
 
