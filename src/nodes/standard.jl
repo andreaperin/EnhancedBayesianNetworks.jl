@@ -35,7 +35,12 @@ function get_randomvariable(node::ContinuousStandardNode, evidence::Vector{Tuple
     for parent in node.parents
         append!(node_key, [e[1] for e in evidence if e[2] == parent])
     end
-    return RandomVariable(node.distribution[node_key], node.name)
+    if isa(node.distribution, OrderedDict{Vector{Symbol},JointDistribution})
+        randomvariable = node.distribution[node_key]
+    else
+        randomvariable = RandomVariable(node.distribution[node_key], node.name)
+    end
+    return randomvariable
 end
 
 struct DiscreteStandardNode <: DiscreteNode
