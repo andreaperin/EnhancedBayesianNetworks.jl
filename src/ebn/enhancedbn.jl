@@ -99,7 +99,14 @@ function markov_envelope(ebn::EnhancedBayesianNetwork)
         push!(groups, group)
     end
     envelope = []
-    for group in unique(Set.(groups))
+    groups = unique(Set.(groups))
+    longest_set = groups[findmax(length.(groups))[2]]
+    for x in groups
+        if all(x .∈ [longest_set]) && x != longest_set
+            deleteat!(groups, findall(i -> i == x, groups))
+        end
+    end
+    for group in groups
         group = group |> collect
         all_blankets = markov_blanket.(repeat([ebn], length(group)), group)
         single_envelope = vcat(unique(Iterators.flatten(all_blankets)), group)
