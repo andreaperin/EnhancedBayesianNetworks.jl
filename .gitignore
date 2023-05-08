@@ -24,5 +24,8 @@ docs/site/
 Manifest.toml
 
 # Mine
-model_TH/inputs/*
+model_TH_macos/*
+model_TH_win/*
+coverage/*
+
 old/*
