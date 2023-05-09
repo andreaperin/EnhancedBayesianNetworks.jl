@@ -11,7 +11,7 @@
         )
         @test_throws ErrorException("number of symbols per parent in node.states must be equal to the number of discrete parents") ContinuousStandardNode(name, [root1], distribution)
 
-        parents = [root1, root2, root3]
+        parents = [root1, root2]
         distribution = OrderedDict(
             [:yes, :yes] => Normal(),
             [:no, :yes] => Normal(1, 1),
@@ -58,7 +58,7 @@
         )
         @test_throws ErrorException("number of symbols per parent in node.states must be equal to the number of discrete parents") DiscreteStandardNode(name, [root1], states)
 
-        parents = [root1, root2, root3]
+        parents = [root1, root2]
         states = OrderedDict(
             [:yes, :yes] => Dict(:yep => 0.2, :no => 0.8),
             [:no, :yes] => Dict(:yes => 0.2, :no => 0.8),

@@ -117,8 +117,8 @@ function evaluate_rbn(rbn::ReducedBayesianNetwork)
     while !isempty(functional_nodes)
         node = functional_nodes[1]
         if isempty(filter(x -> isa(x, DiscreteFunctionalNode), node.parents))
-            srp_node = EnhancedBayesianNetworks._build_structuralreliabilityproblem_node(rbn, node)
-            node.pf, node.cov, node.samples = EnhancedBayesianNetworks._get_failure_probability(srp_node)
+            srp_node = _build_structuralreliabilityproblem_node(rbn, node)
+            node.pf, node.cov, node.samples = _get_failure_probability(srp_node)
             popfirst!(functional_nodes)
         else
             push!(functional_nodes, node)
@@ -137,17 +137,25 @@ end
 function _build_structuralreliabilityproblem_node(rbn::ReducedBayesianNetwork, node::DiscreteFunctionalNode)
     discrete_parents = filter(x -> isa(x, DiscreteNode), get_parents(rbn, node))
     continuous_parents = filter(x -> isa(x, ContinuousNode), node.parents)
-    discrete_parents_combination = vec(collect(Iterators.product(_get_states.(discrete_parents)...)))
+    discrete_parents_combination = vec(collect(Iterators.product(EnhancedBayesianNetworks._get_states.(discrete_parents)...)))
     discrete_parents_combination = map(x -> [i for i in x], discrete_parents_combination)
     srps = OrderedDict{Vector{Symbol},StructuralReliabilityProblem}()
     for combination in discrete_parents_combination
         evidence = [(s, _get_node_given_state(rbn, s)) for s in combination]
 
-        uq_parameters = vcat([get_parameters(p, evidence)[1] for p in discrete_parents]...)
-        uq_randomvariables = vcat([get_randomvariable(p, evidence) for p in continuous_parents])
+        uq_parameters = mapreduce(p -> get_parameters(p, evidence), vcat, discrete_parents)
+        uq_randomvariables = mapreduce(p -> get_randomvariable(p, evidence), vcat, continuous_parents)
         uqinputs = vcat(uq_parameters, uq_randomvariables)
 
-        models = get_models(node, evidence)
+        ordered_functional_node = FunctionalNode[node]
+        get_cont_fun_parents = n -> filter(x -> isa(x, ContinuousFunctionalNode), n.parents)
+
+        cont_fun_parents = get_cont_fun_parents(node)
+        while !isempty(cont_fun_parents)
+            append!(ordered_functional_node, cont_fun_parents)
+            cont_fun_parents = mapreduce(p -> get_cont_fun_parents(p), vcat, cont_fun_parents)
+        end
+        models = mapreduce(p -> get_models(p, evidence), vcat, reverse(ordered_functional_node))
 
         performances = get_performance(node, evidence)
 

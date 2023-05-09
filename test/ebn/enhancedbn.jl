@@ -5,19 +5,19 @@
         root3 = ContinuousRootNode(RandomVariable(Normal(), :z))
 
         name = :child
-        parents = [root1, root2, root3]
+        parents = [root1, root2]
         distribution = OrderedDict([:yes, :y] => Normal(), [:no, :y] => Normal(1, 1), [:yes, :n] => Normal(2, 1), [:no, :n] => Normal(3, 1))
         child_node = ContinuousStandardNode(name, parents, distribution)
 
-        nodes = [root1, root2, root3, child_node]
+        nodes = [root1, root2, child_node]
 
-        @test EnhancedBayesianNetworks._build_digraph(nodes) == SimpleDiGraph{Int64}(3, [[4], [4], [4], Int64[]], [Int64[], Int64[], Int64[], [1, 2, 3]])
+        @test EnhancedBayesianNetworks._build_digraph(nodes) == SimpleDiGraph{Int64}(2, [[3], [3], Int64[]], [Int64[], Int64[], [1, 2]])
 
-        @test EnhancedBayesianNetworks._topological_ordered_dag(nodes)[1] == SimpleDiGraph{Int64}(3, [[4], [4], [4], Int64[]], [Int64[], Int64[], Int64[], [1, 2, 3]])
+        @test EnhancedBayesianNetworks._topological_ordered_dag(nodes)[1] == SimpleDiGraph{Int64}(2, [[3], [3], Int64[]], [Int64[], Int64[], [1, 2]])
 
-        @test EnhancedBayesianNetworks._topological_ordered_dag(nodes)[2] == [root3, root2, root1, child_node]
+        @test EnhancedBayesianNetworks._topological_ordered_dag(nodes)[2] == [root2, root1, child_node]
 
-        @test EnhancedBayesianNetworks._topological_ordered_dag(nodes)[3] == Dict(:z => 1, :y => 2, :x => 3, :child => 4)
+        @test EnhancedBayesianNetworks._topological_ordered_dag(nodes)[3] == Dict(:y => 1, :x => 2, :child => 3)
     end
 
     @testset "EnhancedBayesianNetwork" begin

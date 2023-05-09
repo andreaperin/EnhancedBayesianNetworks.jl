@@ -80,7 +80,7 @@ function markov_blanket(ebn::EnhancedBayesianNetwork, node::N) where {N<:Abstrac
         push!(blanket, child)
     end
     append!(blanket, get_parents(ebn, node))
-    return setdiff(Set(blanket), Set([node]))
+    return unique(setdiff(Set(blanket), Set([node])))
 end
 
 function markov_envelope(ebn::EnhancedBayesianNetwork)
@@ -109,7 +109,7 @@ function markov_envelope(ebn::EnhancedBayesianNetwork)
     for group in groups
         group = group |> collect
         all_blankets = markov_blanket.(repeat([ebn], length(group)), group)
-        single_envelope = vcat(unique(Iterators.flatten(all_blankets)), group)
+        single_envelope = unique(vcat(unique(Iterators.flatten(all_blankets)), group))
         push!(envelope, single_envelope)
     end
     return envelope

@@ -16,12 +16,14 @@ export ContinuousNode
 export DiscreteNode
 
 # struct
+export ContinuousFunctionalNode
 export ContinuousRootNode
 export ContinuousStandardNode
 export DiscreteFunctionalNode
 export DiscreteRootNode
 export DiscreteStandardNode
 export EnhancedBayesianNetwork
+export FunctionalNode
 export RootNode
 export ReducedBayesianNetwork
 export StandardNode

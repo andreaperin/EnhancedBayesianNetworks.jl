@@ -6,7 +6,7 @@ struct ContinuousStandardNode <: ContinuousNode
     function ContinuousStandardNode(name::Symbol, parents::Vector{<:AbstractNode}, distribution::OrderedDict{Vector{Symbol},D}) where {D<:AbstractDistribution}
 
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
-
+        Set(discrete_parents) != Set(parents) && error("ContinuousStandardNode cannot have continuous parents, use ContinuousFunctionalNode instead")
         for (key, _) in distribution
             length(discrete_parents) != length(key) && error("number of symbols per parent in node.states must be equal to the number of discrete parents")
 
@@ -35,11 +35,9 @@ function get_randomvariable(node::ContinuousStandardNode, evidence::Vector{Tuple
     for parent in node.parents
         append!(node_key, [e[1] for e in evidence if e[2] == parent])
     end
-    if isa(node.distribution, OrderedDict{Vector{Symbol},JointDistribution})
-        randomvariable = node.distribution[node_key]
-    else
-        randomvariable = RandomVariable(node.distribution[node_key], node.name)
-    end
+
+    RandomVariable(node.distribution[node_key], node.name)
+
     return randomvariable
 end
 
