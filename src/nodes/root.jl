@@ -1,7 +1,10 @@
 struct ContinuousRootNode <: ContinuousNode
     name::Symbol
-    distribution::D where {D<:AbstractDistribution}
+    distribution::D where {D<:Distribution}
+    evidence::Bool
 end
+
+ContinuousRootNode(name::Symbol, distribution::Distribution) = ContinuousRootNode(name, distribution, false)
 
 ContinuousRootNode(rv::RandomVariable) = ContinuousRootNode(rv.name, rv.dist)
 

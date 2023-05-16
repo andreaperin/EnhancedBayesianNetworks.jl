@@ -6,7 +6,7 @@ mutable struct ContinuousFunctionalNode <: ContinuousNode
     function ContinuousFunctionalNode(
         name::Symbol,
         parents::Vector{<:AbstractNode},
-        models::OrderedDict{Vector{Symbol},Vector{M}},
+        models::OrderedDict{Vector{Symbol},Vector{M}}
     ) where {M<:UQModel}
 
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)

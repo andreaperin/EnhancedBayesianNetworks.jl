@@ -1,14 +1,15 @@
-struct ContinuousStandardNode <: ContinuousNode
+mutable struct ContinuousStandardNode <: ContinuousNode
     name::Symbol
     parents::Vector{<:AbstractNode}
-    distribution::OrderedDict{Vector{Symbol},D} where {D<:AbstractDistribution}
+    distribution::OrderedDict{Vector{Symbol},D} where {D<:Distribution}
+    evidence::Bool
 
-    function ContinuousStandardNode(name::Symbol, parents::Vector{<:AbstractNode}, distribution::OrderedDict{Vector{Symbol},D}) where {D<:AbstractDistribution}
+    function ContinuousStandardNode(name::Symbol, parents::Vector{<:AbstractNode}, distribution::OrderedDict{Vector{Symbol},D}, evidence::Bool) where {D<:Distribution}
 
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
         Set(discrete_parents) != Set(parents) && error("ContinuousStandardNode cannot have continuous parents, use ContinuousFunctionalNode instead")
         for (key, _) in distribution
-            length(discrete_parents) != length(key) && error("number of symbols per parent in node.states must be equal to the number of discrete parents")
+            length(discrete_parents) != length(key) && error("Number of symbols per parent in node.states must be equal to the number of discrete parents")
 
             any([k ∉ _get_states(discrete_parents[i]) for (i, k) in enumerate(key)]) && error("StandardNode state's keys must contain state from parent and the order of the parents states must be coherent with the order of the parents defined in node.parents")
         end
@@ -16,9 +17,11 @@ struct ContinuousStandardNode <: ContinuousNode
         discrete_parents_combination = vec(collect(Iterators.product(_get_states.(discrete_parents)...)))
         discrete_parents_combination = map(x -> [i for i in x], discrete_parents_combination)
         length(discrete_parents_combination) != length(distribution) && error("defined combinations in node.states must be equal to the theorical discrete parents combinations")
-        return new(name, parents, distribution)
+        return new(name, parents, distribution, evidence)
     end
 end
+
+ContinuousStandardNode(name::Symbol, parents::Vector{<:AbstractNode}, distribution::OrderedDict{Vector{Symbol},D}) where {D<:Distribution} = ContinuousStandardNode(name, parents, distribution, false)
 
 function get_state_probability(node::ContinuousStandardNode, evidence::Vector{Tuple{Symbol,N}}) where {N<:AbstractNode}
     all(node.parents .∉ [[x[2] for x in evidence]]) && error("evidence does not contain any parents of the ContinuousStandardNode")
@@ -41,7 +44,7 @@ function get_randomvariable(node::ContinuousStandardNode, evidence::Vector{Tuple
     return randomvariable
 end
 
-struct DiscreteStandardNode <: DiscreteNode
+mutable struct DiscreteStandardNode <: DiscreteNode
     name::Symbol
     parents::Vector{<:AbstractNode}
     states::OrderedDict{Vector{Symbol},Dict{Symbol,T}} where {T<:Real}

@@ -9,7 +9,7 @@
             [:yes, :yes] => Normal(),
             [:no] => Normal(1, 1)
         )
-        @test_throws ErrorException("number of symbols per parent in node.states must be equal to the number of discrete parents") ContinuousStandardNode(name, [root1], distribution)
+        @test_throws ErrorException("Number of symbols per parent in node.states must be equal to the number of discrete parents") ContinuousStandardNode(name, [root1], distribution)
 
         parents = [root1, root2]
         distribution = OrderedDict(
@@ -92,4 +92,3 @@
         @test EnhancedBayesianNetworks._get_states(node) == [:a, :b]
     end
 end
-## TODO add Test when a StdNode has a StdNode as parents (the same for FunctionalNodes)

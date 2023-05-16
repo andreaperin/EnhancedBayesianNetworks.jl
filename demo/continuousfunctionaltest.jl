@@ -54,3 +54,5 @@ rbns = reduce_ebn_markov_envelopes(ebn)
 a = EnhancedBayesianNetworks._build_structuralreliabilityproblem_node(rbns[1], functional2_node)
 
 evaluate_rbn(rbns[1])
+
+rbns[1].nodes

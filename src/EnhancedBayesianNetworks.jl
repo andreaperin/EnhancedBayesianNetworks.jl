@@ -1,7 +1,9 @@
 module EnhancedBayesianNetworks
 
+using Distributions
 using GraphRecipes
 using Graphs
+using LinearAlgebra
 using Reexport
 
 
@@ -23,6 +25,7 @@ export DiscreteFunctionalNode
 export DiscreteRootNode
 export DiscreteStandardNode
 export EnhancedBayesianNetwork
+# export EvidenceDistribution
 export FunctionalNode
 export RootNode
 export ReducedBayesianNetwork
@@ -49,8 +52,13 @@ export reduce_ebn_markov_envelopes
 export reduce_ebn_standard
 export show
 
+export pdf
+export cdf
+export logpdf
+
 
 include("nodes/nodes.jl")
+include("util/interval_verification.jl")
 include("util/node_verification.jl")
 include("ebn/ebn.jl")
 

@@ -69,6 +69,10 @@ nodes = [standard1_node, root1, root3, root2, functional1_node, functional2_node
 # a = EnhancedBayesianNetworks._build_digraph(nodes)
 # b = EnhancedBayesianNetworks._topological_ordered_dag(nodes)[1]
 ebn = EnhancedBayesianNetwork(nodes)
+
+# debn = EnhancedBayesianNetworks._discretize_node(ebn, root3, [[-Inf, -0.5], [-0.5, 1], [1, Inf]])
+debn = EnhancedBayesianNetworks._discretize_node(ebn, standard2_node, [[-Inf, -0.5], [-0.5, 1], [1, Inf]], 2)
+
 # EnhancedBayesianNetworks.plot(ebn)
 # childrensr1 = get_children(ebn, root1)
 # parentsr1 = get_parents(ebn, root1)
@@ -82,11 +86,11 @@ ebn = EnhancedBayesianNetwork(nodes)
 
 # rdag = EnhancedBayesianNetworks._invert_link(rdag, 2, 7)
 
-rbns = reduce_ebn_markov_envelopes(ebn)
+# rbns = reduce_ebn_markov_envelopes(ebn)
 
-# a = EnhancedBayesianNetworks._build_structuralreliabilityproblem_node(rbns[2], functional1_node)
-# b = EnhancedBayesianNetworks._build_structuralreliabilityproblem_node(rbns[1], functional2_node)
+# # a = EnhancedBayesianNetworks._build_structuralreliabilityproblem_node(rbns[2], functional1_node)
+# # b = EnhancedBayesianNetworks._build_structuralreliabilityproblem_node(rbns[1], functional2_node)
 
-# pf, cov, samples = EnhancedBayesianNetworks._get_failure_probability(a)
+# # pf, cov, samples = EnhancedBayesianNetworks._get_failure_probability(a)
 
-evaluate_rbn(rbns)
+# evaluate_rbn(rbns)
