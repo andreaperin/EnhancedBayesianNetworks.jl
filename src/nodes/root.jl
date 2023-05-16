@@ -1,12 +1,12 @@
 struct ContinuousRootNode <: ContinuousNode
     name::Symbol
     distribution::D where {D<:Distribution}
-    evidence::Bool
+    intervals::Vector{Vector{Float64}}
 end
 
-ContinuousRootNode(name::Symbol, distribution::Distribution) = ContinuousRootNode(name, distribution, false)
+ContinuousRootNode(name::Symbol, distribution::Distribution) = ContinuousRootNode(name, distribution, Vector{Vector{Float64}}())
+# ContinuousRootNode(rv::RandomVariable) = ContinuousRootNode(rv.name, rv.dist)
 
-ContinuousRootNode(rv::RandomVariable) = ContinuousRootNode(rv.name, rv.dist)
 
 ##TODO test
 get_state_probability(node::ContinuousRootNode, evidence::Vector{Tuple{Symbol,N}}) where {N<:AbstractNode} = node.distribution

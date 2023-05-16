@@ -2,7 +2,7 @@
     @testset "DiGraphFunctions" begin
         root1 = DiscreteRootNode(:x, Dict(:yes => 0.5, :no => 0.5))
         root2 = DiscreteRootNode(:y, Dict(:y => 0.4, :n => 0.6))
-        root3 = ContinuousRootNode(RandomVariable(Normal(), :z))
+        root3 = ContinuousRootNode(:z, Normal())
 
         name = :child
         parents = [root1, root2]

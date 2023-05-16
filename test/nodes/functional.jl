@@ -4,7 +4,7 @@
     @testset "DiscreteFunctionalNode" begin
         root1 = DiscreteRootNode(:x, Dict(:yes => 0.2, :no => 0.8), Dict(:yes => [Parameter(2.2, :x)], :no => [Parameter(5.5, :x)]))
         root2 = DiscreteRootNode(:y, Dict(:y => 0.4, :n => 0.6), Dict(:y => [Parameter(2.2, :y)], :n => [Parameter(5.5, :y)]))
-        root3 = ContinuousRootNode(RandomVariable(Normal(), :z))
+        root3 = ContinuousRootNode(:z, Normal())
         root4 = DiscreteRootNode(:x, Dict(:yes => 0.2, :no => 0.8))
 
         name = :child

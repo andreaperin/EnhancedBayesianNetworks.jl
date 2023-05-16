@@ -72,7 +72,7 @@
 
         root1 = DiscreteRootNode(:x, Dict(:yes => 0.2, :no => 0.8))
         root2 = DiscreteRootNode(:alpha, Dict(:y => 0.4, :n => 0.6), Dict(:y => [Parameter(1, :alpha)], :n => [Parameter(0, :alpha)]))
-        root3 = ContinuousRootNode(RandomVariable(Normal(), :z))
+        root3 = ContinuousRootNode(:z, Normal())
 
         standard1_states = OrderedDict([:yes, :y] => Dict(:a => 0.2, :b => 0.8), [:no, :y] => Dict(:a => 0.3, :b => 0.7), [:yes, :n] => Dict(:a => 0.4, :b => 0.6), [:no, :n] => Dict(:a => 0.5, :b => 0.5))
         standard1_node = DiscreteStandardNode(:α, [root1, root2], standard1_states, Dict(:a => [Parameter(1, :α)], :b => [Parameter(0, :α)]))

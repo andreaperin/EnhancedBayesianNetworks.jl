@@ -2,9 +2,15 @@ mutable struct ContinuousStandardNode <: ContinuousNode
     name::Symbol
     parents::Vector{<:AbstractNode}
     distribution::OrderedDict{Vector{Symbol},D} where {D<:Distribution}
-    evidence::Bool
+    intervals::Vector{Vector{Float64}}
+    sigma::Real
 
-    function ContinuousStandardNode(name::Symbol, parents::Vector{<:AbstractNode}, distribution::OrderedDict{Vector{Symbol},D}, evidence::Bool) where {D<:Distribution}
+    function ContinuousStandardNode(name::Symbol,
+        parents::Vector{<:AbstractNode},
+        distribution::OrderedDict{Vector{Symbol},D},
+        intervals::Vector{Vector{Float64}},
+        sigma::Real
+    ) where {D<:Distribution}
 
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
         Set(discrete_parents) != Set(parents) && error("ContinuousStandardNode cannot have continuous parents, use ContinuousFunctionalNode instead")
@@ -17,11 +23,11 @@ mutable struct ContinuousStandardNode <: ContinuousNode
         discrete_parents_combination = vec(collect(Iterators.product(_get_states.(discrete_parents)...)))
         discrete_parents_combination = map(x -> [i for i in x], discrete_parents_combination)
         length(discrete_parents_combination) != length(distribution) && error("defined combinations in node.states must be equal to the theorical discrete parents combinations")
-        return new(name, parents, distribution, evidence)
+        return new(name, parents, distribution, intervals, sigma)
     end
 end
 
-ContinuousStandardNode(name::Symbol, parents::Vector{<:AbstractNode}, distribution::OrderedDict{Vector{Symbol},D}) where {D<:Distribution} = ContinuousStandardNode(name, parents, distribution, false)
+ContinuousStandardNode(name::Symbol, parents::Vector{<:AbstractNode}, distribution::OrderedDict{Vector{Symbol},D}) where {D<:Distribution} = ContinuousStandardNode(name, parents, distribution, Vector{Vector{Float64}}(), 0)
 
 function get_state_probability(node::ContinuousStandardNode, evidence::Vector{Tuple{Symbol,N}}) where {N<:AbstractNode}
     all(node.parents .∉ [[x[2] for x in evidence]]) && error("evidence does not contain any parents of the ContinuousStandardNode")
