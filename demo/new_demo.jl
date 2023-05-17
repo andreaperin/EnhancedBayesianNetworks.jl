@@ -3,7 +3,7 @@ using Plots
 
 root1 = DiscreteRootNode(:x, Dict(:y => 0.2, :n => 0.8), Dict(:y => [Parameter(1, :x)], :n => [Parameter(0, :x), Parameter(5.6, :x1)]))
 root2 = DiscreteRootNode(:y, Dict(:yes => 0.4, :no => 0.6), Dict(:yes => [Parameter(2.2, :y)], :no => [Parameter(5.5, :y)]))
-root3 = ContinuousRootNode(RandomVariable(Normal(), :z))
+root3 = ContinuousRootNode(:z, Normal(), [[-0.5, 0.03], [0.03, 0.1]])
 
 standard1_name = :α
 standard1_parents = [root1, root2]
@@ -26,7 +26,7 @@ standard2_states = OrderedDict(
     [:y] => Normal(),
     [:n] => Normal(2, 2)
 )
-standard2_node = ContinuousStandardNode(standard2_name, standard2_parents, standard2_states)
+standard2_node = ContinuousStandardNode(standard2_name, standard2_parents, standard2_states, [[-1.1, 0], [0, 0.1]], 2)
 
 functional1_name = :f1
 functional1_parents = [root2, standard2_node]
@@ -70,15 +70,13 @@ nodes = [standard1_node, root1, root3, root2, functional1_node, functional2_node
 # b = EnhancedBayesianNetworks._topological_ordered_dag(nodes)[1]
 ebn = EnhancedBayesianNetwork(nodes)
 
-# debn = EnhancedBayesianNetworks._discretize_node(ebn, root3, [[-Inf, -0.5], [-0.5, 1], [1, Inf]])
-debn = EnhancedBayesianNetworks._discretize_node(ebn, standard2_node, [[-Inf, -0.5], [-0.5, 1], [1, Inf]], 2)
+ebn = EnhancedBayesianNetworks._discretize_node(ebn, root3, [[-Inf, -0.5], [-0.5, 1], [1, Inf]])
+EnhancedBayesianNetworks.plot(ebn)
 
-# EnhancedBayesianNetworks.plot(ebn)
-# childrensr1 = get_children(ebn, root1)
-# parentsr1 = get_parents(ebn, root1)
+debn = EnhancedBayesianNetworks._discretize_node(ebn, standard2_node, [[-0.6, -0.5], [-0.5, 0.6], [0.6, Inf]], 2)
+EnhancedBayesianNetworks.plot(debn)
 
-# childrenss1 = get_children(ebn, standard1_node)
-# parentss1 = get_parents(ebn, standard1_node)
+
 
 # a = markov_envelope(ebn)
 

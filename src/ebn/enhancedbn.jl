@@ -5,13 +5,24 @@ struct EnhancedBayesianNetwork <: ProbabilisticGraphicalModel
 
     function EnhancedBayesianNetwork(dag::DiGraph, nodes::Vector{<:AbstractNode}, name_to_index::Dict{Symbol,Int})
         all_states = vcat(_get_states.(filter(x -> !isa(x, DiscreteFunctionalNode) && isa(x, DiscreteNode), nodes))...)
-        unique(all_states) != all_states ? error("nodes state must have different symbols") : new(dag, nodes, name_to_index)
+        unique(all_states) != all_states ? error("nodes state must have different symbols") :
+        new(dag, nodes, name_to_index)
     end
 end
 
+Base.copy(ebn::EnhancedBayesianNetwork) = EnhancedBayesianNetwork(ebn.dag, ebn.nodes, ebn.name_to_index)
+
 function EnhancedBayesianNetwork(nodes::Vector{<:AbstractNode})
     ordered_dag, ordered_nodes, ordered_name_to_index = _topological_ordered_dag(nodes)
-    EnhancedBayesianNetwork(ordered_dag, ordered_nodes, ordered_name_to_index)
+    ebn = EnhancedBayesianNetwork(ordered_dag, ordered_nodes, ordered_name_to_index)
+    # continuous_nodes = filter!(j -> !isa(j, FunctionalNode), (filter!(x -> isa(x, ContinuousNode), nodes)))
+    # a = isempty.([i.intervals for i in continuous_nodes])
+    # evidence_node = continuous_nodes[.!a]
+    # while !isempty(evidence_node)
+    #     isa(evidence_node[1], RootNode) ? ebn = _discretize_node(ebn, evidence_node[1], evidence_node[1].intervals) : ebn = _discretize_node(ebn, evidence_node[1], evidence_node[1].intervals, evidence_node[1].sigma)
+    #     popfirst!(evidence_node)
+    # end
+    return ebn
 end
 
 
