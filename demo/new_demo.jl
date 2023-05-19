@@ -26,12 +26,12 @@ standard2_states = OrderedDict(
     [:y] => Normal(),
     [:n] => Normal(2, 2)
 )
-standard2_node = ContinuousStandardNode(standard2_name, standard2_parents, standard2_states, [[-1.1, 0], [0, 0.1]], 2)
+standard2_node = ContinuousStandardNode(standard2_name, standard2_parents, standard2_states, [[-1.1, 0], [0, 0.11]], 2)
 
 functional1_name = :f1
 functional1_parents = [root2, standard2_node]
-functional1_model1 = Model(df -> (df.x .^ 2 + df.β .^ 2) ./ 2, :value1)
-functional1_model2 = Model(df -> (df.x .^ 2 - df.β .^ 2) ./ 2, :value1)
+functional1_model1 = Model(df -> (df.y .^ 2 + df.β .^ 2) ./ 2, :value1)
+functional1_model2 = Model(df -> (df.y .^ 2 - df.β .^ 2) ./ 2, :value1)
 functional1_models = OrderedDict(
     [:yes] => [functional1_model1],
     [:no] => [functional1_model2],
@@ -66,29 +66,9 @@ functional2_node = DiscreteFunctionalNode(functional2_name, functional2_parents,
 
 
 nodes = [standard1_node, root1, root3, root2, functional1_node, functional2_node, standard2_node]
-# a = EnhancedBayesianNetworks._build_digraph(nodes)
-# b = EnhancedBayesianNetworks._topological_ordered_dag(nodes)[1]
+
+## Already build everything with evidence.
 ebn = EnhancedBayesianNetwork(nodes)
-
-ebn = EnhancedBayesianNetworks._discretize_node(ebn, root3, [[-Inf, -0.5], [-0.5, 1], [1, Inf]])
-EnhancedBayesianNetworks.plot(ebn)
-
-debn = EnhancedBayesianNetworks._discretize_node(ebn, standard2_node, [[-0.6, -0.5], [-0.5, 0.6], [0.6, Inf]], 2)
-EnhancedBayesianNetworks.plot(debn)
-
-
-
-# a = markov_envelope(ebn)
-
-# rdag = copy(ebn.dag)
-
-# rdag = EnhancedBayesianNetworks._invert_link(rdag, 2, 7)
-
-# rbns = reduce_ebn_markov_envelopes(ebn)
-
-# # a = EnhancedBayesianNetworks._build_structuralreliabilityproblem_node(rbns[2], functional1_node)
-# # b = EnhancedBayesianNetworks._build_structuralreliabilityproblem_node(rbns[1], functional2_node)
-
-# # pf, cov, samples = EnhancedBayesianNetworks._get_failure_probability(a)
-
-# evaluate_rbn(rbns)
+# rbn1 = reduce_ebn_standard(ebn)
+# rbns2 = reduce_ebn_markov_envelopes(ebn)
+evaluate_ebn(ebn)

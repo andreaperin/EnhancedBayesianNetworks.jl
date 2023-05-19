@@ -30,7 +30,7 @@ end
 ContinuousStandardNode(name::Symbol, parents::Vector{<:AbstractNode}, distribution::OrderedDict{Vector{Symbol},D}) where {D<:Distribution} = ContinuousStandardNode(name, parents, distribution, Vector{Vector{Float64}}(), 0)
 
 function get_state_probability(node::ContinuousStandardNode, evidence::Vector{Tuple{Symbol,N}}) where {N<:AbstractNode}
-    all(node.parents .∉ [[x[2] for x in evidence]]) && error("evidence does not contain any parents of the ContinuousStandardNode")
+    all([i.name for i in node.parents] .∉ [[x[2].name for x in evidence]]) && error("evidence does not contain any parents of the ContinuousStandardNode")
     node_key = Symbol[]
     for parent in node.parents
         append!(node_key, [e[1] for e in evidence if e[2] == parent])
@@ -46,8 +46,6 @@ function get_randomvariable(node::ContinuousStandardNode, evidence::Vector{Tuple
     end
 
     RandomVariable(node.distribution[node_key], node.name)
-
-    return randomvariable
 end
 
 mutable struct DiscreteStandardNode <: DiscreteNode

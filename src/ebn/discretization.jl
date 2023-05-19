@@ -19,7 +19,7 @@ function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousRootNode
     distributions_symbols = [[i] for i in states_symbols]
     distributions = OrderedDict(distributions_symbols .=> f_c.(intervals))
 
-    continuous_node = ContinuousStandardNode(Symbol(string(node.name) * "_c"), [discrete_node], distributions)
+    continuous_node = ContinuousStandardNode(Symbol(string(node.name)), [discrete_node], distributions)
 
     for child in get_children(ebn_new, node)
         deleteat!(child.parents, findall(x -> x == node, child.parents))
@@ -28,7 +28,7 @@ function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousRootNode
     nodes = append!(ebn_new.nodes, [continuous_node, discrete_node])
     deleteat!(nodes, findall(x -> x == node, nodes))
 
-    EnhancedBayesianNetwork(nodes)
+    return nodes
 end
 
 function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousStandardNode, intervals::Vector{Vector{Float64}}, variance::Real)
@@ -57,7 +57,7 @@ function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousStandard
 
     distributions = OrderedDict([Symbol(i)] => f_c(i) for i in intervals)
 
-    continuous_node = ContinuousStandardNode(Symbol(string(node.name) * "_c"), [discrete_node], distributions)
+    continuous_node = ContinuousStandardNode(Symbol(string(node.name)), [discrete_node], distributions)
 
     ## Adding continuous node as parents of children of the discretized node
     for child in get_children(ebn_new, node)
@@ -67,6 +67,6 @@ function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousStandard
     nodes = append!(ebn_new.nodes, [continuous_node, discrete_node])
     deleteat!(nodes, findall(x -> x == node, nodes))
 
-    EnhancedBayesianNetwork(nodes)
+    return nodes
 end
 

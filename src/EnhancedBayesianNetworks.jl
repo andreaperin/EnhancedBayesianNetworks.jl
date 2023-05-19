@@ -36,7 +36,7 @@ export StandardNode
 
 
 # Methods
-export evaluate_rbn
+export evaluate_ebn
 export get_children
 export get_models
 export get_neighbors
