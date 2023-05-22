@@ -1,7 +1,6 @@
 
 function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousRootNode, intervals::Vector{Vector{Float64}})
     ## Check intervals
-    ebn_new = copy(ebn)
     verify_intervals(intervals)
     lower_buond = support(node.distribution).lb
     upper_bound = support(node.distribution).ub
@@ -21,11 +20,11 @@ function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousRootNode
 
     continuous_node = ContinuousStandardNode(Symbol(string(node.name)), [discrete_node], distributions)
 
-    for child in get_children(ebn_new, node)
+    for child in get_children(ebn, node)
         deleteat!(child.parents, findall(x -> x == node, child.parents))
         push!(child.parents, continuous_node)
     end
-    nodes = append!(ebn_new.nodes, [continuous_node, discrete_node])
+    nodes = append!(ebn.nodes, [continuous_node, discrete_node])
     deleteat!(nodes, findall(x -> x == node, nodes))
 
     return nodes
@@ -33,7 +32,6 @@ end
 
 function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousStandardNode, intervals::Vector{Vector{Float64}}, variance::Real)
     ## Check intervals
-    ebn_new = copy(ebn)
     verify_intervals(intervals)
     lower_buond = minimum(support(i).lb for i in values(node.distribution))
     upper_buond = maximum(support(i).ub for i in values(node.distribution))
@@ -60,11 +58,11 @@ function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousStandard
     continuous_node = ContinuousStandardNode(Symbol(string(node.name)), [discrete_node], distributions)
 
     ## Adding continuous node as parents of children of the discretized node
-    for child in get_children(ebn_new, node)
+    for child in get_children(ebn, node)
         deleteat!(child.parents, findall(x -> x == node, child.parents))
         push!(child.parents, continuous_node)
     end
-    nodes = append!(ebn_new.nodes, [continuous_node, discrete_node])
+    nodes = append!(ebn.nodes, [continuous_node, discrete_node])
     deleteat!(nodes, findall(x -> x == node, nodes))
 
     return nodes

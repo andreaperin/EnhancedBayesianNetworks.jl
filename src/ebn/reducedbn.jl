@@ -39,19 +39,30 @@ end
 
 function reduce_ebn_standard(ebn::EnhancedBayesianNetwork)
     ## Always starts with the link to the continuous nodes with fewest parents
-    continuous_nodes = filter(x -> isa(x, ContinuousNode), ebn.nodes)
-    r_dag_nodes = copy(ebn.nodes)
-    r_dag = copy(ebn.dag)
+    rbn = deepcopy(ebn)
+    continuous_nodes = filter(x -> isa(x, ContinuousNode), rbn.nodes)
+    r_dag_nodes = copy(rbn.nodes)
+    r_dag = rbn.dag
     while !isempty(continuous_nodes)
-        starting_node = continuous_nodes[findmin(map(x -> length(get_parents(ebn, x)), continuous_nodes))[2]]
+        starting_node = continuous_nodes[findmin(map(x -> length(get_parents(rbn, x)), continuous_nodes))[2]]
         starting_node_index = findfirst(x -> x == starting_node, r_dag_nodes)
+        children = get_children(rbn, starting_node)
+
         r_dag = _reduce_continuousnode(r_dag, starting_node_index)
+
+        for child in children
+            deleteat!(child.parents, findall(x -> x == starting_node, child.parents))
+            if !isa(starting_node, ContinuousRootNode)
+                append!(child.parents, filter(x -> isa(x, DiscreteNode), starting_node.parents))
+            end
+        end
 
         r_dag_nodes = deleteat!(r_dag_nodes, starting_node_index)
         deleteat!(continuous_nodes, findall(x -> x == starting_node, continuous_nodes))
     end
-    r_name_to_index = Dict(x.name => i for (i, x) in enumerate(r_dag_nodes))
-    return ReducedBayesianNetwork(r_dag, r_dag_nodes, r_name_to_index)
+    ordered_rdag, ordered_rnodes, ordered_rname_to_index = _topological_ordered_dag(r_dag_nodes)
+
+    return ReducedBayesianNetwork(ordered_rdag, ordered_rnodes, ordered_rname_to_index)
 end
 
 
@@ -128,11 +139,12 @@ function evaluate_ebn(ebn::EnhancedBayesianNetwork, markov::Bool=true)
             end
         end
     end
+    return rbns
 end
 
 function _build_structuralreliabilityproblem_node(rbn::ReducedBayesianNetwork, ebn::EnhancedBayesianNetwork, node::DiscreteFunctionalNode)
     ebn_discrete_parents = filter(x -> isa(x, DiscreteNode), get_parents(ebn, node))
-    ebn_continuous_parents = filter(x -> isa(x, ContinuousNode), node.parents)
+    ebn_continuous_parents = filter(x -> isa(x, ContinuousNode), get_parents(ebn, node))
 
     rbn_discrete_parents = filter(x -> isa(x, DiscreteNode), get_parents(rbn, node))
     rbn_discrete_parents_combination = vec(collect(Iterators.product(_get_states.(rbn_discrete_parents)...)))
@@ -146,19 +158,20 @@ function _build_structuralreliabilityproblem_node(rbn::ReducedBayesianNetwork, e
         uq_randomvariables = mapreduce(p -> get_randomvariable(p, evidence), vcat, ebn_continuous_parents)
         uqinputs = vcat(uq_parameters, uq_randomvariables)
 
-        ordered_functional_node = FunctionalNode[node]
+        ebn_node = filter(x -> x.name == node.name, ebn.nodes)[1]
+        ordered_functional_node = [ebn_node]
         get_cont_fun_parents = n -> filter(x -> isa(x, ContinuousFunctionalNode), n.parents)
 
-        cont_fun_parents = get_cont_fun_parents(node)
+        cont_fun_parents = get_cont_fun_parents(ebn_node)
         while !isempty(cont_fun_parents)
             append!(ordered_functional_node, cont_fun_parents)
             cont_fun_parents = mapreduce(p -> get_cont_fun_parents(p), vcat, cont_fun_parents)
         end
         models = mapreduce(p -> get_models(p, evidence), vcat, reverse(ordered_functional_node))
 
-        performances = get_performance(node, evidence)
+        performances = get_performance(ebn_node, evidence)
 
-        simulations = get_simulation(node, evidence)
+        simulations = get_simulation(ebn_node, evidence)
 
         srps[combination] = StructuralReliabilityProblem(models, uqinputs, performances, simulations)
     end
@@ -176,3 +189,6 @@ function _get_failure_probability(node::StructuralReliabilityProblemNode)
     end
     return pf, cov, samples
 end
+
+
+# Base.get(rbn::ReducedBayesianNetwork, node::Symbol)

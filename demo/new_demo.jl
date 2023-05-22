@@ -69,6 +69,6 @@ nodes = [standard1_node, root1, root3, root2, functional1_node, functional2_node
 
 ## Already build everything with evidence.
 ebn = EnhancedBayesianNetwork(nodes)
-# rbn1 = reduce_ebn_standard(ebn)
-# rbns2 = reduce_ebn_markov_envelopes(ebn)
-evaluate_ebn(ebn)
+rbn1 = reduce_ebn_standard(ebn)
+rbns2 = reduce_ebn_markov_envelopes(ebn)
+a = evaluate_ebn(ebn)

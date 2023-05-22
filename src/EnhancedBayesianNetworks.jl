@@ -25,13 +25,11 @@ export DiscreteFunctionalNode
 export DiscreteRootNode
 export DiscreteStandardNode
 export EnhancedBayesianNetwork
-# export EvidenceDistribution
 export FunctionalNode
+export InferenceState
 export RootNode
 export ReducedBayesianNetwork
 export StandardNode
-# export StructuralReliabilityProblem
-# export StructuralReliabilityProblemNode
 
 
 
@@ -58,8 +56,9 @@ export logpdf
 
 
 include("nodes/nodes.jl")
+include("util/wrap.jl")
 include("util/interval_verification.jl")
 include("util/node_verification.jl")
 include("ebn/ebn.jl")
-
+include("inference/inference.jl")
 end

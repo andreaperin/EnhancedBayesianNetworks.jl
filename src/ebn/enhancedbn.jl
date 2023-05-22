@@ -10,10 +10,8 @@ struct EnhancedBayesianNetwork <: ProbabilisticGraphicalModel
     end
 end
 
-Base.copy(ebn::EnhancedBayesianNetwork) = EnhancedBayesianNetwork(ebn.dag, ebn.nodes, ebn.name_to_index)
-
-function EnhancedBayesianNetwork(nodes_vector::Vector{<:AbstractNode})
-    nodes = copy(nodes_vector)
+function EnhancedBayesianNetwork(nodes_::Vector{<:AbstractNode})
+    nodes = deepcopy(nodes_)
     ordered_dag, ordered_nodes, ordered_name_to_index = _topological_ordered_dag(nodes)
     ebn = EnhancedBayesianNetwork(ordered_dag, ordered_nodes, ordered_name_to_index)
 
