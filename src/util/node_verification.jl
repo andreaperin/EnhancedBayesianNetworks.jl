@@ -19,4 +19,6 @@ function verify_functionalnode_parents(parents::Vector{<:AbstractNode})
     unique(discrete_parents_states) != discrete_parents_states && error("all discrete parents of a functional node must have different named states")
 end
 
-
+function is_equal(node1::AbstractNode, node2::AbstractNode)
+    typeof(node1) == typeof(node2) && is_equal(node1, node2)
+end

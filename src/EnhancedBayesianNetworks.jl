@@ -44,6 +44,7 @@ export get_performance
 export get_simulation
 export get_state_probability
 export get_randomvariable
+export is_equal
 export markov_blanket
 export markov_envelope
 export reduce_ebn_markov_envelopes

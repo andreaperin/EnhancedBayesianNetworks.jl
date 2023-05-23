@@ -23,6 +23,7 @@ mutable struct ContinuousFunctionalNode <: ContinuousNode
             discrete_parents_combination = map(x -> [i for i in x], discrete_parents_combination)
             length(discrete_parents_combination) != length(i) && error("defined combinations must be equal to the discrete parents combinations")
         end
+
         return new(name, parents, models)
     end
 end
@@ -44,6 +45,9 @@ function get_models(node::ContinuousFunctionalNode, evidence::Vector{Tuple{Symbo
     return node.models[node_key]
 end
 
+function is_equal(node1::ContinuousFunctionalNode, node2::ContinuousFunctionalNode)
+    node1.name == node2.name && node1.parents == node2.parents && node1.models == node2.models
+end
 
 mutable struct DiscreteFunctionalNode <: DiscreteNode
     name::Symbol
@@ -112,5 +116,8 @@ function get_simulation(node::DiscreteFunctionalNode, evidence::Vector{Tuple{Sym
 end
 
 
+function is_equal(node1::DiscreteFunctionalNode, node2::DiscreteFunctionalNode)
+    node1.name == node2.name && node1.parents == node2.parents && node1.models == node2.models && node1.performances == node2.performances && node1.simulations == node2.simulations
+end
 
 const global FunctionalNode = Union{DiscreteFunctionalNode,ContinuousFunctionalNode}

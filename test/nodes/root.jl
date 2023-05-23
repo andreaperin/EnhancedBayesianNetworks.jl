@@ -10,7 +10,13 @@
 
         @test ContinuousRootNode(name, distribution).distribution == distribution
 
-        @test get_state_probability(ContinuousRootNode(name, distribution), evidence) == distribution
+        @test get_randomvariable(ContinuousRootNode(name, distribution), evidence) == RandomVariable(distribution, name)
+
+        node = ContinuousRootNode(name, distribution)
+
+        @test node.name == name
+        @test node.distribution == distribution
+        @test node.intervals == Vector{Vector{Float64}}()
     end
 
     @testset "DiscreteRootNode" begin
@@ -38,9 +44,7 @@
 
         @test EnhancedBayesianNetworks._get_states(node) == [:yes, :no]
 
-        @test_throws ErrorException("evidence does not contain DiscreteRootNode") get_state_probability(node, evidence)
-
-        @test get_state_probability(node, [(:yes, node)]) == 0.2
+        @test_throws ErrorException("evidence does not contain DiscreteRootNode") get_parameters(node, [(:yes, root1)])
 
         @test get_parameters(node, [(:yes, node)]) == [Parameter(2, :d)]
 
