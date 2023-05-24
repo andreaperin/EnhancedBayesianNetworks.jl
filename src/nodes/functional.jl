@@ -30,14 +30,16 @@ end
 
 function get_randomvariable(node::ContinuousFunctionalNode, evidence::Vector{Tuple{Symbol,N}}) where {N<:AbstractNode}
     discrete_parents = filter(x -> isa(x, DiscreteNode), node.parents)
-    all([j.name for j in discrete_parents] .∉ [[x[2].name for x in evidence]]) && error("evidence does not contain any parents of the ContinuousFunctionalNode")
+    check = mapreduce(n -> .!is_equal.(repeat([n], length(evidence)), [x[2] for x in evidence]), vcat, discrete_parents)
+    all(check) && error("evidence does not contain any parents of the ContinuousFunctionalNode")
     continuous_parents = filter(x -> isa(x, ContinuousNode), node.parents)
     return mapreduce(p -> get_randomvariable(p, evidence), vcat, continuous_parents)
 end
 
 function get_models(node::ContinuousFunctionalNode, evidence::Vector{Tuple{Symbol,N}}) where {N<:AbstractNode}
     discrete_parents = filter(x -> isa(x, DiscreteNode), node.parents)
-    all([j.name for j in discrete_parents] .∉ [[x[2].name for x in evidence]]) && error("evidence does not contain any parents of the ContinuousFunctionalNode")
+    check = mapreduce(n -> .!is_equal.(repeat([n], length(evidence)), [x[2] for x in evidence]), vcat, discrete_parents)
+    all(check) && error("evidence does not contain any parents of the ContinuousFunctionalNode")
     node_key = Symbol[]
     for parent in node.parents
         append!(node_key, [e[1] for e in evidence if e[2].name == parent.name])
@@ -46,7 +48,7 @@ function get_models(node::ContinuousFunctionalNode, evidence::Vector{Tuple{Symbo
 end
 
 function is_equal(node1::ContinuousFunctionalNode, node2::ContinuousFunctionalNode)
-    node1.name == node2.name && node1.parents == node2.parents && node1.models == node2.models
+    length(node1.parents) == length(node2.parents) && node1.name == node2.name && all(is_equal.(node1.parents, node2.parents)) && node1.models == node2.models
 end
 
 mutable struct DiscreteFunctionalNode <: DiscreteNode
@@ -89,7 +91,9 @@ mutable struct DiscreteFunctionalNode <: DiscreteNode
 end
 
 function get_models(node::DiscreteFunctionalNode, evidence::Vector{Tuple{Symbol,N}}) where {N<:AbstractNode}
-    all([j.name for j in node.parents] .∉ [[x[2].name for x in evidence]]) && error("evidence does not contain any parents of the FunctionalNode")
+    discrete_parents = filter(x -> isa(x, DiscreteNode), node.parents)
+    check = mapreduce(n -> .!is_equal.(repeat([n], length(evidence)), [x[2] for x in evidence]), vcat, discrete_parents)
+    all(check) && error("evidence does not contain any parents of the FunctionalNode")
     node_key = Symbol[]
     for parent in node.parents
         append!(node_key, [e[1] for e in evidence if e[2].name == parent.name])
@@ -98,7 +102,9 @@ function get_models(node::DiscreteFunctionalNode, evidence::Vector{Tuple{Symbol,
 end
 
 function get_performance(node::DiscreteFunctionalNode, evidence::Vector{Tuple{Symbol,N}}) where {N<:AbstractNode}
-    all([j.name for j in node.parents] .∉ [[x[2].name for x in evidence]]) && error("evidence does not contain any parents of the FunctionalNode")
+    discrete_parents = filter(x -> isa(x, DiscreteNode), node.parents)
+    check = mapreduce(n -> .!is_equal.(repeat([n], length(evidence)), [x[2] for x in evidence]), vcat, discrete_parents)
+    all(check) && error("evidence does not contain any parents of the FunctionalNode")
     node_key = Symbol[]
     for parent in node.parents
         append!(node_key, [e[1] for e in evidence if e[2].name == parent.name])
@@ -107,7 +113,9 @@ function get_performance(node::DiscreteFunctionalNode, evidence::Vector{Tuple{Sy
 end
 
 function get_simulation(node::DiscreteFunctionalNode, evidence::Vector{Tuple{Symbol,N}}) where {N<:AbstractNode}
-    all([j.name for j in node.parents] .∉ [[x[2].name for x in evidence]]) && error("evidence does not contain any parents of the FunctionalNode")
+    discrete_parents = filter(x -> isa(x, DiscreteNode), node.parents)
+    check = mapreduce(n -> .!is_equal.(repeat([n], length(evidence)), [x[2] for x in evidence]), vcat, discrete_parents)
+    all(check) && error("evidence does not contain any parents of the FunctionalNode")
     node_key = Symbol[]
     for parent in node.parents
         append!(node_key, [e[1] for e in evidence if e[2].name == parent.name])
@@ -117,7 +125,7 @@ end
 
 
 function is_equal(node1::DiscreteFunctionalNode, node2::DiscreteFunctionalNode)
-    node1.name == node2.name && node1.parents == node2.parents && node1.models == node2.models && node1.performances == node2.performances && node1.simulations == node2.simulations
+    length(node1.parents) == length(node2.parents) && node1.name == node2.name && all(is_equal.(node1.parents, node2.parents)) && node1.models == node2.models && node1.performances == node2.performances && node1.simulations == node2.simulations
 end
 
 const global FunctionalNode = Union{DiscreteFunctionalNode,ContinuousFunctionalNode}

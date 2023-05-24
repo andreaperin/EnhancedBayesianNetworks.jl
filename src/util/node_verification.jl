@@ -22,3 +22,7 @@ end
 function is_equal(node1::AbstractNode, node2::AbstractNode)
     typeof(node1) == typeof(node2) && is_equal(node1, node2)
 end
+
+function _is_same_set(vector1::Vector{<:AbstractNode}, vector2::Vector{<:AbstractNode})
+    length(vector1) == length(vector2) && all([any(is_equal.(repeat([n], length(vector2)), vector2)) for n in vector1])
+end

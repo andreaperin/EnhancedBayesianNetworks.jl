@@ -31,7 +31,8 @@ ContinuousStandardNode(name::Symbol, parents::Vector{<:AbstractNode}, distributi
 
 
 function get_randomvariable(node::ContinuousStandardNode, evidence::Vector{Tuple{Symbol,N}}) where {N<:AbstractNode}
-    all([i.name for i in node.parents] .∉ [[x[2].name for x in evidence]]) && error("evidence does not contain any parents of the ContinuousStandardNode")
+    check = mapreduce(n -> .!is_equal.(repeat([n], length(evidence)), [x[2] for x in evidence]), vcat, node.parents)
+    all(check) && error("evidence does not contain any parents of the ContinuousStandardNode")
     node_key = Symbol[]
     for parent in node.parents
         append!(node_key, [e[1] for e in evidence if e[2].name == parent.name])
@@ -41,7 +42,7 @@ function get_randomvariable(node::ContinuousStandardNode, evidence::Vector{Tuple
 end
 
 function is_equal(node1::ContinuousStandardNode, node2::ContinuousStandardNode)
-    node1.name == node2.name && node1.parents == node2.parents && node1.distribution == node2.distribution && node1.intervals == node2.intervals && node1.sigma == node2.sigma
+    length(node1.parents) == length(node2.parents) && node1.name == node2.name && all(is_equal.(node1.parents, node2.parents)) && node1.distribution == node2.distribution && node1.intervals == node2.intervals && node1.sigma == node2.sigma
 end
 
 mutable struct DiscreteStandardNode <: DiscreteNode
@@ -81,13 +82,13 @@ end
 _get_states(node::DiscreteStandardNode) = keys(first(values(node.states))) |> collect
 
 function get_parameters(node::DiscreteStandardNode, evidence::Vector{Tuple{Symbol,N}}) where {N<:AbstractNode}
-    node.name ∉ [x[2].name for x in evidence] && error("evidence does not contain DiscreteStandardNode in the evidence")
+    all(.!is_equal.(repeat([node], length(evidence)), [x[2] for x in evidence])) && error("evidence does not contain DiscreteStandardNode in the evidence")
     node_key = [e[1] for e in evidence if e[2].name == node.name][1]
     return node.parameters[node_key]
 end
 
 function is_equal(node1::DiscreteStandardNode, node2::DiscreteStandardNode)
-    node1.name == node2.name && node1.parents == node2.parents && node1.states == node2.states && node1.parameters == node2.parameters
+    length(node1.parents) == length(node2.parents) && node1.name == node2.name && all(is_equal.(node1.parents, node2.parents)) && node1.states == node2.states && node1.parameters == node2.parameters
 end
 
 const global StandardNode = Union{DiscreteStandardNode,ContinuousStandardNode}

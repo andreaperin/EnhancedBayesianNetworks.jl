@@ -11,7 +11,7 @@
 
         @test_throws ErrorException("Invalid dag-link to be inverted") EnhancedBayesianNetworks._invert_link_dag(copy(dag), 2, 1)
         @test_throws ErrorException("Cyclic dag error") EnhancedBayesianNetworks._invert_link_dag(copy(dag), 1, 3)
-        @test EnhancedBayesianNetworks._invert_link_dag(copy(dag), 1, 2) == resulting_dag
+        @test EnhancedBayesianNetworks._invert_link_dag(deepcopy(dag), 1, 2) == resulting_dag
 
         badjlist = Vector{Vector{Int}}([[], [1], [1], [2, 3]])
         fadjlist = Vector{Vector{Int}}([[2, 3], [4], [4], []])
@@ -21,7 +21,12 @@
         fadjlist2 = Vector{Vector{Int}}([[2, 3, 4], [3, 4], [], [3]])
         resulting_dag = DiGraph(6, fadjlist2, badjlist2)
 
-        @test EnhancedBayesianNetworks._invert_link_nodes(copy(dag), 3, 4) == resulting_dag
+        @test EnhancedBayesianNetworks._invert_link_nodes(deepcopy(dag), 3, 4) == resulting_dag
+
+        badjlist = Vector{Vector{Int}}([[], [1], [1, 2]])
+        fadjlist = Vector{Vector{Int}}([[2, 3], [3], []])
+        resulting_dag = DiGraph(3, fadjlist, badjlist)
+        @test EnhancedBayesianNetworks._reduce_continuousnode(deepcopy(dag), 3) == resulting_dag
 
         badjlist = Vector{Vector{Int}}([[], [1], [1, 2, 4], [1, 2]])
         fadjlist = Vector{Vector{Int}}([[2, 3, 4], [3, 4], [], [3]])
@@ -66,9 +71,16 @@
 
         @test EnhancedBayesianNetworks._reduce_continuousnode(ebn.dag, ebn.name_to_index[:child2]) == resulting_dag
 
-        @test reduce_ebn_standard(ebn).dag == resulting_dag
-        @test reduce_ebn_standard(ebn).nodes == [root2, root1, child1, functional]
-        @test reduce_ebn_standard(ebn).name_to_index == Dict(:z => 1, :x => 2, :child1 => 3, :functional => 4)
+        rbn = reduce_ebn_standard(ebn)
+
+        badjlist = Vector{Vector{Int}}([[], [1], [], [2, 3]])
+        fadjlist = Vector{Vector{Int}}([[2], [4], [4], []])
+        resulting_dag = DiGraph(3, fadjlist, badjlist)
+
+        functional_r = DiscreteFunctionalNode(:functional, [child1, root2], models, performances, simulations)
+        @test rbn.dag == resulting_dag
+        @test EnhancedBayesianNetworks._is_same_set(rbn.nodes, [root2, root1, child1, functional_r])
+        @test rbn.name_to_index == Dict(:z => 3, :x => 1, :child1 => 2, :functional => 4)
 
         root1 = DiscreteRootNode(:x, Dict(:yes => 0.2, :no => 0.8))
         root2 = DiscreteRootNode(:alpha, Dict(:y => 0.4, :n => 0.6), Dict(:y => [Parameter(1, :alpha)], :n => [Parameter(0, :alpha)]))
@@ -106,12 +118,20 @@
         fadjlist2 = Vector{Vector{Int}}([[3], [3], []])
         resulting_dag2 = DiGraph(2, fadjlist2, badjlist2)
 
-        @test reduce_ebn_markov_envelopes(ebn)[1].dag == resulting_dag1
-        @test Set(reduce_ebn_markov_envelopes(ebn)[1].nodes) == Set([root1, root2, standard1_node, functional2_node])
-        @test reduce_ebn_markov_envelopes(ebn)[1].name_to_index ∈ [Dict(:x => 1, :alpha => 2, :α => 3, :f2 => 4), Dict(:x => 2, :alpha => 1, :α => 3, :f2 => 4)]
+        rbn1, rbn2 = reduce_ebn_markov_envelopes(ebn)
 
-        @test reduce_ebn_markov_envelopes(ebn)[2].dag == resulting_dag2
-        @test Set(reduce_ebn_markov_envelopes(ebn)[2].nodes) == Set([root2, root1, functional1_node])
-        @test reduce_ebn_markov_envelopes(ebn)[2].name_to_index ∈ [Dict(:alpha => 1, :x => 2, :f1 => 3), Dict(:alpha => 2, :x => 1, :f1 => 3)]
+        functional2_node_r = DiscreteFunctionalNode(:f2, [standard1_node], functional2_models, functional2_performances, functional2_simulations)
+
+        @test rbn1.dag == resulting_dag1
+        @test EnhancedBayesianNetworks._is_same_set(rbn1.nodes, [root1, root2, standard1_node, functional2_node_r])
+        @test rbn1.name_to_index ∈ [Dict(:x => 1, :alpha => 2, :α => 3, :f2 => 4), Dict(:x => 2, :alpha => 1, :α => 3, :f2 => 4)]
+
+        functional1_node_r = deepcopy(functional1_node)
+        deleteat!(functional1_node_r.parents, findall(x -> x.name == :β, functional1_node_r.parents))
+        push!(functional1_node_r.parents, root1)
+
+        @test rbn2.dag == resulting_dag2
+        @test EnhancedBayesianNetworks._is_same_set(rbn2.nodes, [root2, root1, functional1_node_r])
+        @test rbn2.name_to_index ∈ [Dict(:alpha => 1, :x => 2, :f1 => 3), Dict(:alpha => 2, :x => 1, :f1 => 3)]
     end
 end

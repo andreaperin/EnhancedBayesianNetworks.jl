@@ -22,6 +22,8 @@
 
     @testset "EnhancedBayesianNetwork" begin
         root1 = DiscreteRootNode(:x, Dict(:yes => 0.5, :no => 0.5))
+        root1_1 = DiscreteRootNode(:x, Dict(:y => 0.5, :n => 0.5))
+        root1_2 = DiscreteRootNode(:p, Dict(:yes => 0.5, :no => 0.5))
 
         states_child1 = OrderedDict([:yes] => Dict(:a => 0.5, :b => 0.5), [:no] => Dict(:a => 0.5, :b => 0.5))
         child1 = DiscreteStandardNode(:child1, [root1], states_child1, Dict(:a => [Parameter(3, :child1)], :b => [Parameter(0, :child1)]))
@@ -40,10 +42,13 @@
         fadjlist = Vector{Vector{Int}}([[2], [3, 4], [4], []])
 
         nodes = [root1, child1, child2, functional]
+        @test_throws ErrorException("nodes must have different names") EnhancedBayesianNetwork([root1, root1_1, child1, child2, functional])
+
+        @test_throws ErrorException("nodes state must have different symbols") EnhancedBayesianNetwork([root1, root1_2, child1, child2, functional])
 
         @test EnhancedBayesianNetwork(nodes).dag == EnhancedBayesianNetwork(DiGraph(4, fadjlist, badjlist), nodes, Dict(:x => 1, :child1 => 2, :child2 => 3, :functional => 4)).dag
 
-        @test EnhancedBayesianNetwork(nodes).nodes == EnhancedBayesianNetwork(DiGraph(4, fadjlist, badjlist), nodes, Dict(:x => 1, :child1 => 2, :child2 => 3, :functional => 4)).nodes
+        @test all(is_equal.(EnhancedBayesianNetwork(nodes).nodes, EnhancedBayesianNetwork(DiGraph(4, fadjlist, badjlist), nodes, Dict(:x => 1, :child1 => 2, :child2 => 3, :functional => 4)).nodes))
 
         @test EnhancedBayesianNetwork(nodes).name_to_index == EnhancedBayesianNetwork(DiGraph(4, fadjlist, badjlist), nodes, Dict(:x => 1, :child1 => 2, :child2 => 3, :functional => 4)).name_to_index
 
@@ -52,16 +57,16 @@
 
         @test EnhancedBayesianNetworks._create_ebn_from_envelope(ebn, envelope).dag == ebn.dag
 
-        @test EnhancedBayesianNetworks._create_ebn_from_envelope(ebn, envelope).nodes == ebn.nodes
+        @test all(is_equal.(EnhancedBayesianNetworks._create_ebn_from_envelope(ebn, envelope).nodes, ebn.nodes))
 
         @test EnhancedBayesianNetworks._create_ebn_from_envelope(ebn, envelope).name_to_index == ebn.name_to_index
     end
 
     @testset "Nodes Operation" begin
-        root1 = DiscreteRootNode(:x, Dict(:yes => 0.5, :no => 0.5))
+        root1 = DiscreteRootNode(:x, Dict(:y => 0.5, :n => 0.5))
         root2 = DiscreteRootNode(:z, Dict(:yes => 0.2, :no => 0.8), Dict(:yes => [Parameter(3, :z)], :no => [Parameter(0, :z)]))
 
-        states_child1 = OrderedDict([:yes] => Dict(:a => 0.5, :b => 0.5), [:no] => Dict(:a => 0.5, :b => 0.5))
+        states_child1 = OrderedDict([:y] => Dict(:a => 0.5, :b => 0.5), [:n] => Dict(:a => 0.5, :b => 0.5))
         child1 = DiscreteStandardNode(:child1, [root1], states_child1, Dict(:a => [Parameter(3, :child1)], :b => [Parameter(0, :child1)]))
 
         distributions_child2 = OrderedDict([:a] => Normal(), [:b] => Normal(2, 2))
@@ -79,23 +84,18 @@
         simulations = OrderedDict([:a, :yes] => MonteCarlo(100), [:b, :yes] => MonteCarlo(200), [:a, :no] => MonteCarlo(300), [:b, :no] => MonteCarlo(400))
         functional = DiscreteFunctionalNode(:functional, [child1, child2, root2], models, performances, simulations)
 
-        @test_throws ErrorException("nodes state must have different symbols") EnhancedBayesianNetwork([root1, root2, child1, child2, functional])
-
-        root1 = DiscreteRootNode(:x, Dict(:y => 0.5, :n => 0.5))
-
-        states_child1 = OrderedDict([:y] => Dict(:a => 0.5, :b => 0.5), [:n] => Dict(:a => 0.5, :b => 0.5))
-        child1 = DiscreteStandardNode(:child1, [root1], states_child1, Dict(:a => [Parameter(3, :child1)], :b => [Parameter(0, :child1)]))
-
         ebn = EnhancedBayesianNetwork([root1, root2, child1, child2, functional])
 
-        @test Set(get_parents(ebn, child1)) == Set([root1])
+        @test EnhancedBayesianNetworks._is_same_set(get_parents(ebn, child1), [root1])
 
-        @test Set(get_children(ebn, child2)) == Set([functional])
+        @test EnhancedBayesianNetworks._is_same_set(get_children(ebn, child2), [functional])
 
-        @test Set(get_neighbors(ebn, child2)) == Set([child1, functional])
+        @test EnhancedBayesianNetworks._is_same_set(get_neighbors(ebn, child2), [child1, functional])
 
-        @test Set(markov_blanket(ebn, child2)) == Set([root2, functional, child1])
+        @test EnhancedBayesianNetworks._is_same_set(markov_blanket(ebn, child2), [child1, root2, child2, functional])
 
-        @test Set.(markov_envelope(ebn)) == [Set([child2, root2, functional, child1])]
+        @test EnhancedBayesianNetworks._is_same_set(markov_envelope(ebn)[1], [child1, root2, functional, child2])
+
+        @test is_equal(EnhancedBayesianNetworks._get_node_given_state(ebn, :a), child1)
     end
 end

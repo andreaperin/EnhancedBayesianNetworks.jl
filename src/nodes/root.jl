@@ -31,7 +31,7 @@ DiscreteRootNode(name::Symbol, states::Dict{Symbol,<:Real}) = DiscreteRootNode(n
 _get_states(node::DiscreteRootNode) = collect(keys(node.states))
 
 function get_parameters(node::DiscreteRootNode, evidence::Vector{Tuple{Symbol,N}}) where {N<:AbstractNode}
-    node.name ∉ [x[2].name for x in evidence] && error("evidence does not contain DiscreteRootNode")
+    all(.!is_equal.(repeat([node], length(evidence)), [x[2] for x in evidence])) && error("evidence does not contain DiscreteRootNode")
     [node.parameters[s[1]] for s in evidence if haskey(node.parameters, s[1])][1]
 end
 

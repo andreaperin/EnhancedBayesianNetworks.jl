@@ -5,6 +5,7 @@ struct EnhancedBayesianNetwork <: ProbabilisticGraphicalModel
 
     function EnhancedBayesianNetwork(dag::DiGraph, nodes::Vector{<:AbstractNode}, name_to_index::Dict{Symbol,Int})
         all_states = vcat(_get_states.(filter(x -> !isa(x, DiscreteFunctionalNode) && isa(x, DiscreteNode), nodes))...)
+        unique([i.name for i in nodes]) != [i.name for i in nodes] && error("nodes must have different names")
         unique(all_states) != all_states ? error("nodes state must have different symbols") :
         new(dag, nodes, name_to_index)
     end
@@ -83,12 +84,12 @@ end
 
 function get_parents(ebn::EnhancedBayesianNetwork, node::N) where {N<:AbstractNode}
     i = ebn.name_to_index[node.name]
-    [ebn.nodes[j] for j in inneighbors(ebn.dag, i)]
+    [ebn.nodes[j] for j in unique(inneighbors(ebn.dag, i))]
 end
 
 function get_neighbors(ebn::EnhancedBayesianNetwork, node::N) where {N<:AbstractNode}
     i = ebn.name_to_index[node.name]
-    [ebn.nodes[j] for j in append!(inneighbors(ebn.dag, i), outneighbors(ebn.dag, i))]
+    [ebn.nodes[j] for j in unique(append!(inneighbors(ebn.dag, i), outneighbors(ebn.dag, i)))]
 end
 
 ## Returns a Set of AbstractNode representing the Markov Blanket for the choosen node
@@ -143,7 +144,6 @@ function _create_ebn_from_envelope(ebn::EnhancedBayesianNetwork, envelope::Vecto
     EnhancedBayesianNetwork(unique!(nodes))
 end
 
-##TODO test
 function _get_node_given_state(ebn::EnhancedBayesianNetwork, state::Symbol)
     nodes = filter(x -> !isa(x, DiscreteFunctionalNode) && isa(x, DiscreteNode), ebn.nodes)
     [node for node in nodes if state ∈ _get_states(node)][1]

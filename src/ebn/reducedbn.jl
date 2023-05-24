@@ -4,16 +4,19 @@ struct ReducedBayesianNetwork <: ProbabilisticGraphicalModel
     name_to_index::Dict{Symbol,Int}
 end
 
+##TODO TEST
 function get_children(ebn::ReducedBayesianNetwork, node::N) where {N<:AbstractNode}
     i = ebn.name_to_index[node.name]
     [ebn.nodes[j] for j in outneighbors(ebn.dag, i)]
 end
 
+##TODO TEST
 function get_parents(ebn::ReducedBayesianNetwork, node::N) where {N<:AbstractNode}
     i = ebn.name_to_index[node.name]
     [ebn.nodes[j] for j in inneighbors(ebn.dag, i)]
 end
 
+##TODO TEST
 function get_neighbors(ebn::ReducedBayesianNetwork, node::N) where {N<:AbstractNode}
     i = ebn.name_to_index[node.name]
     [ebn.nodes[j] for j in append!(inneighbors(ebn.dag, i), outneighbors(ebn.dag, i))]
@@ -45,21 +48,28 @@ function reduce_ebn_standard(ebn::EnhancedBayesianNetwork)
     r_dag = rbn.dag
     while !isempty(continuous_nodes)
         starting_node = continuous_nodes[findmin(map(x -> length(get_parents(rbn, x)), continuous_nodes))[2]]
-        starting_node_index = findfirst(x -> x == starting_node, r_dag_nodes)
+        starting_node_index = findall(is_equal.(repeat([starting_node], length(r_dag_nodes)), r_dag_nodes))[1]
+
         children = get_children(rbn, starting_node)
 
         r_dag = _reduce_continuousnode(r_dag, starting_node_index)
 
         for child in children
-            deleteat!(child.parents, findall(x -> x == starting_node, child.parents))
+            for parent in child.parents
+                is_equal(parent, starting_node) && deleteat!(child.parents, findall(x -> x == parent, child.parents))
+            end
             if !isa(starting_node, ContinuousRootNode)
-                append!(child.parents, filter(x -> isa(x, DiscreteNode), starting_node.parents))
+                starting_node_parents = filter(x -> isa(x, DiscreteNode), starting_node.parents)
+                for s in starting_node_parents
+                    .!any(is_equal.(repeat([s], length(child.parents)), child.parents)) && push!(child.parents, s)
+                end
             end
         end
 
         r_dag_nodes = deleteat!(r_dag_nodes, starting_node_index)
         deleteat!(continuous_nodes, findall(x -> x == starting_node, continuous_nodes))
     end
+
     ordered_rdag, ordered_rnodes, ordered_rname_to_index = _topological_ordered_dag(r_dag_nodes)
 
     return ReducedBayesianNetwork(ordered_rdag, ordered_rnodes, ordered_rname_to_index)
@@ -69,8 +79,9 @@ end
 ```
 Dag Operations
 ```
+##TODO TEST
 function _reduce_continuousnode(dag::SimpleDiGraph, node_index::Int)
-    r_dag = copy(dag)
+    r_dag = deepcopy(dag)
     child_indices = r_dag.fadjlist[node_index]
     for child in child_indices
         r_dag = _invert_link_nodes(r_dag, node_index, child)
@@ -80,7 +91,7 @@ end
 
 
 function _invert_link_dag(dag::SimpleDiGraph, parent_index::Int, child_index::Int)
-    new_dag = copy(dag)
+    new_dag = deepcopy(dag)
     child_index ∉ dag.fadjlist[parent_index] && error("Invalid dag-link to be inverted")
     rem_edge!(new_dag, parent_index, child_index)
     add_edge!(new_dag, child_index, parent_index)
@@ -99,7 +110,7 @@ end
 
 function _remove_barren_node(dag::SimpleDiGraph, node_index::Int)
     !isempty(dag.fadjlist[node_index]) && error("node to be eliminated must be a barren node")
-    for i in copy(dag.badjlist[node_index])
+    for i in deepcopy(dag.badjlist[node_index])
         rem_edge!(dag, i, node_index)
     end
     deleteat!(dag.badjlist, node_index)
@@ -115,6 +126,7 @@ function _remove_barren_node(dag::SimpleDiGraph, node_index::Int)
     return SimpleDiGraph(dag.ne, new_fadjlist, new_badjlist)
 end
 
+##TODO TEST
 function _get_node_given_state(rbn::ReducedBayesianNetwork, state::Symbol)
     nodes = filter(x -> !isa(x, DiscreteFunctionalNode) && isa(x, DiscreteNode), rbn.nodes)
     [node for node in nodes if state ∈ _get_states(node)][1]
@@ -123,6 +135,7 @@ end
 ```
 Reduced BN Operations
 ```
+##TODO TEST
 function evaluate_ebn(ebn::EnhancedBayesianNetwork, markov::Bool=true)
     markov ? rbns = reduce_ebn_markov_envelopes(ebn) : rbns = [reduce_ebn_standard(ebn)]
     for rbn in rbns
@@ -142,6 +155,7 @@ function evaluate_ebn(ebn::EnhancedBayesianNetwork, markov::Bool=true)
     return rbns
 end
 
+##TODO TEST
 function _build_structuralreliabilityproblem_node(rbn::ReducedBayesianNetwork, ebn::EnhancedBayesianNetwork, node::DiscreteFunctionalNode)
     ebn_discrete_parents = filter(x -> isa(x, DiscreteNode), get_parents(ebn, node))
     ebn_continuous_parents = filter(x -> isa(x, ContinuousNode), get_parents(ebn, node))
@@ -178,6 +192,7 @@ function _build_structuralreliabilityproblem_node(rbn::ReducedBayesianNetwork, e
     return StructuralReliabilityProblemNode(node.name, node.parents, srps)
 end
 
+##TODO TEST
 function _get_failure_probability(node::StructuralReliabilityProblemNode)
     pf = Dict()
     cov = Dict()
