@@ -7,6 +7,7 @@ function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousRootNode
     minimum(minimum.(intervals)) != lower_buond && push!(intervals, [lower_buond, minimum(minimum.(intervals))])
     maximum(maximum.(intervals)) != upper_bound && push!(intervals, [maximum(maximum.(intervals)), upper_bound])
 
+    nodes = deepcopy(ebn.nodes)
     f_d = i -> cdf(node.distribution, i[2]) - cdf(node.distribution, i[1])
     states_symbols = [Symbol(i) for i in intervals]
     states = Dict(states_symbols .=> f_d.(intervals))
@@ -14,19 +15,20 @@ function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousRootNode
     discrete_node = DiscreteRootNode(Symbol(string(node.name) * "_d"), states)
 
     ## Adding continuous node as parents of children of the discretized node
-    f_c = i -> Truncated(node.distribution, i[1], i[2])
+    f_c = i -> truncated(node.distribution, i[1], i[2])
     distributions_symbols = [[i] for i in states_symbols]
     distributions = OrderedDict(distributions_symbols .=> f_c.(intervals))
 
     continuous_node = ContinuousStandardNode(Symbol(string(node.name)), [discrete_node], distributions)
 
-    for child in get_children(ebn, node)
-        deleteat!(child.parents, findall(x -> x == node, child.parents))
+    children = get_children(ebn, node)
+    children = filter(x -> x.name in [j.name for j in children], nodes)
+    for child in children
+        deleteat!(child.parents, findall(is_equal.(repeat([node], length(child.parents)), child.parents)))
         push!(child.parents, continuous_node)
     end
-    nodes = append!(ebn.nodes, [continuous_node, discrete_node])
-    deleteat!(nodes, findall(x -> x == node, nodes))
-
+    append!(nodes, [continuous_node, discrete_node])
+    deleteat!(nodes, findall(is_equal.(repeat([node], length(nodes)), nodes)))
     return nodes
 end
 
@@ -38,8 +40,8 @@ function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousStandard
     minimum(minimum.(intervals)) != lower_buond && push!(intervals, [lower_buond, minimum(minimum.(intervals))])
     maximum(maximum.(intervals)) != upper_buond && push!(intervals, [maximum(maximum.(intervals)), upper_buond])
 
+    nodes = deepcopy(ebn.nodes)
     f_d = (d, i) -> cdf(d, i[2]) - cdf(d, i[1])
-    # states_symbols = [Symbol(i) for i in intervals]
 
     states = OrderedDict{Vector{Symbol},Dict{Symbol,Real}}()
     for (key, dist) in node.distribution
@@ -50,21 +52,21 @@ function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousStandard
 
     f_c = i -> begin
         a = isfinite.(i)
-        all(a) ? Uniform(i...) : Truncated(Normal(i[a][1], variance), i...)
+        all(a) ? Uniform(i...) : truncated(Normal(i[a][1], variance), i...)
     end
 
     distributions = OrderedDict([Symbol(i)] => f_c(i) for i in intervals)
 
     continuous_node = ContinuousStandardNode(Symbol(string(node.name)), [discrete_node], distributions)
 
-    ## Adding continuous node as parents of children of the discretized node
-    for child in get_children(ebn, node)
-        deleteat!(child.parents, findall(x -> x == node, child.parents))
+    children = get_children(ebn, node)
+    children = filter(x -> x.name in [j.name for j in children], nodes)
+    for child in children
+        deleteat!(child.parents, findall(is_equal.(repeat([node], length(child.parents)), child.parents)))
         push!(child.parents, continuous_node)
     end
-    nodes = append!(ebn.nodes, [continuous_node, discrete_node])
-    deleteat!(nodes, findall(x -> x == node, nodes))
-
+    append!(nodes, [continuous_node, discrete_node])
+    deleteat!(nodes, findall(is_equal.(repeat([node], length(nodes)), nodes)))
     return nodes
 end
 
