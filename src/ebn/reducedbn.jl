@@ -4,22 +4,19 @@ struct ReducedBayesianNetwork <: ProbabilisticGraphicalModel
     name_to_index::Dict{Symbol,Int}
 end
 
-##TODO TEST
 function get_children(ebn::ReducedBayesianNetwork, node::N) where {N<:AbstractNode}
     i = ebn.name_to_index[node.name]
     [ebn.nodes[j] for j in outneighbors(ebn.dag, i)]
 end
 
-##TODO TEST
 function get_parents(ebn::ReducedBayesianNetwork, node::N) where {N<:AbstractNode}
     i = ebn.name_to_index[node.name]
     [ebn.nodes[j] for j in inneighbors(ebn.dag, i)]
 end
 
-##TODO TEST
 function get_neighbors(ebn::ReducedBayesianNetwork, node::N) where {N<:AbstractNode}
     i = ebn.name_to_index[node.name]
-    [ebn.nodes[j] for j in append!(inneighbors(ebn.dag, i), outneighbors(ebn.dag, i))]
+    [ebn.nodes[j] for j in unique(append!(inneighbors(ebn.dag, i), outneighbors(ebn.dag, i)))]
 end
 
 function plot(ebn::ReducedBayesianNetwork)
@@ -79,7 +76,6 @@ end
 ```
 Dag Operations
 ```
-##TODO TEST
 function _reduce_continuousnode(dag::SimpleDiGraph, node_index::Int)
     r_dag = deepcopy(dag)
     child_indices = r_dag.fadjlist[node_index]
@@ -155,7 +151,6 @@ function evaluate_ebn(ebn::EnhancedBayesianNetwork, markov::Bool=true)
     return rbns
 end
 
-##TODO TEST
 function _build_structuralreliabilityproblem_node(rbn::ReducedBayesianNetwork, ebn::EnhancedBayesianNetwork, node::DiscreteFunctionalNode)
     ebn_discrete_parents = filter(x -> isa(x, DiscreteNode), get_parents(ebn, node))
     ebn_continuous_parents = filter(x -> isa(x, ContinuousNode), get_parents(ebn, node))
@@ -192,7 +187,7 @@ function _build_structuralreliabilityproblem_node(rbn::ReducedBayesianNetwork, e
     return StructuralReliabilityProblemNode(node.name, node.parents, srps)
 end
 
-##TODO TEST
+##TODO (incomplete and not reliable TEST)
 function _get_failure_probability(node::StructuralReliabilityProblemNode)
     pf = Dict()
     cov = Dict()
