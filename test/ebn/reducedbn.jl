@@ -73,11 +73,11 @@
 
         rbn = reduce_ebn_standard(ebn)
 
-        @test all(is_equal.(get_children(rbn, root1), [child1]))
-        @test all(is_equal.(get_parents(rbn, child1), [root1]))
+        @test issetequal(get_children(rbn, root1), [child1])
+        @test issetequal(get_parents(rbn, child1), [root1])
 
         functional_r = DiscreteFunctionalNode(:functional, [child1, root2], models, performances, simulations)
-        @test all(is_equal.(get_neighbors(rbn, child1), [root1, functional_r]))
+        @test issetequal(get_neighbors(rbn, child1), [root1, functional_r])
 
         badjlist = Vector{Vector{Int}}([[], [1, 4], [], [2, 3]])
         fadjlist = Vector{Vector{Int}}([[2], [4], [4], []])
@@ -85,7 +85,7 @@
 
         functional_r = DiscreteFunctionalNode(:functional, [child1, root2], models, performances, simulations)
         @test rbn.dag == resulting_dag
-        @test EnhancedBayesianNetworks._is_same_set(rbn.nodes, [root2, root1, child1, functional_r])
+        @test issetequal(rbn.nodes, [root2, root1, child1, functional_r])
         @test rbn.name_to_index == Dict(:z => 3, :x => 1, :child1 => 2, :functional => 4)
 
         root1 = DiscreteRootNode(:x, Dict(:yes => 0.2, :no => 0.8))
@@ -129,7 +129,7 @@
         functional2_node_r = DiscreteFunctionalNode(:f2, [standard1_node], functional2_models, functional2_performances, functional2_simulations)
 
         @test rbn1.dag == resulting_dag1
-        @test EnhancedBayesianNetworks._is_same_set(rbn1.nodes, [root1, root2, standard1_node, functional2_node_r])
+        @test issetequal(rbn1.nodes, [root1, root2, standard1_node, functional2_node_r])
         @test rbn1.name_to_index ∈ [Dict(:x => 1, :alpha => 2, :α => 3, :f2 => 4), Dict(:x => 2, :alpha => 1, :α => 3, :f2 => 4)]
 
         functional1_node_r = deepcopy(functional1_node)
@@ -137,7 +137,7 @@
         push!(functional1_node_r.parents, root1)
 
         @test rbn2.dag == resulting_dag2
-        @test EnhancedBayesianNetworks._is_same_set(rbn2.nodes, [root2, root1, functional1_node_r])
+        @test issetequal(rbn2.nodes, [root2, root1, functional1_node_r])
         @test rbn2.name_to_index ∈ [Dict(:alpha => 1, :x => 2, :f1 => 3), Dict(:alpha => 2, :x => 1, :f1 => 3)]
     end
 
@@ -213,11 +213,11 @@
         srp_node = EnhancedBayesianNetworks._build_structuralreliabilityproblem_node(rbn1, ebn, rbn1.nodes[4])
 
         @test srp_node.name == :f2
-        @test all(is_equal.(srp_node.parents, [standard1_node]))
+        @test issetequal(srp_node.parents, [standard1_node])
 
         srps = OrderedDict(
-            [:a] => EnhancedBayesianNetworks.StructuralReliabilityProblem(functional2_node.models[[:a]], [standard1_node.parameters[:a][1], get_randomvariable(root3, [(Symbol(), root3)])], functional2_node.performances[[:a]], functional2_node.simulations[[:a]]),
-            [:b] => EnhancedBayesianNetworks.StructuralReliabilityProblem(functional2_node.models[[:b]], [standard1_node.parameters[:b][1], get_randomvariable(root3, [(Symbol(), root3)])], functional2_node.performances[[:b]], functional2_node.simulations[[:b]]))
+            [:a] => EnhancedBayesianNetworks.StructuralReliabilityProblem(functional2_node.models[[:a]], [standard1_node.parameters[:a][1], get_randomvariable(root3, [Symbol()])], functional2_node.performances[[:a]], functional2_node.simulations[[:a]]),
+            [:b] => EnhancedBayesianNetworks.StructuralReliabilityProblem(functional2_node.models[[:b]], [standard1_node.parameters[:b][1], get_randomvariable(root3, [Symbol()])], functional2_node.performances[[:b]], functional2_node.simulations[[:b]]))
         @test srp_node.srps[[:a]].inputs == srps[[:a]].inputs
         @test srp_node.srps[[:a]].models == srps[[:a]].models
         @test srp_node.srps[[:a]].simulation == srps[[:a]].simulation

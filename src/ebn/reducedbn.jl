@@ -45,7 +45,7 @@ function reduce_ebn_standard(ebn::EnhancedBayesianNetwork)
     r_dag = rbn.dag
     while !isempty(continuous_nodes)
         starting_node = continuous_nodes[findmin(map(x -> length(get_parents(rbn, x)), continuous_nodes))[2]]
-        starting_node_index = findall(is_equal.(repeat([starting_node], length(r_dag_nodes)), r_dag_nodes))[1]
+        starting_node_index = findall(isequal.(repeat([starting_node], length(r_dag_nodes)), r_dag_nodes))[1]
 
         children = get_children(rbn, starting_node)
 
@@ -53,12 +53,12 @@ function reduce_ebn_standard(ebn::EnhancedBayesianNetwork)
 
         for child in children
             for parent in child.parents
-                is_equal(parent, starting_node) && deleteat!(child.parents, findall(x -> x == parent, child.parents))
+                isequal(parent, starting_node) && deleteat!(child.parents, findall(x -> x == parent, child.parents))
             end
             if !isa(starting_node, ContinuousRootNode)
                 starting_node_parents = filter(x -> isa(x, DiscreteNode), starting_node.parents)
                 for s in starting_node_parents
-                    .!any(is_equal.(repeat([s], length(child.parents)), child.parents)) && push!(child.parents, s)
+                    .!any(isequal.(repeat([s], length(child.parents)), child.parents)) && push!(child.parents, s)
                 end
             end
         end
@@ -160,8 +160,7 @@ function _build_structuralreliabilityproblem_node(rbn::ReducedBayesianNetwork, e
     rbn_discrete_parents_combination = map(x -> [i for i in x], rbn_discrete_parents_combination)
     srps = OrderedDict{Vector{Symbol},StructuralReliabilityProblem}()
 
-    for combination in rbn_discrete_parents_combination
-        evidence = [(s, _get_node_given_state(rbn, s)) for s in combination]
+    for evidence in rbn_discrete_parents_combination
 
         uq_parameters = mapreduce(p -> get_parameters(p, evidence), vcat, ebn_discrete_parents)
         uq_randomvariables = mapreduce(p -> get_randomvariable(p, evidence), vcat, ebn_continuous_parents)
@@ -182,7 +181,7 @@ function _build_structuralreliabilityproblem_node(rbn::ReducedBayesianNetwork, e
 
         simulations = get_simulation(ebn_node, evidence)
 
-        srps[combination] = StructuralReliabilityProblem(models, uqinputs, performances, simulations)
+        srps[evidence] = StructuralReliabilityProblem(models, uqinputs, performances, simulations)
     end
     return StructuralReliabilityProblemNode(node.name, node.parents, srps)
 end
