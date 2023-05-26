@@ -1,18 +1,18 @@
 @testset "Root Nodes" begin
     @testset "ContinuesRootNode" begin
         root1 = DiscreteRootNode(:d, Dict(:yes => 0.5, :no => 0.5))
-        evidence = [(:yes, root1)]
+        evidence = [:yes]
 
         name = :x
         distribution = Normal()
+        node = ContinuousRootNode(name, distribution)
 
         @test ContinuousRootNode(name, distribution).name == name
 
         @test ContinuousRootNode(name, distribution).distribution == distribution
 
-        @test get_randomvariable(ContinuousRootNode(name, distribution), evidence) == RandomVariable(distribution, name)
+        @test get_randomvariable(node, evidence) == RandomVariable(distribution, name)
 
-        node = ContinuousRootNode(name, distribution)
 
         @test node.name == name
         @test node.distribution == distribution
@@ -21,7 +21,7 @@
 
     @testset "DiscreteRootNode" begin
         root1 = DiscreteRootNode(:d, Dict(:yes => 0.5, :no => 0.5))
-        evidence = [(:yes, root1)]
+        evidence = [:yes]
 
         name = :x
         states = Dict(:yes => -0.5, :no => 0.5)
@@ -37,6 +37,7 @@
 
         states = Dict(:yes => 0.2, :no => 0.8)
         node = DiscreteRootNode(name, states, parameters)
+        node_ = DiscreteRootNode(name, states)
 
         @test node.name == name
         @test node.parameters == parameters
@@ -44,9 +45,10 @@
 
         @test EnhancedBayesianNetworks._get_states(node) == [:yes, :no]
 
-        @test_throws ErrorException("evidence does not contain DiscreteRootNode") get_parameters(node, [(:yes, root1)])
+        @test_throws ErrorException("evidence does not contain DiscreteRootNode") get_parameters(node, [:y])
+        @test_throws ErrorException("node does has an empty parameters vector") get_parameters(node_, [:y, :yes])
 
-        @test get_parameters(node, [(:yes, node)]) == [Parameter(2, :d)]
+        @test get_parameters(node, [:yes]) == [Parameter(2, :d)]
 
     end
 end

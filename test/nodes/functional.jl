@@ -50,16 +50,16 @@
         node = ContinuousFunctionalNode(name, [root1, root2, root3], models)
 
         @test node.name == name
-        @test node.parents == [root1, root2, root3]
+        @test issetequal(node.parents, [root1, root2, root3])
         @test node.models == models
 
-        evidence = [(:a, root4)]
+        evidence = [:a]
 
-        @test_throws ErrorException("evidence does not contain any parents of the ContinuousFunctionalNode") get_randomvariable(node, evidence)
+        @test get_randomvariable(node, evidence) == RandomVariable(Normal(), :z)
 
-        @test_throws ErrorException("evidence does not contain any parents of the ContinuousFunctionalNode") get_models(node, evidence)
+        @test_throws ErrorException("evidence does not contain all the parents of the ContinuousFunctionalNode") get_models(node, evidence)
 
-        evidence = [(:yes, root1), (:n, root2)]
+        evidence = [:yes, :n]
         @test get_randomvariable(node, evidence) == RandomVariable(Normal{Float64}(0.0, 1.0), :z)
         @test get_models(node, evidence) == [model]
     end
@@ -122,17 +122,17 @@
         @test node.performances == performances
         @test node.simulations == simulations
         @test node.name == :child
-        @test Set(node.parents) == Set([root1, root2, root3])
+        @test issetequal(node.parents, [root1, root2, root3])
 
-        evidence = [(:yes, root4)]
+        evidence = [:yes]
 
-        @test_throws ErrorException("evidence does not contain any parents of the FunctionalNode") get_models(node, evidence)
+        @test_throws ErrorException("evidence does not contain all the parents of the DiscreteFunctionalNode") get_models(node, evidence)
 
-        @test_throws ErrorException("evidence does not contain any parents of the FunctionalNode") get_performance(node, evidence)
+        @test_throws ErrorException("evidence does not contain all the parents of the DiscreteFunctionalNode") get_performance(node, evidence)
 
-        @test_throws ErrorException("evidence does not contain any parents of the FunctionalNode") get_simulation(node, evidence)
+        @test_throws ErrorException("evidence does not contain all the parents of the DiscreteFunctionalNode") get_simulation(node, evidence)
 
-        evidence = [(:yes, root1), (:n, root2)]
+        evidence = [:yes, :n]
 
         @test get_models(node, evidence) == [model]
 

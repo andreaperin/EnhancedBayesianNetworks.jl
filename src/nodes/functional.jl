@@ -1,7 +1,7 @@
 mutable struct ContinuousFunctionalNode <: ContinuousNode
     name::Symbol
     parents::Vector{<:AbstractNode}
-    models::OrderedDict{Vector{Symbol},Vector{M}} where {M<:UQModel}
+    models::OrderedDict{Vector{Symbol},Vector{UQModel}}
 
     function ContinuousFunctionalNode(
         name::Symbol,
@@ -18,9 +18,8 @@ mutable struct ContinuousFunctionalNode <: ContinuousNode
 
                 any([k ∉ _get_states(discrete_parents[i]) for (i, k) in enumerate(key)]) && error("StandardNode state's keys must contain state from parent and the order of the parents states must be coherent with the order of the parents defined in node.parents")
             end
-
-            discrete_parents_combination = vec(collect(Iterators.product(_get_states.(discrete_parents)...)))
-            discrete_parents_combination = map(x -> [i for i in x], discrete_parents_combination)
+            discrete_parents_combination = Iterators.product(_get_states.(discrete_parents)...)
+            discrete_parents_combination = map(t -> [t...], discrete_parents_combination)
             length(discrete_parents_combination) != length(i) && error("defined combinations must be equal to the discrete parents combinations")
         end
 
@@ -28,33 +27,36 @@ mutable struct ContinuousFunctionalNode <: ContinuousNode
     end
 end
 
-function get_randomvariable(node::ContinuousFunctionalNode, evidence::Vector{Tuple{Symbol,N}}) where {N<:AbstractNode}
-    discrete_parents = filter(x -> isa(x, DiscreteNode), node.parents)
-    check = mapreduce(n -> .!is_equal.(repeat([n], length(evidence)), [x[2] for x in evidence]), vcat, discrete_parents)
-    all(check) && error("evidence does not contain any parents of the ContinuousFunctionalNode")
+## Get all the parents random variable if the evidence gives uniques random variables 
+function get_randomvariable(node::ContinuousFunctionalNode, evidence::Vector{Symbol})
     continuous_parents = filter(x -> isa(x, ContinuousNode), node.parents)
     return mapreduce(p -> get_randomvariable(p, evidence), vcat, continuous_parents)
 end
 
-function get_models(node::ContinuousFunctionalNode, evidence::Vector{Tuple{Symbol,N}}) where {N<:AbstractNode}
-    discrete_parents = filter(x -> isa(x, DiscreteNode), node.parents)
-    check = mapreduce(n -> .!is_equal.(repeat([n], length(evidence)), [x[2] for x in evidence]), vcat, discrete_parents)
-    all(check) && error("evidence does not contain any parents of the ContinuousFunctionalNode")
-    node_key = Symbol[]
-    for parent in node.parents
-        append!(node_key, [e[1] for e in evidence if e[2].name == parent.name])
-    end
-    return node.models[node_key]
+function get_models(node::ContinuousFunctionalNode, evidence::Vector{Symbol})
+    node_keys = keys(node.models) |> collect
+    all(.![issubset(i, evidence) for i in keys(node.models)]) && error("evidence does not contain all the parents of the ContinuousFunctionalNode")
+    key = node_keys[findfirst([issubset(evidence, i) for i in node_keys])]
+    return node.models[key]
 end
 
-function is_equal(node1::ContinuousFunctionalNode, node2::ContinuousFunctionalNode)
-    length(node1.parents) == length(node2.parents) && node1.name == node2.name && all(is_equal.(node1.parents, node2.parents)) && node1.models == node2.models
+
+function Base.isequal(node1::ContinuousFunctionalNode, node2::ContinuousFunctionalNode)
+    node1.name == node2.name && issetequal(node1.parents, node2.parents) && node1.models == node2.models
+end
+
+function Base.hash(node::ContinuousFunctionalNode, h::UInt)
+    h = hash(node.name, h)
+    h = hash(node.parents, h)
+    h = hash(node.models, h)
+
+    return h
 end
 
 mutable struct DiscreteFunctionalNode <: DiscreteNode
     name::Symbol
     parents::Vector{<:AbstractNode}
-    models::OrderedDict{Vector{Symbol},Vector{M}} where {M<:UQModel}
+    models::OrderedDict{Vector{Symbol},Vector{UQModel}}
     performances::OrderedDict{Vector{Symbol},Function}
     simulations::OrderedDict{Vector{Symbol},S} where {S<:AbstractSimulation}
     pf::Dict{Vector{Symbol},Real}
@@ -90,42 +92,40 @@ mutable struct DiscreteFunctionalNode <: DiscreteNode
     end
 end
 
-function get_models(node::DiscreteFunctionalNode, evidence::Vector{Tuple{Symbol,N}}) where {N<:AbstractNode}
-    discrete_parents = filter(x -> isa(x, DiscreteNode), node.parents)
-    check = mapreduce(n -> .!is_equal.(repeat([n], length(evidence)), [x[2] for x in evidence]), vcat, discrete_parents)
-    all(check) && error("evidence does not contain any parents of the FunctionalNode")
-    node_key = Symbol[]
-    for parent in node.parents
-        append!(node_key, [e[1] for e in evidence if e[2].name == parent.name])
-    end
-    return node.models[node_key]
+function get_models(node::DiscreteFunctionalNode, evidence::Vector{Symbol})
+    node_keys = keys(node.models) |> collect
+    all(.![issubset(i, evidence) for i in keys(node.models)]) && error("evidence does not contain all the parents of the DiscreteFunctionalNode")
+    key = node_keys[findfirst([issubset(evidence, i) for i in node_keys])]
+    return node.models[key]
 end
 
-function get_performance(node::DiscreteFunctionalNode, evidence::Vector{Tuple{Symbol,N}}) where {N<:AbstractNode}
-    discrete_parents = filter(x -> isa(x, DiscreteNode), node.parents)
-    check = mapreduce(n -> .!is_equal.(repeat([n], length(evidence)), [x[2] for x in evidence]), vcat, discrete_parents)
-    all(check) && error("evidence does not contain any parents of the FunctionalNode")
-    node_key = Symbol[]
-    for parent in node.parents
-        append!(node_key, [e[1] for e in evidence if e[2].name == parent.name])
-    end
-    return node.performances[node_key]
+function get_performance(node::DiscreteFunctionalNode, evidence::Vector{Symbol})
+    node_keys = keys(node.performances) |> collect
+    all(.![issubset(i, evidence) for i in keys(node.performances)]) && error("evidence does not contain all the parents of the DiscreteFunctionalNode")
+    key = node_keys[findfirst([issubset(evidence, i) for i in node_keys])]
+    return node.performances[key]
 end
 
-function get_simulation(node::DiscreteFunctionalNode, evidence::Vector{Tuple{Symbol,N}}) where {N<:AbstractNode}
-    discrete_parents = filter(x -> isa(x, DiscreteNode), node.parents)
-    check = mapreduce(n -> .!is_equal.(repeat([n], length(evidence)), [x[2] for x in evidence]), vcat, discrete_parents)
-    all(check) && error("evidence does not contain any parents of the FunctionalNode")
-    node_key = Symbol[]
-    for parent in node.parents
-        append!(node_key, [e[1] for e in evidence if e[2].name == parent.name])
-    end
-    return node.simulations[node_key]
+function get_simulation(node::DiscreteFunctionalNode, evidence::Vector{Symbol})
+    node_keys = keys(node.simulations) |> collect
+    all(.![issubset(i, evidence) for i in keys(node.simulations)]) && error("evidence does not contain all the parents of the DiscreteFunctionalNode")
+    key = node_keys[findfirst([issubset(evidence, i) for i in node_keys])]
+    return node.simulations[key]
 end
 
-
-function is_equal(node1::DiscreteFunctionalNode, node2::DiscreteFunctionalNode)
-    length(node1.parents) == length(node2.parents) && node1.name == node2.name && all(is_equal.(node1.parents, node2.parents)) && node1.models == node2.models && node1.performances == node2.performances && node1.simulations == node2.simulations
+function Base.isequal(node1::DiscreteFunctionalNode, node2::DiscreteFunctionalNode)
+    node1.name == node2.name && issetequal(node1.parents, node2.parents) && node1.models == node2.models && node1.performances == node2.performances && node1.simulations == node2.simulations
 end
+
+function Base.hash(node::DiscreteFunctionalNode, h::UInt)
+    h = hash(node.name, h)
+    h = hash(node.parents, h)
+    h = hash(node.models, h)
+    h = hash(node.performances, h)
+    h = hash(node.simulation, h)
+
+    return h
+end
+
 
 const global FunctionalNode = Union{DiscreteFunctionalNode,ContinuousFunctionalNode}

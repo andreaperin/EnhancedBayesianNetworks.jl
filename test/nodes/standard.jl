@@ -43,17 +43,17 @@
         node = ContinuousStandardNode(name, [root1, root2], distribution)
 
         @test node.name == name
-        @test node.parents == [root1, root2]
+        @test issetequal(node.parents, [root1, root2])
         @test node.distribution == distribution
         @test node.intervals == Vector{Vector{Float64}}()
         @test node.sigma == 0
 
         node = ContinuousStandardNode(:child, [root1], OrderedDict([:yes] => Normal(), [:no] => Normal(2, 2)))
 
-        evidence = [(:a, root4)]
-        @test_throws ErrorException("evidence does not contain any parents of the ContinuousStandardNode") get_randomvariable(node, evidence)
+        evidence = [:a]
+        @test_throws ErrorException("evidence does not contain all the parents of the ContinuousStandardNode") get_randomvariable(node, evidence)
 
-        evidence = [(:yes, root1)]
+        evidence = [:yes]
         @test get_randomvariable(node, evidence) == RandomVariable(Normal(), node.name)
     end
 
@@ -120,17 +120,20 @@
 
         node = DiscreteStandardNode(name, parents, states)
         @test node.name == name
-        @test node.parents == parents
+        @test issetequal(node.parents, parents)
         @test node.states == states
         @test node.parameters == Dict{Symbol,Vector{Parameter}}()
 
         @test EnhancedBayesianNetworks._get_states(node) == [:a, :b]
 
         node = DiscreteStandardNode(name, parents, states, Dict(:a => [Parameter(1.1, :g)], :b => [Parameter(1.2, :g)]))
-        evidence = [(:yes, root1)]
-        @test_throws ErrorException("evidence does not contain DiscreteStandardNode in the evidence") get_parameters(node, evidence)
+        evidence = [:yes]
+        @test_throws ErrorException("evidence does not contain DiscreteStandardNode") get_parameters(node, evidence)
 
-        evidence = [(:a, node)]
+        node_ = DiscreteStandardNode(name, parents, states)
+        @test_throws ErrorException("node has an empty parameters vector") get_parameters(node_, evidence)
+
+        evidence = [:a, :yes]
         @test get_parameters(node, evidence) == [Parameter(1.1, :g)]
     end
 end
