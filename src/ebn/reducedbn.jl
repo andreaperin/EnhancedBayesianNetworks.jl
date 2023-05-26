@@ -175,6 +175,7 @@ function _build_structuralreliabilityproblem_node(rbn::ReducedBayesianNetwork, e
             append!(ordered_functional_node, cont_fun_parents)
             cont_fun_parents = mapreduce(p -> get_cont_fun_parents(p), vcat, cont_fun_parents)
         end
+        get_models(ordered_functional_node[1], evidence)
         models = mapreduce(p -> get_models(p, evidence), vcat, reverse(ordered_functional_node))
 
         performances = get_performance(ebn_node, evidence)

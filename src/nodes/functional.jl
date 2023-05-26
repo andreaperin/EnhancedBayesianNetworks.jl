@@ -95,21 +95,21 @@ end
 function get_models(node::DiscreteFunctionalNode, evidence::Vector{Symbol})
     node_keys = keys(node.models) |> collect
     all(.![issubset(i, evidence) for i in keys(node.models)]) && error("evidence does not contain all the parents of the DiscreteFunctionalNode")
-    key = node_keys[findfirst([issubset(evidence, i) for i in node_keys])]
+    key = node_keys[findfirst([issubset(i, evidence) for i in node_keys])]
     return node.models[key]
 end
 
 function get_performance(node::DiscreteFunctionalNode, evidence::Vector{Symbol})
     node_keys = keys(node.performances) |> collect
     all(.![issubset(i, evidence) for i in keys(node.performances)]) && error("evidence does not contain all the parents of the DiscreteFunctionalNode")
-    key = node_keys[findfirst([issubset(evidence, i) for i in node_keys])]
+    key = node_keys[findfirst([issubset(i, evidence) for i in node_keys])]
     return node.performances[key]
 end
 
 function get_simulation(node::DiscreteFunctionalNode, evidence::Vector{Symbol})
     node_keys = keys(node.simulations) |> collect
     all(.![issubset(i, evidence) for i in keys(node.simulations)]) && error("evidence does not contain all the parents of the DiscreteFunctionalNode")
-    key = node_keys[findfirst([issubset(evidence, i) for i in node_keys])]
+    key = node_keys[findfirst([issubset(i, evidence) for i in node_keys])]
     return node.simulations[key]
 end
 

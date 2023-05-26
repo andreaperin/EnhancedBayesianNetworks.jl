@@ -16,7 +16,7 @@ function EnhancedBayesianNetwork(nodes_::Vector{<:AbstractNode})
     ordered_dag, ordered_nodes, ordered_name_to_index = _topological_ordered_dag(nodes)
     ebn = EnhancedBayesianNetwork(ordered_dag, ordered_nodes, ordered_name_to_index)
 
-    continuous_nodes = filter!(j -> !isa(j, FunctionalNode), (filter!(x -> isa(x, ContinuousNode), nodes)))
+    continuous_nodes = filter(j -> !isa(j, FunctionalNode), (filter(x -> isa(x, ContinuousNode), nodes)))
     a = isempty.([i.intervals for i in continuous_nodes])
     evidence_node = continuous_nodes[.!a]
     while !isempty(evidence_node)

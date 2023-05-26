@@ -3,7 +3,7 @@ using Plots
 
 root1 = DiscreteRootNode(:x, Dict(:y => 0.2, :n => 0.8), Dict(:y => [Parameter(1, :x)], :n => [Parameter(0, :x), Parameter(5.6, :x1)]))
 root2 = DiscreteRootNode(:y, Dict(:yes => 0.4, :no => 0.6), Dict(:yes => [Parameter(2.2, :y)], :no => [Parameter(5.5, :y)]))
-root3 = ContinuousRootNode(:z, Normal(), [[-0.5, 0.03], [0.03, 0.1]])
+root3 = ContinuousRootNode(:z, Normal())
 
 standard1_name = :α
 standard1_parents = [root1, root2]
