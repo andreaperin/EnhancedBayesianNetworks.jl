@@ -1,20 +1,20 @@
 mutable struct ContinuousStandardNode <: ContinuousNode
     name::Symbol
     parents::Vector{<:AbstractNode}
-    distribution::OrderedDict{Vector{Symbol},Distribution}
+    distributions::OrderedDict{Vector{Symbol},Distribution}
     intervals::Vector{Vector{Float64}}
     sigma::Real
 
     function ContinuousStandardNode(name::Symbol,
         parents::Vector{<:AbstractNode},
-        distribution::OrderedDict{Vector{Symbol},D},
+        distributions::OrderedDict{Vector{Symbol},D},
         intervals::Vector{Vector{Float64}},
         sigma::Real
     ) where {D<:Distribution}
 
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
         !issetequal(discrete_parents, parents) && error("ContinuousStandardNode cannot have continuous parents, use ContinuousFunctionalNode instead")
-        for key in keys(distribution)
+        for key in keys(distributions)
             length(discrete_parents) != length(key) && error("Number of symbols per parent in node.states must be equal to the number of discrete parents")
 
             any([k ∉ _get_states(discrete_parents[i]) for (i, k) in enumerate(key)]) && error("StandardNode state's keys must contain state from parent and the order of the parents states must be coherent with the order of the parents defined in node.parents")
@@ -22,19 +22,19 @@ mutable struct ContinuousStandardNode <: ContinuousNode
 
         discrete_parents_combination = Iterators.product(_get_states.(discrete_parents)...)
         discrete_parents_combination = map(t -> [t...], discrete_parents_combination)
-        length(discrete_parents_combination) != length(distribution) && error("defined combinations in node.states must be equal to the theorical discrete parents combinations")
-        return new(name, parents, distribution, intervals, sigma)
+        length(discrete_parents_combination) != length(distributions) && error("defined combinations in node.states must be equal to the theorical discrete parents combinations")
+        return new(name, parents, distributions, intervals, sigma)
     end
 end
 
-ContinuousStandardNode(name::Symbol, parents::Vector{<:AbstractNode}, distribution::OrderedDict{Vector{Symbol},D}) where {D<:Distribution} = ContinuousStandardNode(name, parents, distribution, Vector{Vector{Float64}}(), 0)
+ContinuousStandardNode(name::Symbol, parents::Vector{<:AbstractNode}, distributions::OrderedDict{Vector{Symbol},D}) where {D<:Distribution} = ContinuousStandardNode(name, parents, distributions, Vector{Vector{Float64}}(), 0)
 
 
 function get_randomvariable(node::ContinuousStandardNode, evidence::Vector{Symbol})
-    node_keys = keys(node.distribution) |> collect
-    all(.![issubset(i, evidence) for i in keys(node.distribution)]) && error("evidence does not contain all the parents of the ContinuousStandardNode")
+    node_keys = keys(node.distributions) |> collect
+    all(.![issubset(i, evidence) for i in keys(node.distributions)]) && error("evidence does not contain all the parents of the ContinuousStandardNode")
     key = node_keys[findfirst([issubset(i, evidence) for i in node_keys])]
-    return RandomVariable(node.distribution[key], node.name)
+    return RandomVariable(node.distributions[key], node.name)
 end
 
 function Base.isequal(node1::ContinuousStandardNode, node2::ContinuousStandardNode)

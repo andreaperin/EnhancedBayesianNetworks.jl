@@ -122,7 +122,7 @@ function Base.hash(node::DiscreteFunctionalNode, h::UInt)
     h = hash(node.parents, h)
     h = hash(node.models, h)
     h = hash(node.performances, h)
-    h = hash(node.simulation, h)
+    h = hash(node.simulations, h)
 
     return h
 end

@@ -7,5 +7,5 @@ function verify_intervals(intervals::Vector{Vector{Float64}})
             end
         end
     end
-    deleteat!(sort(minimum.(intervals)), 1) != deleteat!(sort(maximum.(intervals)), length(intervals)) && error("non continuous range of intervals")
+    sort(minimum.(intervals))[2:end] == sort(maximum.(intervals))[1:end-1] || error("non continuous range of intervals")
 end
