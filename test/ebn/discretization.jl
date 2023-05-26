@@ -75,7 +75,7 @@
 
         functional2_r_node = DiscreteFunctionalNode(functional2_name, [standard1_node, z_c_node], functional2_models, functional2_performances, functional2_simulations)
 
-        @test all(is_equal.(e_ebn, [root2, root1, standard2_node, standard1_node, functional2_r_node, z_c_node, z_d_node]))
+        @test issetequal(e_ebn, [root2, root1, standard2_node, standard1_node, functional2_r_node, z_c_node, z_d_node])
 
 
         e_ebn = EnhancedBayesianNetworks._discretize_node(ebn, standard2_node, [[-1.1, 0], [0, 0.11]], 2)
@@ -102,6 +102,6 @@
         )
         )
 
-        @test all(is_equal.(e_ebn, [root2, root3, root1, standard1_node, functional2_node, β_c_node, β_d_node]))
+        @test issetequal(e_ebn, [root2, root3, root1, standard1_node, functional2_node, β_c_node, β_d_node])
     end
 end

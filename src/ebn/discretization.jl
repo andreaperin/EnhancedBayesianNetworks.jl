@@ -24,19 +24,19 @@ function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousRootNode
     children = get_children(ebn, node)
     children = filter(x -> x.name in [j.name for j in children], nodes)
     for child in children
-        deleteat!(child.parents, findall(is_equal.(repeat([node], length(child.parents)), child.parents)))
+        deleteat!(child.parents, findall(isequal.(repeat([node], length(child.parents)), child.parents)))
         push!(child.parents, continuous_node)
     end
     append!(nodes, [continuous_node, discrete_node])
-    deleteat!(nodes, findall(is_equal.(repeat([node], length(nodes)), nodes)))
+    deleteat!(nodes, findall(isequal.(repeat([node], length(nodes)), nodes)))
     return nodes
 end
 
 function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousStandardNode, intervals::Vector{Vector{Float64}}, variance::Real)
     ## Check intervals
     verify_intervals(intervals)
-    lower_buond = minimum(support(i).lb for i in values(node.distribution))
-    upper_buond = maximum(support(i).ub for i in values(node.distribution))
+    lower_buond = minimum(support(i).lb for i in values(node.distributions))
+    upper_buond = maximum(support(i).ub for i in values(node.distributions))
     minimum(minimum.(intervals)) != lower_buond && push!(intervals, [lower_buond, minimum(minimum.(intervals))])
     maximum(maximum.(intervals)) != upper_buond && push!(intervals, [maximum(maximum.(intervals)), upper_buond])
 
@@ -44,7 +44,7 @@ function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousStandard
     f_d = (d, i) -> cdf(d, i[2]) - cdf(d, i[1])
 
     states = OrderedDict{Vector{Symbol},Dict{Symbol,Real}}()
-    for (key, dist) in node.distribution
+    for (key, dist) in node.distributions
         states[key] = Dict(Symbol.(intervals) .=> f_d.(dist, intervals))
     end
 
@@ -62,11 +62,11 @@ function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousStandard
     children = get_children(ebn, node)
     children = filter(x -> x.name in [j.name for j in children], nodes)
     for child in children
-        deleteat!(child.parents, findall(is_equal.(repeat([node], length(child.parents)), child.parents)))
+        deleteat!(child.parents, findall(isequal.(repeat([node], length(child.parents)), child.parents)))
         push!(child.parents, continuous_node)
     end
     append!(nodes, [continuous_node, discrete_node])
-    deleteat!(nodes, findall(is_equal.(repeat([node], length(nodes)), nodes)))
+    deleteat!(nodes, findall(isequal.(repeat([node], length(nodes)), nodes)))
     return nodes
 end
 
