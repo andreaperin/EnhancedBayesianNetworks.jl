@@ -13,11 +13,13 @@
 
         @test EnhancedBayesianNetworks._build_digraph(nodes) == SimpleDiGraph{Int64}(2, [[3], [3], Int64[]], [Int64[], Int64[], [1, 2]])
 
-        @test EnhancedBayesianNetworks._topological_ordered_dag(nodes)[1] == SimpleDiGraph{Int64}(2, [[3], [3], Int64[]], [Int64[], Int64[], [1, 2]])
+        dag, nodes, name_to_index = EnhancedBayesianNetworks._topological_ordered_dag(nodes)
 
-        @test EnhancedBayesianNetworks._topological_ordered_dag(nodes)[2] == [root2, root1, child_node]
+        @test dag == SimpleDiGraph{Int64}(2, [[3], [3], Int64[]], [Int64[], Int64[], [1, 2]])
 
-        @test EnhancedBayesianNetworks._topological_ordered_dag(nodes)[3] == Dict(:y => 1, :x => 2, :child => 3)
+        @test issetequal(nodes, [root2, root1, child_node])
+
+        @test name_to_index == Dict(:y => 1, :x => 2, :child => 3)
     end
 
     @testset "EnhancedBayesianNetwork" begin
@@ -46,18 +48,19 @@
 
         @test_throws ErrorException("nodes state must have different symbols") EnhancedBayesianNetwork([root1, root1_2, child1, child2, functional])
 
-        @test EnhancedBayesianNetwork(nodes).dag == EnhancedBayesianNetwork(DiGraph(4, fadjlist, badjlist), nodes, Dict(:x => 1, :child1 => 2, :child2 => 3, :functional => 4)).dag
-
-        @test all(is_equal.(EnhancedBayesianNetwork(nodes).nodes, EnhancedBayesianNetwork(DiGraph(4, fadjlist, badjlist), nodes, Dict(:x => 1, :child1 => 2, :child2 => 3, :functional => 4)).nodes))
-
-        @test EnhancedBayesianNetwork(nodes).name_to_index == EnhancedBayesianNetwork(DiGraph(4, fadjlist, badjlist), nodes, Dict(:x => 1, :child1 => 2, :child2 => 3, :functional => 4)).name_to_index
-
         ebn = EnhancedBayesianNetwork(nodes)
+
+        @test ebn.dag == EnhancedBayesianNetwork(DiGraph(4, fadjlist, badjlist), nodes, Dict(:x => 1, :child1 => 2, :child2 => 3, :functional => 4)).dag
+
+        @test issetequal(ebn.nodes, EnhancedBayesianNetwork(DiGraph(4, fadjlist, badjlist), nodes, Dict(:x => 1, :child1 => 2, :child2 => 3, :functional => 4)).nodes)
+
+        @test ebn.name_to_index == EnhancedBayesianNetwork(DiGraph(4, fadjlist, badjlist), nodes, Dict(:x => 1, :child1 => 2, :child2 => 3, :functional => 4)).name_to_index
+
         envelope = markov_envelope(ebn)[1]
 
         @test EnhancedBayesianNetworks._create_ebn_from_envelope(ebn, envelope).dag == ebn.dag
 
-        @test all(is_equal.(EnhancedBayesianNetworks._create_ebn_from_envelope(ebn, envelope).nodes, ebn.nodes))
+        @test issetequal(EnhancedBayesianNetworks._create_ebn_from_envelope(ebn, envelope).nodes, ebn.nodes)
 
         @test EnhancedBayesianNetworks._create_ebn_from_envelope(ebn, envelope).name_to_index == ebn.name_to_index
     end
@@ -86,16 +89,16 @@
 
         ebn = EnhancedBayesianNetwork([root1, root2, child1, child2, functional])
 
-        @test EnhancedBayesianNetworks._is_same_set(get_parents(ebn, child1), [root1])
+        @test issetequal(get_parents(ebn, child1), [root1])
 
-        @test EnhancedBayesianNetworks._is_same_set(get_children(ebn, child2), [functional])
+        @test issetequal(get_children(ebn, child2), [functional])
 
-        @test EnhancedBayesianNetworks._is_same_set(get_neighbors(ebn, child2), [child1, functional])
+        @test issetequal(get_neighbors(ebn, child2), [child1, functional])
 
-        @test EnhancedBayesianNetworks._is_same_set(markov_blanket(ebn, child2), [child1, root2, child2, functional])
+        @test issetequal(markov_blanket(ebn, child2), [child1, root2, functional])
 
-        @test EnhancedBayesianNetworks._is_same_set(markov_envelope(ebn)[1], [child1, root2, functional, child2])
+        @test issetequal(markov_envelope(ebn)[1], [child1, root2, functional, child2])
 
-        @test is_equal(EnhancedBayesianNetworks._get_node_given_state(ebn, :a), child1)
+        @test isequal(EnhancedBayesianNetworks._get_node_given_state(ebn, :a), child1)
     end
 end

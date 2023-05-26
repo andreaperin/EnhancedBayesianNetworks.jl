@@ -6,45 +6,45 @@
         root4 = DiscreteRootNode(:k, Dict(:a => 0.5, :b => 0.5))
         name = :child
 
-        distribution = OrderedDict(
+        distributions = OrderedDict(
             [:yes, :yes] => Normal(),
             [:no] => Normal(1, 1)
         )
-        @test_throws ErrorException("Number of symbols per parent in node.states must be equal to the number of discrete parents") ContinuousStandardNode(name, [root1], distribution)
+        @test_throws ErrorException("Number of symbols per parent in node.states must be equal to the number of discrete parents") ContinuousStandardNode(name, [root1], distributions)
 
-        distribution = OrderedDict(
+        distributions = OrderedDict(
             [:yes] => Normal(),
             [:no] => Normal(1, 1)
         )
-        @test_throws ErrorException("ContinuousStandardNode cannot have continuous parents, use ContinuousFunctionalNode instead") ContinuousStandardNode(name, [root1, root3], distribution)
+        @test_throws ErrorException("ContinuousStandardNode cannot have continuous parents, use ContinuousFunctionalNode instead") ContinuousStandardNode(name, [root1, root3], distributions)
 
         parents = [root1, root2]
-        distribution = OrderedDict(
+        distributions = OrderedDict(
             [:yes, :y] => Normal(),
             [:no, :y] => Normal(1, 1),
             [:yes, :n] => Normal(2, 1)
         )
-        @test_throws ErrorException("defined combinations in node.states must be equal to the theorical discrete parents combinations") ContinuousStandardNode(name, parents, distribution)
+        @test_throws ErrorException("defined combinations in node.states must be equal to the theorical discrete parents combinations") ContinuousStandardNode(name, parents, distributions)
 
-        distribution = OrderedDict(
+        distributions = OrderedDict(
             [:yes, :maybe] => Normal(),
             [:no, :y] => Normal(1, 1),
             [:yes, :n] => Normal(2, 1),
             [:no, :n] => Normal(3, 1)
         )
-        @test_throws ErrorException("StandardNode state's keys must contain state from parent and the order of the parents states must be coherent with the order of the parents defined in node.parents") ContinuousStandardNode(name, parents, distribution)
+        @test_throws ErrorException("StandardNode state's keys must contain state from parent and the order of the parents states must be coherent with the order of the parents defined in node.parents") ContinuousStandardNode(name, parents, distributions)
 
-        distribution = OrderedDict(
+        distributions = OrderedDict(
             [:yes, :y] => Normal(),
             [:no, :y] => Normal(1, 1),
             [:yes, :n] => Normal(2, 1),
             [:no, :n] => Normal(3, 1)
         )
-        node = ContinuousStandardNode(name, [root1, root2], distribution)
+        node = ContinuousStandardNode(name, [root1, root2], distributions)
 
         @test node.name == name
         @test issetequal(node.parents, [root1, root2])
-        @test node.distribution == distribution
+        @test node.distributions == distributions
         @test node.intervals == Vector{Vector{Float64}}()
         @test node.sigma == 0
 
