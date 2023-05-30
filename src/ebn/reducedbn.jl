@@ -122,7 +122,6 @@ function _remove_barren_node(dag::SimpleDiGraph, node_index::Int)
     return SimpleDiGraph(dag.ne, new_fadjlist, new_badjlist)
 end
 
-##TODO TEST
 function _get_node_given_state(rbn::ReducedBayesianNetwork, state::Symbol)
     nodes = filter(x -> !isa(x, DiscreteFunctionalNode) && isa(x, DiscreteNode), rbn.nodes)
     [node for node in nodes if state ∈ _get_states(node)][1]
@@ -131,7 +130,6 @@ end
 ```
 Reduced BN Operations
 ```
-##TODO TEST
 function evaluate_ebn(ebn::EnhancedBayesianNetwork, markov::Bool=true)
     markov ? rbns = reduce_ebn_markov_envelopes(ebn) : rbns = [reduce_ebn_standard(ebn)]
     for rbn in rbns
@@ -184,7 +182,9 @@ function _build_structuralreliabilityproblem_node(rbn::ReducedBayesianNetwork, e
 
         srps[evidence] = StructuralReliabilityProblem(models, uqinputs, performances, simulations)
     end
-    return StructuralReliabilityProblemNode(node.name, node.parents, srps)
+    e = collect(keys(srps))[1]
+    parents = _get_node_given_state.(repeat([rbn], length(e)), e)
+    return StructuralReliabilityProblemNode(node.name, parents, srps)
 end
 
 ##TODO (incomplete and not reliable TEST)
