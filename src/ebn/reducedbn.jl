@@ -138,6 +138,7 @@ function evaluate_ebn(ebn::EnhancedBayesianNetwork, markov::Bool=true)
             node = functional_nodes[1]
             if isempty(filter(x -> isa(x, DiscreteFunctionalNode), node.parents))
                 srp_node = _build_structuralreliabilityproblem_node(rbn, ebn, node)
+                node.parents = srp_node.parents
                 node.pf, node.cov, node.samples = _get_failure_probability(srp_node)
                 popfirst!(functional_nodes)
             else
