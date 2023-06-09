@@ -5,8 +5,9 @@ mutable struct Factor
 
     function Factor(dims::Vector{Symbol}, potential::Array{Float64}, states_mapping::Dict{Symbol,Dict{Symbol,Int}})
         _ckeck_dims_unique(dims)
-        (length(dims) != ndims(potential)) && error("`potential` must have as many " * "dimensions as dims")
-        (:potential in dims) && error("Having a dimension called `potential` will cause problems")
+        (length(dims) != ndims(potential)) && error("potential must have as many dimensions as length of dimensions")
+        (:potential in dims) && error("Having a dimension called potential will cause problems")
+        Set(dims) != Set(keys(states_mapping)) && error("states mapping keys have to be coherent with defined dimensions")
         return new(dims, potential, states_mapping)
     end
 end
