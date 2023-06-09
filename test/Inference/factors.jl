@@ -31,4 +31,12 @@
     @test Factor(bn, :S, evidence).dimensions == [:S]
     @test Factor(bn, :S, evidence).potential == [0.5, 0.5]
     @test Factor(bn, :S, evidence).states_mapping == Dict(:S => Dict(:noS => 1, :yesS => 2))
+
+    inds = Array{Any}(undef, length(ϕ_t.dimensions))
+    inds[:] .= Colon()
+    @test EnhancedBayesianNetworks._translate_index(ϕ_t, Evidence()) == inds
+    inds = Array{Any}(undef, length(ϕ_t.dimensions))
+    inds[:] .= Colon()
+    inds[1] = 2
+    EnhancedBayesianNetworks._translate_index(ϕ_t, Dict(:T => :yesT)) == inds
 end
