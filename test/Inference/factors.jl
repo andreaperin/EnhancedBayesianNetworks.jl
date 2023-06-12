@@ -27,6 +27,12 @@
     @test ϕ_t.potential == potential
     @test ϕ_t.states_mapping == states_mapping
 
+    ϕ_t = convert(Factor, cpd_t)
+    @test ϕ_t.dimensions == dimensions
+    @test ϕ_t.potential == potential
+    @test ϕ_t.states_mapping == states_mapping
+
+
     evidence = Dict(:T => :yesT)
     @test Factor(bn, :S, evidence).dimensions == [:S]
     @test Factor(bn, :S, evidence).potential == [0.5, 0.5]

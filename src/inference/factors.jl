@@ -44,6 +44,9 @@ function factorize_cpd(cpd::ConditionalProbabilityDistribution)
     return Factor(dims, p, states_mapping)
 end
 
+Base.convert(::Type{Factor}, cpd::ConditionalProbabilityDistribution) = factorize_cpd(cpd)
+
+
 @inline function _translate_index(ϕ::Factor, e::Evidence)
     inds = Array{Any}(undef, length(ϕ.dimensions))
     inds[:] .= Colon()
