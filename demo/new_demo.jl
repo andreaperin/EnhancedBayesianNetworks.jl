@@ -75,37 +75,9 @@ a = evaluate_ebn(ebn)
 
 rbn = a[1]
 bn = BayesianNetwork(rbn)
-ϕ = factorize_cpd(get_cpd(bn, :β_d))
-e = Evidence()
-ϕ_new = Factor(bn, :f1, e)
-query = [:f1]
+query = [:x]
+e = Dict(:f1 => :f)
 inf = InferenceState(bn, query, e)
 
 
-bn = inf.bn
-nodes = bn.nodes
-query = inf.query
-evidence = inf.evidence
-hidden = setdiff([i.name for i in nodes], vcat(query, collect(keys(evidence))))
-
-# Factor(bn, nodes[2].name, evidence)
-factors = map(n -> Factor(bn, n.name, evidence), nodes)
-# successively remove the hidden nodes
-# order impacts performance, but we currently have no ordering heuristics
-
-h = hidden[1]
-contain_h = filter(ϕ -> h ∈ ϕ, factors)
-factors1 = setdiff(factors, contain_h)
-
-# for h in hidden
-#     # find the facts that contain the hidden variable
-#     contain_h = filter(ϕ -> h ∈ ϕ, factors)
-#     # add the product of those factors to the set
-#     if !isempty(contain_h)
-#         # remove those factors
-#         factors = setdiff(factors, contain_h)
-#         # push!(factors, sum(reduce((*), contain_h), h))
-#     end
-# end
-# ϕ = normalize!(reduce((*), factors))
-# infer(bn, query, e)
+infer(bn, query, e)
