@@ -1,9 +1,10 @@
-include("../src/bn.jl")
+using EnhancedBayesianNetworks
+
 Sys.isapple() ? include("../model_TH_macos/buildmodel_TH.jl") : include("../model_TH_win/buildmodel_TH.jl")
 
-# timescenario = NamedCategorical([:first, :second, :third], [0.34, 0.33, 0.33])
-# CPD_timescenario = RootCPD(:time_scenario, timescenario)
-# timescenario_node = StdNode(CPD_timescenario)
+timescenario = NamedCategorical([:first, :second, :third], [0.34, 0.33, 0.33])
+CPD_timescenario = RootCPD(:time_scenario, timescenario)
+timescenario_node = StdNode(CPD_timescenario)
 
 earthquake = NamedCategorical([:happen, :nothappen], [0.5, 0.5])
 CPD_earthquake = RootCPD(:earthquake, [earthquake])

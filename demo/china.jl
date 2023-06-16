@@ -42,11 +42,3 @@ N = [v, s, t, l, b, e, d, x]
 bn = BayesianNetwork(N)
 evidence = Evidence()
 factors = map(n -> Factor(bn, n.name, evidence), bn.nodes)
-
-# query = :V
-# c = infer(bn, query, evidence)
-
-# # elimination_oreder = [:D, :B, :L, :S, :T]
-# # factors = map(n -> Factor(bn, n.name, evidence), bn.nodes)
-# # h = elimination_oreder[3]
-# # contain_h = filter(ϕ -> h ∈ ϕ, factors)
