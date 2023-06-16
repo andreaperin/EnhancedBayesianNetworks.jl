@@ -15,7 +15,7 @@ end
 function _check_dims_valid(dims::Vector{Symbol}, ϕ::Factor)
     isempty(dims) && return
     dim = first(dims)
-    (dim in ϕ) || not_in_factor_error(dim)
+    (dim in ϕ) || error("Dimension is not in the factor")
     return _check_dims_valid(dims[2:end], ϕ)
 end
 # dims are unique

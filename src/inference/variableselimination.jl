@@ -28,6 +28,7 @@ end
 function minimal_increase_in_complexity(factors::Vector{Factor}, name_to_index::Dict{Symbol,Int64})
     g = _moral_graph_from_dimensions([i.dimensions for i in factors], name_to_index)
     res = Tuple[]
+    filter!(x -> !isempty(x.dimensions), factors)
     for factor in factors
         node = first(factor.dimensions)
         ψ = filter(x -> node ∈ x.dimensions, factors)
@@ -74,4 +75,5 @@ function _moral_graph_from_dimensions(dimensions::Vector{Vector{Symbol}}, name_t
 end
 
 
-infer(bn::BayesianNetwork, query::Union{Symbol,Vector{Symbol}}, evidence::Evidence=Evidence()) = infer(InferenceState(bn, query, evidence))
+infer(bn::BayesianNetwork, query::Union{Symbol,Vector{Symbol}}, evidence::Evidence=Evidence()) =
+    infer(InferenceState(bn, query, evidence))
