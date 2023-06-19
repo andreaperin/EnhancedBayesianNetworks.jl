@@ -8,7 +8,6 @@ using Reexport
 
 
 @reexport using Graphs
-@reexport using OrderedCollections
 @reexport using UncertaintyQuantification
 
 import Base: *, sum

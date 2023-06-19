@@ -9,7 +9,7 @@
         name = :child
         parents = [root1, root2, root3]
         model = Model(df -> sqrt.(df.z .^ 2 + df.z .^ 2), :value1)
-        models = OrderedDict(
+        models = Dict(
             [:yes, :n] => [model],
             [:yes, :y] => [model],
             [:no, :n] => [model],
@@ -25,7 +25,7 @@
 
         @test_throws ErrorException("defined combinations must be equal to the discrete parents combinations") ContinuousFunctionalNode(name, [root1, root2, root3], models)
 
-        models = OrderedDict(
+        models = Dict(
             [:yes, :n] => [model],
             [:yes, :y] => [model],
             [:no, :n] => [model],
@@ -34,14 +34,14 @@
 
         @test_throws ErrorException("StandardNode state's keys must contain state from parent and the order of the parents states must be coherent with the order of the parents defined in node.parents") ContinuousFunctionalNode(name, [root1, root2, root3], models)
 
-        models = OrderedDict(
+        models = Dict(
             [:yes, :n] => [model],
             [:yes, :y] => [model],
             [:no, :n] => [model],
         )
         @test_throws ErrorException("defined combinations must be equal to the discrete parents combinations") ContinuousFunctionalNode(name, [root1, root2, root3], models)
 
-        models = OrderedDict(
+        models = Dict(
             [:yes, :n] => [model],
             [:yes, :y] => [model],
             [:no, :n] => [model],
@@ -74,19 +74,19 @@
         parents = [root1, root2, root3]
         model = Model(df -> sqrt.(df.z .^ 2 + df.z .^ 2), :value1)
         performance = df -> 1 .- 2 .* df.value1
-        models = OrderedDict(
+        models = Dict(
             [:yes] => [model],
             [:yes] => [model],
             [:no] => [model],
             [:no] => [model]
         )
-        simulations = OrderedDict(
+        simulations = Dict(
             [:yes, :n] => MonteCarlo(100),
             [:yes, :y] => MonteCarlo(200),
             [:no, :n] => MonteCarlo(300),
             [:no, :y] => MonteCarlo(400)
         )
-        performances = OrderedDict(
+        performances = Dict(
             [:yes, :n] => df -> 1 .- 2 .* df.value1,
             [:yes, :y] => df -> 1 .- 2 .* df.value1,
             [:no, :n] => df -> 1 .- 2 .* df.value1,
@@ -94,14 +94,14 @@
         )
         @test_throws ErrorException("defined parent nodes states must be equal to the number of discrete parent nodes") DiscreteFunctionalNode(name, parents, models, performances, simulations)
 
-        models = OrderedDict(
+        models = Dict(
             [:yes, :n] => [model],
             [:yes, :y] => [model],
             [:no, :y] => [model]
         )
         @test_throws ErrorException("defined combinations must be equal to the discrete parents combinations") DiscreteFunctionalNode(name, parents, models, performances, simulations)
 
-        models = OrderedDict(
+        models = Dict(
             [:yes, :maybe] => [model],
             [:yes, :y] => [model],
             [:no, :y] => [model],
@@ -109,7 +109,7 @@
         )
         @test_throws ErrorException("StandardNode state's keys must contain state from parent and the order of the parents states must be coherent with the order of the parents defined in node.parents") DiscreteFunctionalNode(name, parents, models, performances, simulations)
 
-        models = OrderedDict(
+        models = Dict(
             [:yes, :n] => [model],
             [:yes, :y] => [model],
             [:no, :y] => [model],

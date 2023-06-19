@@ -4,15 +4,15 @@
         root3 = ContinuousRootNode(:z, Normal())
 
         functional_model = Model(df -> (df.y .^ 2 + df.z .^ 2) ./ 2, :value1)
-        functional_models = OrderedDict(
+        functional_models = Dict(
             [:yes] => [functional_model],
             [:no] => [functional_model],
         )
-        functional_simulations = OrderedDict(
+        functional_simulations = Dict(
             [:yes] => MonteCarlo(200),
             [:no] => MonteCarlo(300),
         )
-        functional_performances = OrderedDict(
+        functional_performances = Dict(
             [:yes] => df -> 1 .- 2 .* df.value1,
             [:no] => df -> 1 .- 2 .* df.value1,
         )
@@ -25,18 +25,18 @@
         @test discrete_standard_node.name == functional_node.name
         @test discrete_standard_node.parameters == Dict{Symbol,Vector{Parameter}}()
         @test discrete_standard_node.parents == functional_node.parents
-        @test discrete_standard_node.states == OrderedDict([:yes] => Dict(:f => 1, :s => 0), [:no] => Dict(:f => 1, :s => 0))
+        @test discrete_standard_node.states == Dict([:yes] => Dict(:f => 1, :s => 0), [:no] => Dict(:f => 1, :s => 0))
     end
 
     @testset "Beyesian Network" begin
         r = ContinuousRootNode(:R, Normal())
         v = DiscreteRootNode(:V, Dict(:yesV => 0.01, :noV => 0.99))
         s = DiscreteRootNode(:S, Dict(:yesS => 0.5, :noS => 0.5))
-        t = DiscreteStandardNode(:T, [v], OrderedDict(
+        t = DiscreteStandardNode(:T, [v], Dict(
             [:yesV] => Dict(:yesT => 0.05, :noT => 0.95),
             [:noV] => Dict(:yesT => 0.01, :noT => 0.99))
         )
-        l = DiscreteStandardNode(:L, [s], OrderedDict(
+        l = DiscreteStandardNode(:L, [s], Dict(
             [:yesS] => Dict(:yesL => 0.1, :noL => 0.9),
             [:noS] => Dict(:yesL => 0.01, :noL => 0.99))
         )
@@ -54,15 +54,15 @@
         root3 = ContinuousRootNode(:z, Normal())
 
         functional_model = Model(df -> (df.y .^ 2 + df.z .^ 2) ./ 2, :value1)
-        functional_models = OrderedDict(
+        functional_models = Dict(
             [:yes] => [functional_model],
             [:no] => [functional_model],
         )
-        functional_simulations = OrderedDict(
+        functional_simulations = Dict(
             [:yes] => MonteCarlo(200),
             [:no] => MonteCarlo(300),
         )
-        functional_performances = OrderedDict(
+        functional_performances = Dict(
             [:yes] => df -> 1 .- 2 .* df.value1,
             [:no] => df -> 1 .- 2 .* df.value1,
         )
@@ -83,11 +83,11 @@
     @testset "Conditional Probability Distribiution" begin
         v = DiscreteRootNode(:V, Dict(:yesV => 0.01, :noV => 0.99))
         s = DiscreteRootNode(:S, Dict(:yesS => 0.5, :noS => 0.5))
-        t = DiscreteStandardNode(:T, [v], OrderedDict(
+        t = DiscreteStandardNode(:T, [v], Dict(
             [:yesV] => Dict(:yesT => 0.05, :noT => 0.95),
             [:noV] => Dict(:yesT => 0.01, :noT => 0.99))
         )
-        l = DiscreteStandardNode(:L, [s], OrderedDict(
+        l = DiscreteStandardNode(:L, [s], Dict(
             [:yesS] => Dict(:yesL => 0.1, :noL => 0.9),
             [:noS] => Dict(:yesL => 0.01, :noL => 0.99))
         )
@@ -95,8 +95,8 @@
         cpd_s = get_cpd(bn, :S)
         cpd_t = get_cpd(bn, :T)
 
-        @test cpd_s.distributions == OrderedDict(Symbol[] => Dict(:noS => 0.5, :yesS => 0.5))
-        @test cpd_t.distributions == OrderedDict([:yesV] => Dict(:noT => 0.95, :yesT => 0.05),
+        @test cpd_s.distributions == Dict(Symbol[] => Dict(:noS => 0.5, :yesS => 0.5))
+        @test cpd_t.distributions == Dict([:yesV] => Dict(:noT => 0.95, :yesT => 0.05),
             [:noV] => Dict(:noT => 0.99, :yesT => 0.01))
 
         @test isempty(cpd_s.parental_ncategories)

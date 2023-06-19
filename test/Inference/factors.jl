@@ -11,11 +11,11 @@
 
     v = DiscreteRootNode(:V, Dict(:yesV => 0.01, :noV => 0.99))
     s = DiscreteRootNode(:S, Dict(:yesS => 0.5, :noS => 0.5))
-    t = DiscreteStandardNode(:T, [v], OrderedDict(
+    t = DiscreteStandardNode(:T, [v], Dict(
         [:yesV] => Dict(:yesT => 0.05, :noT => 0.95),
         [:noV] => Dict(:yesT => 0.01, :noT => 0.99))
     )
-    l = DiscreteStandardNode(:L, [s], OrderedDict(
+    l = DiscreteStandardNode(:L, [s], Dict(
         [:yesS] => Dict(:yesL => 0.1, :noL => 0.9),
         [:noS] => Dict(:yesL => 0.01, :noL => 0.99))
     )

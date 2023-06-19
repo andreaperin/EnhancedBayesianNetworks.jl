@@ -45,22 +45,22 @@
         root1 = DiscreteRootNode(:x, Dict(:yes => 0.5, :no => 0.5))
         root2 = DiscreteRootNode(:z, Dict(:y => 0.2, :n => 0.8), Dict(:y => [Parameter(1, :z)], :n => [Parameter(0, :z)]))
 
-        states_child1 = OrderedDict([:yes] => Dict(:a => 0.5, :b => 0.5), [:no] => Dict(:a => 0.5, :b => 0.5))
+        states_child1 = Dict([:yes] => Dict(:a => 0.5, :b => 0.5), [:no] => Dict(:a => 0.5, :b => 0.5))
         child1 = DiscreteStandardNode(:child1, [root1], states_child1, Dict(:a => [Parameter(1, :child1)], :b => [Parameter(0, :child1)]))
 
-        distributions_child2 = OrderedDict([:a] => Normal(), [:b] => Normal(2, 2))
+        distributions_child2 = Dict([:a] => Normal(), [:b] => Normal(2, 2))
         child2 = ContinuousStandardNode(:child2, [child1], distributions_child2)
 
         model = Model(df -> sqrt.(df.child1 .^ 2 + df.child2 .- df.z .^ 2), :value1)
 
-        models = OrderedDict([:a, :y] => [model], [:b, :y] => [model], [:a, :n] => [model], [:b, :n] => [model])
-        performances = OrderedDict(
+        models = Dict([:a, :y] => [model], [:b, :y] => [model], [:a, :n] => [model], [:b, :n] => [model])
+        performances = Dict(
             [:a, :y] => df -> 1 .- 2 .* df.value1,
             [:b, :y] => df -> 1 .- 2 .* df.value1,
             [:a, :n] => df -> 1 .- 2 .* df.value1,
             [:b, :n] => df -> 1 .- 2 .* df.value1
         )
-        simulations = OrderedDict([:a, :y] => MonteCarlo(100), [:b, :y] => MonteCarlo(200), [:a, :n] => MonteCarlo(300), [:b, :n] => MonteCarlo(400))
+        simulations = Dict([:a, :y] => MonteCarlo(100), [:b, :y] => MonteCarlo(200), [:a, :n] => MonteCarlo(300), [:b, :n] => MonteCarlo(400))
         functional = DiscreteFunctionalNode(:functional, [child1, child2, root2], models, performances, simulations)
 
         ebn = EnhancedBayesianNetwork([root1, root2, child1, child2, functional])
@@ -92,23 +92,23 @@
         root2 = DiscreteRootNode(:alpha, Dict(:y => 0.4, :n => 0.6), Dict(:y => [Parameter(1, :alpha)], :n => [Parameter(0, :alpha)]))
         root3 = ContinuousRootNode(:z, Normal())
 
-        standard1_states = OrderedDict([:yes, :y] => Dict(:a => 0.2, :b => 0.8), [:no, :y] => Dict(:a => 0.3, :b => 0.7), [:yes, :n] => Dict(:a => 0.4, :b => 0.6), [:no, :n] => Dict(:a => 0.5, :b => 0.5))
+        standard1_states = Dict([:yes, :y] => Dict(:a => 0.2, :b => 0.8), [:no, :y] => Dict(:a => 0.3, :b => 0.7), [:yes, :n] => Dict(:a => 0.4, :b => 0.6), [:no, :n] => Dict(:a => 0.5, :b => 0.5))
         standard1_node = DiscreteStandardNode(:α, [root1, root2], standard1_states, Dict(:a => [Parameter(1, :α)], :b => [Parameter(0, :α)]))
 
-        standard2_states = OrderedDict([:yes] => Normal(), [:no] => Normal(2, 2))
+        standard2_states = Dict([:yes] => Normal(), [:no] => Normal(2, 2))
         standard2_node = ContinuousStandardNode(:β, [root1], standard2_states)
 
         functional1_model = Model(df -> sqrt.(df.x .^ 2 + df.β .^ 2), :value1)
-        functional1_models = OrderedDict([:y] => [functional1_model], [:n] => [functional1_model])
-        functional1_performances = OrderedDict([:y] => df -> 1 .- 2 .* df.value1, [:n] => df -> 1 .- 2 .* df.value1)
-        functional1_simulations = OrderedDict([:y] => MonteCarlo(100), [:n] => MonteCarlo(200))
+        functional1_models = Dict([:y] => [functional1_model], [:n] => [functional1_model])
+        functional1_performances = Dict([:y] => df -> 1 .- 2 .* df.value1, [:n] => df -> 1 .- 2 .* df.value1)
+        functional1_simulations = Dict([:y] => MonteCarlo(100), [:n] => MonteCarlo(200))
         functional1_node = DiscreteFunctionalNode(:f1, [root2, standard2_node], functional1_models, functional1_performances, functional1_simulations)
 
 
         functional2_model = Model(df -> sqrt.(df.α .^ 2 + df.z .^ 2), :value1)
-        functional2_models = OrderedDict([:a] => [functional2_model], [:b] => [functional2_model])
-        functional2_performances = OrderedDict([:a] => df -> 1 .- 2 .* df.value1, [:b] => df -> 1 .- 2 .* df.value1)
-        functional2_simulations = OrderedDict([:a] => MonteCarlo(150), [:b] => MonteCarlo(250))
+        functional2_models = Dict([:a] => [functional2_model], [:b] => [functional2_model])
+        functional2_performances = Dict([:a] => df -> 1 .- 2 .* df.value1, [:b] => df -> 1 .- 2 .* df.value1)
+        functional2_simulations = Dict([:a] => MonteCarlo(150), [:b] => MonteCarlo(250))
         functional2_node = DiscreteFunctionalNode(:f2, [standard1_node, root3], functional2_models, functional2_performances, functional2_simulations)
 
         nodes = [standard1_node, root1, root3, root2, functional1_node, functional2_node, standard2_node]
@@ -149,7 +149,7 @@
 
         standard1_name = :α
         standard1_parents = [root1, root2]
-        standard1_states = OrderedDict(
+        standard1_states = Dict(
             [:y, :yes] => Dict(:a => 0.2, :b => 0.8),
             [:n, :yes] => Dict(:a => 0.3, :b => 0.7),
             [:y, :no] => Dict(:a => 0.4, :b => 0.6),
@@ -160,11 +160,11 @@
 
         standard2_name = :β
         standard2_parents = [root1]
-        standard2_states = OrderedDict(
+        standard2_states = Dict(
             [:y] => Normal(),
             [:n] => Normal(2, 2)
         )
-        standard2_states = OrderedDict(
+        standard2_states = Dict(
             [:y] => Normal(),
             [:n] => Normal(2, 2)
         )
@@ -174,15 +174,15 @@
         functional1_parents = [root2, standard2_node]
         functional1_model1 = Model(df -> (df.y .^ 2 + df.β .^ 2) ./ 2, :value1)
         functional1_model2 = Model(df -> (df.y .^ 2 - df.β .^ 2) ./ 2, :value1)
-        functional1_models = OrderedDict(
+        functional1_models = Dict(
             [:yes] => [functional1_model1],
             [:no] => [functional1_model2],
         )
-        functional1_simulations = OrderedDict(
+        functional1_simulations = Dict(
             [:yes] => MonteCarlo(200),
             [:no] => MonteCarlo(300),
         )
-        functional1_performances = OrderedDict(
+        functional1_performances = Dict(
             [:yes] => df -> 1 .- 2 .* df.value1,
             [:no] => df -> 1 .- 2 .* df.value1,
         )
@@ -191,15 +191,15 @@
         functional2_name = :f2
         functional2_parents = [standard1_node, root3]
         functional2_model = Model(df -> (df.α .^ 2 + df.z .^ 2) ./ 2, :value1)
-        functional2_models = OrderedDict(
+        functional2_models = Dict(
             [:a] => [functional2_model],
             [:b] => [functional2_model]
         )
-        functional2_simulations = OrderedDict(
+        functional2_simulations = Dict(
             [:a] => MonteCarlo(600),
             [:b] => MonteCarlo(800)
         )
-        functional2_performances = OrderedDict(
+        functional2_performances = Dict(
             [:a] => df -> 1 .- 2 .* df.value1,
             [:b] => df -> 1 .- 2 .* df.value1
         )
@@ -215,7 +215,7 @@
         @test srp_node.name == :f2
         @test issetequal(srp_node.parents, [standard1_node])
 
-        srps = OrderedDict(
+        srps = Dict(
             [:a] => EnhancedBayesianNetworks.StructuralReliabilityProblem(functional2_node.models[[:a]], [standard1_node.parameters[:a][1], get_randomvariable(root3, [Symbol()])], functional2_node.performances[[:a]], functional2_node.simulations[[:a]]),
             [:b] => EnhancedBayesianNetworks.StructuralReliabilityProblem(functional2_node.models[[:b]], [standard1_node.parameters[:b][1], get_randomvariable(root3, [Symbol()])], functional2_node.performances[[:b]], functional2_node.simulations[[:b]]))
         @test srp_node.srps[[:a]].inputs == srps[[:a]].inputs

@@ -157,7 +157,7 @@ function _build_structuralreliabilityproblem_node(rbn::ReducedBayesianNetwork, e
     rbn_discrete_parents = filter(x -> isa(x, DiscreteNode), get_parents(rbn, node))
     rbn_discrete_parents_combination = vec(collect(Iterators.product(_get_states.(rbn_discrete_parents)...)))
     rbn_discrete_parents_combination = map(x -> [i for i in x], rbn_discrete_parents_combination)
-    srps = OrderedDict{Vector{Symbol},StructuralReliabilityProblem}()
+    srps = Dict{Vector{Symbol},StructuralReliabilityProblem}()
 
     for evidence in rbn_discrete_parents_combination
 

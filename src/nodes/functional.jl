@@ -1,12 +1,12 @@
 mutable struct ContinuousFunctionalNode <: ContinuousNode
     name::Symbol
     parents::Vector{<:AbstractNode}
-    models::OrderedDict{Vector{Symbol},Vector{UQModel}}
+    models::Dict{Vector{Symbol},Vector{UQModel}}
 
     function ContinuousFunctionalNode(
         name::Symbol,
         parents::Vector{<:AbstractNode},
-        models::OrderedDict{Vector{Symbol},Vector{M}}
+        models::Dict{Vector{Symbol},Vector{M}}
     ) where {M<:UQModel}
 
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
@@ -56,9 +56,9 @@ end
 mutable struct DiscreteFunctionalNode <: DiscreteNode
     name::Symbol
     parents::Vector{<:AbstractNode}
-    models::OrderedDict{Vector{Symbol},Vector{UQModel}}
-    performances::OrderedDict{Vector{Symbol},Function}
-    simulations::OrderedDict{Vector{Symbol},S} where {S<:AbstractSimulation}
+    models::Dict{Vector{Symbol},Vector{UQModel}}
+    performances::Dict{Vector{Symbol},Function}
+    simulations::Dict{Vector{Symbol},S} where {S<:AbstractSimulation}
     pf::Dict{Vector{Symbol},Real}
     cov::Dict{Vector{Symbol},Real}
     samples::Dict{Vector{Symbol},Any}
@@ -66,9 +66,9 @@ mutable struct DiscreteFunctionalNode <: DiscreteNode
     function DiscreteFunctionalNode(
         name::Symbol,
         parents::Vector{<:AbstractNode},
-        models::OrderedDict{Vector{Symbol},Vector{M}},
-        performances::OrderedDict{Vector{Symbol},Function},
-        simulations::OrderedDict{Vector{Symbol},S}
+        models::Dict{Vector{Symbol},Vector{M}},
+        performances::Dict{Vector{Symbol},Function},
+        simulations::Dict{Vector{Symbol},S}
     ) where {M<:UQModel,S<:AbstractSimulation}
 
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)

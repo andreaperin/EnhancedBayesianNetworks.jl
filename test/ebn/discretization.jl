@@ -7,7 +7,7 @@
 
         standard1_name = :α
         standard1_parents = [root1, root2]
-        standard1_states = OrderedDict(
+        standard1_states = Dict(
             [:y, :yes] => Dict(:a => 0.2, :b => 0.8),
             [:n, :yes] => Dict(:a => 0.3, :b => 0.7),
             [:y, :no] => Dict(:a => 0.4, :b => 0.6),
@@ -18,11 +18,11 @@
 
         standard2_name = :β
         standard2_parents = [root1]
-        standard2_states = OrderedDict(
+        standard2_states = Dict(
             [:y] => Normal(),
             [:n] => Normal(2, 2)
         )
-        standard2_states = OrderedDict(
+        standard2_states = Dict(
             [:y] => Normal(),
             [:n] => Normal(2, 2)
         )
@@ -31,15 +31,15 @@
         functional2_name = :f2
         functional2_parents = [standard1_node, root3]
         functional2_model = Model(df -> (df.α .^ 2 + df.z .^ 2) ./ 2, :value1)
-        functional2_models = OrderedDict(
+        functional2_models = Dict(
             [:a] => [functional2_model],
             [:b] => [functional2_model]
         )
-        functional2_simulations = OrderedDict(
+        functional2_simulations = Dict(
             [:a] => MonteCarlo(600),
             [:b] => MonteCarlo(800)
         )
-        functional2_performances = OrderedDict(
+        functional2_performances = Dict(
             [:a] => df -> 1 .- 2 .* df.value1,
             [:b] => df -> 1 .- 2 .* df.value1
         )
@@ -65,7 +65,7 @@
         )
 
         z_c_node = ContinuousStandardNode(:z, [z_d_node],
-            OrderedDict(
+            Dict(
                 [Symbol("[-1.1, 0.1]")] => truncated(Normal(0.0, 1.0), -1.1, 0.1),
                 [Symbol("[0.1, 1.0]")] => truncated(Normal(0.0, 1.0), 0.1, 1.0),
                 [Symbol("[-Inf, -1.1]")] => truncated(Normal(0.0, 1.0), -Inf, -1.1),
@@ -80,7 +80,7 @@
 
         e_ebn = EnhancedBayesianNetworks._discretize_node(ebn, standard2_node, [[-1.1, 0], [0, 0.11]], 2)
 
-        β_d_node = DiscreteStandardNode(:β_d, [root1], OrderedDict(
+        β_d_node = DiscreteStandardNode(:β_d, [root1], Dict(
             [:y] => Dict(
                 Symbol("[-Inf, -1.1]") => 0.13566606094638262,
                 Symbol("[0.11, Inf]") => 0.45620468745768317,
@@ -94,7 +94,7 @@
         )
         )
 
-        β_c_node = ContinuousStandardNode(:β, [β_d_node], OrderedDict(
+        β_c_node = ContinuousStandardNode(:β, [β_d_node], Dict(
             [Symbol("[-1.1, 0.0]")] => Uniform(-1.1, 0.0),
             [Symbol("[0.0, 0.11]")] => Uniform(0.0, 0.11),
             [Symbol("[-Inf, -1.1]")] => truncated(Normal(-1.1, 2.0), -Inf, -1.1),

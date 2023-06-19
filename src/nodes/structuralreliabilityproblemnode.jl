@@ -8,6 +8,6 @@ end
 struct StructuralReliabilityProblemNode
     name::Symbol
     parents::Vector{<:AbstractNode}
-    srps::OrderedDict{Vector{Symbol},StructuralReliabilityProblem}
+    srps::Dict{Vector{Symbol},StructuralReliabilityProblem}
 end
 

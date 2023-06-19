@@ -4,7 +4,7 @@ struct ConditionalProbabilityDistribution
     parents_states_mapping_dict::Dict{Symbol,Dict{Symbol,Int}}
     parental_ncategories::Vector{Int}
     states::Vector{Symbol}
-    distributions::OrderedDict{Vector{Symbol},Dict{Symbol,Real}}
+    distributions::Dict{Vector{Symbol},Dict{Symbol,Real}}
 end
 mutable struct BayesianNetwork <: ProbabilisticGraphicalModel
     dag::SimpleDiGraph
@@ -38,7 +38,7 @@ function get_cpd(bn::BayesianNetwork, i::Int)
     st = _get_states(bn.nodes[i])
     isa(n, RootNode) ? parents = Vector{Symbol}() : parents = [x.name for x in n.parents]
     isa(n, RootNode) ? parental_ncategories = Vector{Int}() : parental_ncategories = map(s -> length(_get_states(s)), n.parents)
-    isa(n, RootNode) ? distributions = OrderedDict(Vector{Symbol}() => n.states) : distributions = n.states
+    isa(n, RootNode) ? distributions = Dict(Vector{Symbol}() => n.states) : distributions = n.states
     parents_nodes = [bn.nodes[bn.name_to_index[s]] for s in parents]
     mapping_dict = Dict{Symbol,Dict{Symbol,Int}}()
     for node in parents_nodes
@@ -63,7 +63,7 @@ function plot(bn::BayesianNetwork)
 end
 
 function _get_discretestandardnode(node::DiscreteFunctionalNode)
-    states = OrderedDict{Vector{Symbol},Dict{Symbol,Float64}}()
+    states = Dict{Vector{Symbol},Dict{Symbol,Float64}}()
     for (k, v) in node.pf
         states[k] = Dict(:f => v, :s => 1 - v)
     end

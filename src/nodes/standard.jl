@@ -1,13 +1,13 @@
 mutable struct ContinuousStandardNode <: ContinuousNode
     name::Symbol
     parents::Vector{<:AbstractNode}
-    distributions::OrderedDict{Vector{Symbol},Distribution}
+    distributions::Dict{Vector{Symbol},Distribution}
     intervals::Vector{Vector{Float64}}
     sigma::Real
 
     function ContinuousStandardNode(name::Symbol,
         parents::Vector{<:AbstractNode},
-        distributions::OrderedDict{Vector{Symbol},D},
+        distributions::Dict{Vector{Symbol},D},
         intervals::Vector{Vector{Float64}},
         sigma::Real
     ) where {D<:Distribution}
@@ -17,7 +17,7 @@ mutable struct ContinuousStandardNode <: ContinuousNode
         for key in keys(distributions)
             length(discrete_parents) != length(key) && error("Number of symbols per parent in node.states must be equal to the number of discrete parents")
 
-            any([k ∉ _get_states(discrete_parents[i]) for (i, k) in enumerate(key)]) && error("StandardNode state's keys must contain state from parent and the order of the parents states must be coherent with the order of the parents defined in node.parents")
+            any([k ∉ _get_states(discrete_parents[i]) for (i, k) in enumerate(key)]) && error("StandardNode state's keys must contain state from parents")
         end
 
         discrete_parents_combination = Iterators.product(_get_states.(discrete_parents)...)
@@ -27,7 +27,7 @@ mutable struct ContinuousStandardNode <: ContinuousNode
     end
 end
 
-ContinuousStandardNode(name::Symbol, parents::Vector{<:AbstractNode}, distributions::OrderedDict{Vector{Symbol},D}) where {D<:Distribution} = ContinuousStandardNode(name, parents, distributions, Vector{Vector{Float64}}(), 0)
+ContinuousStandardNode(name::Symbol, parents::Vector{<:AbstractNode}, distributions::Dict{Vector{Symbol},D}) where {D<:Distribution} = ContinuousStandardNode(name, parents, distributions, Vector{Vector{Float64}}(), 0)
 
 
 function get_randomvariable(node::ContinuousStandardNode, evidence::Vector{Symbol})
@@ -54,10 +54,10 @@ end
 mutable struct DiscreteStandardNode <: DiscreteNode
     name::Symbol
     parents::Vector{<:AbstractNode}
-    states::OrderedDict{Vector{Symbol},Dict{Symbol,Real}}
+    states::Dict{Vector{Symbol},Dict{Symbol,Real}}
     parameters::Dict{Symbol,Vector{Parameter}}
 
-    function DiscreteStandardNode(name::Symbol, parents::Vector{<:AbstractNode}, states::OrderedDict{Vector{Symbol},Dict{Symbol,T}}, parameters::Dict{Symbol,Vector{Parameter}}) where {T<:Real}
+    function DiscreteStandardNode(name::Symbol, parents::Vector{<:AbstractNode}, states::Dict{Vector{Symbol},Dict{Symbol,T}}, parameters::Dict{Symbol,Vector{Parameter}}) where {T<:Real}
 
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
 
@@ -65,12 +65,12 @@ mutable struct DiscreteStandardNode <: DiscreteNode
             verify_probabilities(val)
             verify_parameters(val, parameters)
             length(discrete_parents) != length(key) && error("number of symbols per parent in node.states must be equal to the number of discrete parents")
-            any([k ∉ _get_states(discrete_parents[i]) for (i, k) in enumerate(key)]) && error("StandardNode state's keys must contain state from parent and the order of the parents states must be coherent with the order of the parents defined in node.parents")
+            any([k ∉ _get_states(discrete_parents[i]) for (i, k) in enumerate(key)]) && error("StandardNode state's keys must contain states from parents")
         end
 
         node_states = [keys(s) for s in values(states)]
         if length(reduce(intersect, node_states)) != length(reduce(union, node_states))
-            error("NON coherent definition of nodes states in the ordered dict")
+            error("NON coherent definition of nodes states")
         end
 
         discrete_parents_combination = Iterators.product(_get_states.(discrete_parents)...)
@@ -81,7 +81,7 @@ mutable struct DiscreteStandardNode <: DiscreteNode
     end
 end
 
-function DiscreteStandardNode(name::Symbol, parents::Vector{<:AbstractNode}, states::OrderedDict{Vector{Symbol},Dict{Symbol,T}}) where {T<:Real}
+function DiscreteStandardNode(name::Symbol, parents::Vector{<:AbstractNode}, states::Dict{Vector{Symbol},Dict{Symbol,T}}) where {T<:Real}
     DiscreteStandardNode(name, parents, states, Dict{Symbol,Vector{Parameter}}())
 end
 
