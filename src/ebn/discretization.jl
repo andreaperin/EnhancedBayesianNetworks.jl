@@ -50,6 +50,7 @@ function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousStandard
 
     discrete_node = DiscreteStandardNode(Symbol(string(node.name) * "_d"), node.parents, states)
 
+    ## Approximation function is a truncated normal (thicker tails)
     f_c = i -> begin
         a = isfinite.(i)
         all(a) ? Uniform(i...) : truncated(Normal(i[a][1], variance), i...)
