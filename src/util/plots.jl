@@ -1,0 +1,55 @@
+function plot(bn::Union{BayesianNetwork,EnhancedBayesianNetwork,ReducedBayesianNetwork}, layout=:tree, nodesize=0.2, fontsize=18)
+    graphplot(
+        bn.dag,
+        names=[i.name for i in bn.nodes],
+        # nodesize=map(x -> isa(x, ContinuousNode) ? Float64(0.2) : Float64(0.1), bn.nodes),
+        method=layout,
+        nodesize=nodesize,
+        font_size=fontsize,
+        node_shape=map(x -> isa(x, ContinuousNode) ? :circle : :rect, bn.nodes),
+        markercolor=map(x -> isa(x, DiscreteFunctionalNode) ? "lightgreen" : "orange", bn.nodes),
+        linecolor=:darkgrey,
+    )
+end
+
+```
+List of available methods:
+
+`:spectral`, `:sfdp`, `:circular`, `:shell`, `:stress`, `:spring`, `:tree`, `:buchheim`, `:arcdiagram` or `:chorddiagram`
+
+```
+# function plot(bn::BayesianNetwork)
+#     graphplot(
+#         bn.dag,
+#         names=[i.name for i in bn.nodes],
+#         # nodesize=map(x -> isa(x, ContinuousNode) ? Float64(0.2) : Float64(0.1), bn.nodes),
+#         font_size=14,
+#         node_shape=map(x -> isa(x, ContinuousNode) ? :circle : :rect, bn.nodes),
+#         markercolor=map(x -> isa(x, DiscreteFunctionalNode) ? "lightgreen" : "orange", bn.nodes),
+#         linecolor=:darkgrey,
+#     )
+# end
+
+# function plot(ebn::EnhancedBayesianNetwork)
+#     graphplot(
+#         ebn.dag,
+#         names=[i.name for i in ebn.nodes],
+#         # nodesize=map(x -> isa(x, ContinuousNode) ? Float64(0.2) : Float64(0.1), ebn.nodes),
+#         font_size=14,
+#         node_shape=map(x -> isa(x, ContinuousNode) ? :circle : :rect, ebn.nodes),
+#         markercolor=map(x -> isa(x, DiscreteFunctionalNode) ? "lightgreen" : "orange", ebn.nodes),
+#         linecolor=:darkgrey,
+#     )
+# end
+
+# function plot(ebn::ReducedBayesianNetwork)
+#     graphplot(
+#         ebn.dag,
+#         names=[i.name for i in ebn.nodes],
+#         # nodesize=map(x -> isa(x, ContinuousNode) ? Float64(0.2) : Float64(0.1), ebn.nodes),
+#         font_size=14,
+#         node_shape=map(x -> isa(x, ContinuousNode) ? :circle : :rect, ebn.nodes),
+#         markercolor=map(x -> isa(x, DiscreteFunctionalNode) ? "lightgreen" : "orange", ebn.nodes),
+#         linecolor=:darkgrey,
+#     )
+# end

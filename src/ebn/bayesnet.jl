@@ -50,17 +50,17 @@ end
 
 get_cpd(bn::BayesianNetwork, name::Symbol) = get_cpd(bn, bn.name_to_index[name])
 
-function plot(bn::BayesianNetwork)
-    graphplot(
-        bn.dag,
-        names=[i.name for i in bn.nodes],
-        # nodesize=map(x -> isa(x, ContinuousNode) ? Float64(0.2) : Float64(0.1), bn.nodes),
-        font_size=10,
-        node_shape=map(x -> isa(x, ContinuousNode) ? :circle : :rect, bn.nodes),
-        markercolor=map(x -> isa(x, DiscreteFunctionalNode) ? "lightgreen" : "orange", bn.nodes),
-        linecolor=:darkgrey,
-    )
-end
+# function plot(bn::BayesianNetwork)
+#     graphplot(
+#         bn.dag,
+#         names=[i.name for i in bn.nodes],
+#         # nodesize=map(x -> isa(x, ContinuousNode) ? Float64(0.2) : Float64(0.1), bn.nodes),
+#         font_size=14,
+#         node_shape=map(x -> isa(x, ContinuousNode) ? :circle : :rect, bn.nodes),
+#         markercolor=map(x -> isa(x, DiscreteFunctionalNode) ? "lightgreen" : "orange", bn.nodes),
+#         linecolor=:darkgrey,
+#     )
+# end
 
 function _get_discretestandardnode(node::DiscreteFunctionalNode)
     states = Dict{Vector{Symbol},Dict{Symbol,Float64}}()

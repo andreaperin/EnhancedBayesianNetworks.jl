@@ -73,6 +73,7 @@ include("util/wrap.jl")
 include("util/interval_verification.jl")
 include("util/node_verification.jl")
 include("ebn/ebn.jl")
+include("util/plots.jl")
 include("util/evidence_verification.jl")
 include("inference/inference.jl")
 

@@ -65,17 +65,17 @@ function _topological_ordered_dag(nodes::Vector{<:AbstractNode})
     return ordered_dag, ordered_nodes, ordered_name_to_index
 end
 
-function plot(ebn::EnhancedBayesianNetwork)
-    graphplot(
-        ebn.dag,
-        names=[i.name for i in ebn.nodes],
-        # nodesize=map(x -> isa(x, ContinuousNode) ? Float64(0.2) : Float64(0.1), ebn.nodes),
-        font_size=10,
-        node_shape=map(x -> isa(x, ContinuousNode) ? :circle : :rect, ebn.nodes),
-        markercolor=map(x -> isa(x, DiscreteFunctionalNode) ? "lightgreen" : "orange", ebn.nodes),
-        linecolor=:darkgrey,
-    )
-end
+# function plot(ebn::EnhancedBayesianNetwork)
+#     graphplot(
+#         ebn.dag,
+#         names=[i.name for i in ebn.nodes],
+#         # nodesize=map(x -> isa(x, ContinuousNode) ? Float64(0.2) : Float64(0.1), ebn.nodes),
+#         font_size=14,
+#         node_shape=map(x -> isa(x, ContinuousNode) ? :circle : :rect, ebn.nodes),
+#         markercolor=map(x -> isa(x, DiscreteFunctionalNode) ? "lightgreen" : "orange", ebn.nodes),
+#         linecolor=:darkgrey,
+#     )
+# end
 
 function get_children(ebn::EnhancedBayesianNetwork, node::N) where {N<:AbstractNode}
     i = ebn.name_to_index[node.name]

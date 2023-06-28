@@ -19,17 +19,17 @@ function get_neighbors(ebn::ReducedBayesianNetwork, node::N) where {N<:AbstractN
     [ebn.nodes[j] for j in unique(append!(inneighbors(ebn.dag, i), outneighbors(ebn.dag, i)))]
 end
 
-function plot(ebn::ReducedBayesianNetwork)
-    graphplot(
-        ebn.dag,
-        names=[i.name for i in ebn.nodes],
-        # nodesize=map(x -> isa(x, ContinuousNode) ? Float64(0.2) : Float64(0.1), ebn.nodes),
-        font_size=10,
-        node_shape=map(x -> isa(x, ContinuousNode) ? :circle : :rect, ebn.nodes),
-        markercolor=map(x -> isa(x, DiscreteFunctionalNode) ? "lightgreen" : "orange", ebn.nodes),
-        linecolor=:darkgrey,
-    )
-end
+# function plot(ebn::ReducedBayesianNetwork)
+#     graphplot(
+#         ebn.dag,
+#         names=[i.name for i in ebn.nodes],
+#         # nodesize=map(x -> isa(x, ContinuousNode) ? Float64(0.2) : Float64(0.1), ebn.nodes),
+#         font_size=14,
+#         node_shape=map(x -> isa(x, ContinuousNode) ? :circle : :rect, ebn.nodes),
+#         markercolor=map(x -> isa(x, DiscreteFunctionalNode) ? "lightgreen" : "orange", ebn.nodes),
+#         linecolor=:darkgrey,
+#     )
+# end
 
 function reduce_ebn_markov_envelopes(ebn::EnhancedBayesianNetwork)
     markov_envelopes = markov_envelope(ebn)
@@ -49,7 +49,7 @@ function reduce_ebn_standard(ebn::EnhancedBayesianNetwork)
 
         children = get_children(rbn, starting_node)
 
-        r_dag = _reduce_continuousnode(r_dag, starting_node_index)
+        r_dag = EnhancedBayesianNetworks._reduce_continuousnode(r_dag, starting_node_index)
 
         for child in children
             for parent in child.parents
