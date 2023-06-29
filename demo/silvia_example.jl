@@ -1,141 +1,119 @@
-using DataFrames
-include("../src/nodes.jl")
+using EnhancedBayesianNetworks
+using Distributions
+using Plots
 
-emission = NamedCategorical([:nothappen, :happen], [0.0, 1.0])
-CPD_emission = RootCPD(:emission, [emission])
-node_emission = RootNode(CPD_emission)
+node_emission = DiscreteRootNode(:em, Dict(:no => 0.0, :yes => 1.0))
+node_time = DiscreteRootNode(:time, Dict(:f => 1.0, :s => 0.0, :t => 0.0))
+node_windvelocity = DiscreteRootNode(:wv, Dict(:fast => 0.2, :slow => 0.8))
 
-timescenario = NamedCategorical([:first, :second, :third], [1.0, 0.0, 0.0])
-CPD_timescenario = RootCPD(:timescenario, [timescenario])
-node_timescenario = RootNode(CPD_timescenario)
-
-extremeprecipitation1 = NamedCategorical([:lev1, :lev2, :lev3, :lev4, :lev5], [0.39, 0.37, 0.15, 0.07, 0.01])
-extremeprecipitation2 = NamedCategorical([:lev1, :lev2, :lev3, :lev4, :lev5], [0.39, 0.52, 0.0, 0.07, 0.01])
-extremeprecipitation3 = NamedCategorical([:lev1, :lev2, :lev3, :lev4, :lev5], [0.39, 0.52, 0.0, 0.07, 0.01])
-extremeprecipitation4 = NamedCategorical([:lev1, :lev2, :lev3, :lev4, :lev5], [0.39, 0.52, 0.0, 0.07, 0.01])
-extremeprecipitation5 = NamedCategorical([:lev1, :lev2, :lev3, :lev4, :lev5], [0.39, 0.37, 0.15, 0.07, 0.01])
-extremeprecipitation6 = NamedCategorical([:lev1, :lev2, :lev3, :lev4, :lev5], [0.39, 0.37, 0.15, 0.03, 0.06])
-parents_extremeprecipitation = [node_emission, node_timescenario]
-CPD_extremeprecipitation = StdCPD(
-    :extremeprecipitation, [:emission, :timescenario], [2, 3],
-    [extremeprecipitation1,
-        extremeprecipitation2,
-        extremeprecipitation3,
-        extremeprecipitation4,
-        extremeprecipitation5,
-        extremeprecipitation6]
+parents_extremeprecipitation = Vector{AbstractNode}([node_emission, node_time])
+extremeprecipitation_states = Dict(
+    [:no, :f] => Dict(:lev1 => 0.39, :lev2 => 0.37, :lev3 => 0.15, :lev4 => 0.07, :lev5 => 0.02),
+    [:no, :s] => Dict(:lev1 => 0.39, :lev2 => 0.52, :lev3 => 0.0, :lev4 => 0.07, :lev5 => 0.02),
+    [:no, :t] => Dict(:lev1 => 0.39, :lev2 => 0.52, :lev3 => 0.0, :lev4 => 0.07, :lev5 => 0.02),
+    [:yes, :f] => Dict(:lev1 => 0.39, :lev2 => 0.52, :lev3 => 0.0, :lev4 => 0.07, :lev5 => 0.02),
+    [:yes, :s] => Dict(:lev1 => 0.39, :lev2 => 0.37, :lev3 => 0.15, :lev4 => 0.07, :lev5 => 0.02),
+    [:yes, :t] => Dict(:lev1 => 0.39, :lev2 => 0.37, :lev3 => 0.15, :lev4 => 0.03, :lev5 => 0.06)
 )
-node_extremeprecipitation = StdNode(CPD_extremeprecipitation, parents_extremeprecipitation)
+node_extremeprec = DiscreteStandardNode(:ex_p, parents_extremeprecipitation, extremeprecipitation_states)
 
-distribution_waterlevel = [
-    NamedCategorical([:low, :high], [0.9, 0.1]),
-    NamedCategorical([:low, :high], [0.8, 0.2]),
-    NamedCategorical([:low, :high], [0.6, 0.4]),
-    NamedCategorical([:low, :high], [0.2, 0.8]),
-    NamedCategorical([:low, :high], [0.1, 0.9])
-]
-
-parents_waterlevel = [node_extremeprecipitation]
-parental_ncategories_waterlevel = [5]
-CPD_waterlevel = StdCPD(:waterlevel, name.(parents_waterlevel), parental_ncategories_waterlevel, distribution_waterlevel)
-waterlevel_parameters1 = Dict(
-    "model1" => [Parameter(1, :E)],
-    "model2" => [Parameter(2, :E)]
+parents_waterlevel = Vector{AbstractNode}([node_extremeprec])
+waterlevel_states = Dict(
+    [:lev1] => Dict(:low => 0.9, :high => 0.1),
+    [:lev2] => Dict(:low => 0.8, :high => 0.2),
+    [:lev3] => Dict(:low => 0.6, :high => 0.4),
+    [:lev4] => Dict(:low => 0.2, :high => 0.8),
+    [:lev5] => Dict(:low => 0.1, :high => 0.9)
 )
-waterlavel_parameters2 = Dict(
-    "model1" => [Parameter(5, :E)],
-    "model2" => [Parameter(6, :E)]
+parameters = Dict(
+    :low => [Parameter(-296.2, :wl)],
+    :high => [Parameter(296.2, :wl)])
+node_waterlev = DiscreteStandardNode(:wl, parents_waterlevel, waterlevel_states, parameters)
+
+parents_debrisflow = Vector{AbstractNode}([node_extremeprec])
+debrisflow_states = Dict(
+    [:lev1] => Dict(:st1 => 0.444, :st2 => 0.519, :st3 => 0.027, :st4 => 0.01),
+    [:lev2] => Dict(:st1 => 0.4, :st2 => 0.543, :st3 => 0.04, :st4 => 0.017),
+    [:lev3] => Dict(:st1 => 0.2, :st2 => 0.3, :st3 => 0.352, :st4 => 0.148),
+    [:lev4] => Dict(:st1 => 0.0, :st2 => 0.0, :st3 => 0.852, :st4 => 0.148),
+    [:lev5] => Dict(:st1 => 0.0, :st2 => 0.0, :st3 => 0.0, :st4 => 1.0)
 )
-parameters_vector = [waterlevel_parameters1, waterlavel_parameters2]
+parameters_dbf = Dict(
+    :st1 => [Parameter(10, :dbf)],
+    :st2 => [Parameter(20, :dbf)],
+    :st3 => [Parameter(40, :dbf)],
+    :st4 => [Parameter(50, :dbf)],
+)
+node_debrisflow = DiscreteStandardNode(:dbf, parents_debrisflow, debrisflow_states, parameters_dbf)
 
-node_waterlevel = StdNode(CPD_waterlevel, parents_waterlevel, parameters_vector)
+parents_waveraising = Vector{AbstractNode}([node_windvelocity])
+waverising_states = Dict(
+    [:slow] => Rayleigh(0.387),
+    [:fast] => Rayleigh(2.068)
+)
+node_waverising = ContinuousStandardNode(:wr, parents_waveraising, waverising_states)
 
-debrisflow1 = NamedCategorical([:state1, :state2, :state3, :state4], [0.444, 0.519, 0.027, 0.01])
-debrisflow2 = NamedCategorical([:state1, :state2, :state3, :state4], [0.4, 0.543, 0.04, 0.017])
-debrisflow3 = NamedCategorical([:state1, :state2, :state3, :state4], [0.2, 0.3, 0.352, 0.148])
-debrisflow4 = NamedCategorical([:state1, :state2, :state3, :state4], [0.0, 0.0, 0.852, 0.148])
-debrisflow5 = NamedCategorical([:state1, :state2, :state3, :state4], [0.0, 0.0, 0.0, 1.0])
-parents_debrisflow = [node_extremeprecipitation]
-CPD_debrisflow = StdCPD(
-    :debrisflow, name.(parents_debrisflow), [5],
-    [debrisflow1,
-        debrisflow2,
-        debrisflow3,
-        debrisflow4,
-        debrisflow5]
+parents_overtopping = Vector{AbstractNode}([node_waverising, node_waterlev])
+overtopping_model1 = Model(df -> df.wl .+ df.wr .+ 291, :level)
+overtopping_model2 = Model(df -> df.wl .+ df.wr .- 291, :level)
+overtopping_models = Dict(
+    [:low] => [overtopping_model1],
+    [:high] => [overtopping_model2]
+)
+overtopping_simulations = Dict(
+    [:low] => MonteCarlo(400),
+    [:high] => MonteCarlo(400)
+)
+overtopping_performances = Dict(
+    [:low] => df -> df.level,
+    [:high] => df -> df.level
+)
+parameters_ov_t = Dict(
+    :safe_ov_t => [Parameter(1, :ov_t)],
+    :fail_ov_t => [Parameter(-1, :ov_t)]
 )
 
-function cpd(parents::Dict{Symbol,Any})
-    if parents[:a] == 2 && parents[:b] == 1
-        return NamedCategorical([:state1, :state2, :state3, :state4], [0.444, 0.519, 0.027, 0.01])
-    end
-end
+node_overtopping = DiscreteFunctionalNode(:ov_t, parents_overtopping, overtopping_models, overtopping_performances, overtopping_simulations, parameters_ov_t)
 
-node_debrisflow = StdNode(CPD_debrisflow, parents_debrisflow)
+parents_st_dmg = Vector{AbstractNode}([node_overtopping, node_debrisflow])
+st_dmg_model1 = Model(df -> df.ov_t .* df.dbf .+ 91, :dmg)
+st_dmg_model2 = Model(df -> df.ov_t .* df.dbf .- 91, :dmg)
+st_dmg_models = Dict(
+    [:fail_ov_t, :st1] => [st_dmg_model1],
+    [:safe_ov_t, :st1] => [st_dmg_model2],
+    [:fail_ov_t, :st2] => [st_dmg_model1],
+    [:safe_ov_t, :st2] => [st_dmg_model2],
+    [:fail_ov_t, :st3] => [st_dmg_model1],
+    [:safe_ov_t, :st3] => [st_dmg_model2],
+    [:fail_ov_t, :st4] => [st_dmg_model1],
+    [:safe_ov_t, :st4] => [st_dmg_model2]
+)
+st_dmg_performances = Dict(
+    [:fail_ov_t, :st1] => df -> df.dmg,
+    [:safe_ov_t, :st1] => df -> df.dmg,
+    [:fail_ov_t, :st2] => df -> df.dmg,
+    [:safe_ov_t, :st2] => df -> df.dmg,
+    [:fail_ov_t, :st3] => df -> df.dmg,
+    [:safe_ov_t, :st3] => df -> df.dmg,
+    [:fail_ov_t, :st4] => df -> df.dmg,
+    [:safe_ov_t, :st4] => df -> df.dmg
+)
 
-windvelocity = NamedCategorical([:slow, :fast], [0.8, 0.2])
-CPD_windvelocity = RootCPD(:windvelocity, [windvelocity])
-node_windvelocity = RootNode(CPD_windvelocity)
+st_dmg_node = DiscreteFunctionalNode(:st_dmg, parents_st_dmg, st_dmg_models, st_dmg_performances)
 
-waveraising1 = Rayleigh(0.387)
-waveraising2 = Rayleigh(2.068)
-parents_waveraising = [node_windvelocity]
-CPD_waveraising = StdCPD(:waveraising, name.(parents_waveraising), [2], [waveraising1, waveraising2])
-node_waveraising = StdNode(CPD_waveraising, parents_waveraising)
+nodes = [node_debrisflow, node_emission, node_extremeprec, node_time, node_waterlev, node_waverising, node_windvelocity, node_overtopping, st_dmg_node]
 
+ebn = EnhancedBayesianNetwork(nodes)
 
-## TODO check from here on
+gr();
+nodesize = 0.1
+fontsize = 18
+EnhancedBayesianNetworks.plot(ebn, :tree, nodesize, fontsize)
+# Plots.savefig("/Users/andreaperin_macos/Documents/PhD/3_Academic/Papers_Presentations/Conferences/2023_ESREL/ExtendedAbstract-Template/imgs/Silvia_ebn.png")
 
+rbn = reduce_ebn_markov_envelopes(ebn)
+EnhancedBayesianNetworks.plot(rbn[1], :tree, nodesize, fontsize)
+# Plots.savefig("/Users/andreaperin_macos/Documents/PhD/3_Academic/Papers_Presentations/Conferences/2023_ESREL/ExtendedAbstract-Template/imgs/Silvia_rbn.png")
 
+e_ebn = evaluate_ebn(ebn)
 
-
-# child1 = Model(df -> df.waverising .+ df.windvelocity, :child1)
-# child2 = Model(df -> df.waverising .- df.windvelocity, :child2)
-# child_model = [child1, child2]
-# ## TODO Child new type of node that accept functional relationship as CPD (Struct model node, add check on parents categories as written in notes)
-
-
-# nodes = [node_windvelocity, node_waveraising, node_emission, node_debrisflow, node_extremeprecipitation, node_timescenario, node_waterlevel]
-# dag = _build_DiAGraph_from_nodes(nodes)
-# ordered_cpds, ordered_nodes, ordered_name_to_index, ordered_dag = _topological_ordered_dag(nodes)
-# bn = StdBayesNet(ordered_nodes)
-# show(bn)
-
-
-
-
-
-
-
-
-
-
-
-##TODO Review with Jasper, i want just a map function
-# discreteparents_states = vec(get_discreteparents_states_combinations(node_child)[2])
-# df_dict = Dict()
-# for state in discreteparents_states
-#     df_dict[state] = DataFrame()
-#     evidence = Dict{Symbol,Any}()
-#     for i in range(1, length(state))
-#         evidence[collect(keys(get_discreteparents_states_combinations(node_child)[1][i]))[1]] = state[i]
-#         df_dict[state][!, collect(keys(get_discreteparents_states_combinations(node_child)[1][i]))[1]] = [state[i]]
-#     end
-#     for continuous_parent in get_continuous_parents(node_child)
-#         distribution = evaluate_nodecpd_with_evidence(bn, name(continuous_parent), evidence)
-#         df_dict[state][!, name(continuous_parent)] = [collect(values(distribution))[1]]
-#     end
-# end
-
-
-## to evaluate the pdf of child node, sample from wave rising dist and evaluate model
-
-
-# nodes = [node_emission, node_timescenario, node_debrisflow, node_extremeprecipitation, node_waterlevel, node_windvelocity, node_waveraising]
-# dag = _build_DiAGraph_from_nodes(nodes)
-# ordered_cpds, ordered_nodes, ordered_name_to_index, ordered_dag = _topological_ordered_dag(nodes)
-# bn = StdBayesNet(ordered_nodes)
-# show(bn)
-
-evidence = Assignment(:windvelocity => :fast, :emission => :happen)
-a = evaluate_nodecpd_with_evidence(bn, name(node_waveraising), evidence)
