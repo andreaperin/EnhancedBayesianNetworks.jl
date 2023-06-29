@@ -9,5 +9,6 @@ struct StructuralReliabilityProblemNode
     name::Symbol
     parents::Vector{<:AbstractNode}
     srps::Dict{Vector{Symbol},StructuralReliabilityProblem}
+    parameters::Dict{Symbol,Vector{Parameter}}
 end
 

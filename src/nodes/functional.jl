@@ -58,38 +58,61 @@ mutable struct DiscreteFunctionalNode <: DiscreteNode
     parents::Vector{<:AbstractNode}
     models::Dict{Vector{Symbol},Vector{UQModel}}
     performances::Dict{Vector{Symbol},Function}
-    simulations::Dict{Vector{Symbol},S} where {S<:AbstractSimulation}
+    simulations::Union{Dict{Vector{Symbol},S},Nothing} where {S<:AbstractSimulation}
     pf::Dict{Vector{Symbol},Real}
     cov::Dict{Vector{Symbol},Real}
     samples::Dict{Vector{Symbol},Any}
+    parameters::Dict{Symbol,Vector{Parameter}}
 
     function DiscreteFunctionalNode(
         name::Symbol,
         parents::Vector{<:AbstractNode},
         models::Dict{Vector{Symbol},Vector{M}},
         performances::Dict{Vector{Symbol},Function},
-        simulations::Dict{Vector{Symbol},S}
+        simulations::Union{Dict{Vector{Symbol},S},Nothing},
+        parameters::Dict{Symbol,Vector{Parameter}}
     ) where {M<:UQModel,S<:AbstractSimulation}
 
-        discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
-        verify_functionalnode_parents(parents)
+        if isempty(filter(x -> isa(x, FunctionalNode), parents))
+            discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
+            verify_functionalnode_parents(parents)
 
-        for i in [models, performances, simulations]
-            for (key, _) in i
-                length(discrete_parents) != length(key) && error("defined parent nodes states must be equal to the number of discrete parent nodes")
+            for i in [models, performances, simulations]
+                for (key, _) in i
+                    length(discrete_parents) != length(key) && error("defined parent nodes states must be equal to the number of discrete parent nodes")
 
-                any([k ∉ _get_states(discrete_parents[i]) for (i, k) in enumerate(key)]) && error("StandardNode state's keys must contain state from parent and the order of the parents states must be coherent with the order of the parents defined in node.parents")
+                    any([k ∉ _get_states(discrete_parents[i]) for (i, k) in enumerate(key)]) && error("StandardNode state's keys must contain state from parent and the order of the parents states must be coherent with the order of the parents defined in node.parents")
+                end
+
+                discrete_parents_combination = vec(collect(Iterators.product(_get_states.(discrete_parents)...)))
+                discrete_parents_combination = map(x -> [i for i in x], discrete_parents_combination)
+                length(discrete_parents_combination) != length(i) && error("defined combinations must be equal to the discrete parents combinations")
             end
-
-            discrete_parents_combination = vec(collect(Iterators.product(_get_states.(discrete_parents)...)))
-            discrete_parents_combination = map(x -> [i for i in x], discrete_parents_combination)
-            length(discrete_parents_combination) != length(i) && error("defined combinations must be equal to the discrete parents combinations")
         end
         pf = Dict{Vector{Symbol},Real}()
         cov = Dict{Vector{Symbol},Real}()
         samples = Dict{Vector{Symbol},Any}()
-        return new(name, parents, models, performances, simulations, pf, cov, samples)
+        return new(name, parents, models, performances, simulations, pf, cov, samples, parameters)
     end
+end
+
+function DiscreteFunctionalNode(
+    name::Symbol,
+    parents::Vector{<:AbstractNode},
+    models::Dict{Vector{Symbol},Vector{M}},
+    performances::Dict{Vector{Symbol},Function},
+    simulations::Union{Dict{Vector{Symbol},S},Nothing}
+) where {M<:UQModel,S<:AbstractSimulation}
+    DiscreteFunctionalNode(name, parents, models, performances, simulations, Dict{Symbol,Vector{Parameter}}())
+end
+
+function DiscreteFunctionalNode(
+    name::Symbol,
+    parents::Vector{<:AbstractNode},
+    models::Dict{Vector{Symbol},Vector{M}},
+    performances::Dict{Vector{Symbol},Function},
+) where {M<:UQModel}
+    DiscreteFunctionalNode(name, parents, models, performances, nothing, Dict{Symbol,Vector{Parameter}}())
 end
 
 function get_models(node::DiscreteFunctionalNode, evidence::Vector{Symbol})
