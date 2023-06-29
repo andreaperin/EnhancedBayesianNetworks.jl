@@ -132,6 +132,12 @@ function markov_envelope(ebn::EnhancedBayesianNetwork)
         single_envelope = unique(vcat(unique(Iterators.flatten(all_blankets)), group))
         push!(envelope, single_envelope)
     end
+    nodes_in_envelope = collect(Iterators.flatten(envelope))
+    ebn_discrete_node = filter(x -> isa(x, DiscreteNode), ebn.nodes)
+    missing_nodes = setdiff(ebn_discrete_node, nodes_in_envelope)
+    for single_envelope in envelope
+        append!(single_envelope, missing_nodes)
+    end
     return envelope
 end
 
