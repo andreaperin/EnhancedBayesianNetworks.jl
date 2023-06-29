@@ -1,11 +1,11 @@
-function plot(bn::Union{BayesianNetwork,EnhancedBayesianNetwork,ReducedBayesianNetwork}, layout=:tree, nodesize=0.2, fontsize=18)
+function plot(bn::Union{BayesianNetwork,EnhancedBayesianNetwork,ReducedBayesianNetwork}, layout=:tree, nodesize=0.2, fontsize=13)
     graphplot(
         bn.dag,
         names=[i.name for i in bn.nodes],
         # nodesize=map(x -> isa(x, ContinuousNode) ? Float64(0.2) : Float64(0.1), bn.nodes),
         method=layout,
         nodesize=nodesize,
-        font_size=fontsize,
+        fontsize=fontsize,
         node_shape=map(x -> isa(x, ContinuousNode) ? :circle : :rect, bn.nodes),
         markercolor=map(x -> isa(x, DiscreteFunctionalNode) ? "lightgreen" : "orange", bn.nodes),
         linecolor=:darkgrey,
