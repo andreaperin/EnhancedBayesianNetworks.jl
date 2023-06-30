@@ -109,11 +109,11 @@ gr();
 nodesize = 0.1
 fontsize = 18
 EnhancedBayesianNetworks.plot(ebn, :tree, nodesize, fontsize)
-# Plots.savefig("/Users/andreaperin_macos/Documents/PhD/3_Academic/Papers_Presentations/Conferences/2023_ESREL/ExtendedAbstract-Template/imgs/Silvia_ebn.png")
+Plots.savefig("/Users/andreaperin_macos/Documents/PhD/3_Academic/Papers_Presentations/Conferences/2023_ESREL/ExtendedAbstract-Template/imgs/Silvia_ebn.png")
 
 rbn = reduce_ebn_markov_envelopes(ebn)
 EnhancedBayesianNetworks.plot(rbn[1], :tree, nodesize, fontsize)
-# Plots.savefig("/Users/andreaperin_macos/Documents/PhD/3_Academic/Papers_Presentations/Conferences/2023_ESREL/ExtendedAbstract-Template/imgs/Silvia_rbn.png")
+Plots.savefig("/Users/andreaperin_macos/Documents/PhD/3_Academic/Papers_Presentations/Conferences/2023_ESREL/ExtendedAbstract-Template/imgs/Silvia_rbn.png")
 
 e_ebn = evaluate_ebn(ebn)
 
