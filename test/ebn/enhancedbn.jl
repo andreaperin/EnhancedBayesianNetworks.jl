@@ -97,7 +97,7 @@
 
         @test issetequal(markov_blanket(ebn, child2), [child1, root2, functional])
 
-        @test issetequal(markov_envelope(ebn)[1], [child1, root2, functional, child2])
+        @test issetequal(markov_envelope(ebn)[1], [child1, root1, root2, functional, child2])
 
         @test isequal(EnhancedBayesianNetworks._get_node_given_state(ebn, :a), child1)
     end

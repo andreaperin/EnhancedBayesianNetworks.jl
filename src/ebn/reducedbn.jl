@@ -165,7 +165,6 @@ function evaluate_ebn(ebn::EnhancedBayesianNetwork, markov::Bool=true)
                 ## Create new DiscreteStandardNode
                 new_node = _map_functional_to_standard_node(node)
                 ## Insert new node into ebn and rbn
-
                 rbn = _update_network_with_evaluation(rbn, node, new_node)
                 ebn = _update_network_with_evaluation(ebn, node, new_node)
                 popfirst!(functional_nodes)
@@ -206,8 +205,6 @@ function _map_functional_to_standard_node(node::DiscreteFunctionalNode)
     states = Dict(map((k, v) -> (k, f.(v)), keys(node.pf), values(node.pf)))
     return DiscreteStandardNode(node.name, node.parents, states, node.parameters)
 end
-
-
 
 function _build_structuralreliabilityproblem_node(rbn::ReducedBayesianNetwork, ebn::EnhancedBayesianNetwork, node::DiscreteFunctionalNode)
     ebn_discrete_parents = filter(x -> isa(x, DiscreteNode), get_parents(ebn, node))
