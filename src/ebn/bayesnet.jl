@@ -25,12 +25,9 @@ end
 
 function BayesianNetwork(rbn::ReducedBayesianNetwork)
     functional_nodes = filter(x -> isa(x, DiscreteFunctionalNode), rbn.nodes)
-    any(isempty.([i.pf for i in functional_nodes])) && error("rbn needs to evaluated!")
-    bn_nodes = filter(x -> !isa(x, DiscreteFunctionalNode), rbn.nodes)
-    append!(bn_nodes, _get_discretestandardnode.(functional_nodes))
-    BayesianNetwork(bn_nodes)
+    !isempty(functional_nodes) && error("rbn needs to evaluated!")
+    BayesianNetwork(rbn.nodes)
 end
-
 
 function get_cpd(bn::BayesianNetwork, i::Int)
     n = bn.nodes[i]
@@ -50,22 +47,10 @@ end
 
 get_cpd(bn::BayesianNetwork, name::Symbol) = get_cpd(bn, bn.name_to_index[name])
 
-# function plot(bn::BayesianNetwork)
-#     graphplot(
-#         bn.dag,
-#         names=[i.name for i in bn.nodes],
-#         # nodesize=map(x -> isa(x, ContinuousNode) ? Float64(0.2) : Float64(0.1), bn.nodes),
-#         font_size=14,
-#         node_shape=map(x -> isa(x, ContinuousNode) ? :circle : :rect, bn.nodes),
-#         markercolor=map(x -> isa(x, DiscreteFunctionalNode) ? "lightgreen" : "orange", bn.nodes),
-#         linecolor=:darkgrey,
-#     )
+# function _get_discretestandardnode(node::DiscreteFunctionalNode)
+#     states = Dict{Vector{Symbol},Dict{Symbol,Float64}}()
+#     for (k, v) in node.pf
+#         states[k] = Dict(:f => v, :s => 1 - v)
+#     end
+#     return DiscreteStandardNode(node.name, node.parents, states)
 # end
-
-function _get_discretestandardnode(node::DiscreteFunctionalNode)
-    states = Dict{Vector{Symbol},Dict{Symbol,Float64}}()
-    for (k, v) in node.pf
-        states[k] = Dict(:f => v, :s => 1 - v)
-    end
-    return DiscreteStandardNode(node.name, node.parents, states)
-end
