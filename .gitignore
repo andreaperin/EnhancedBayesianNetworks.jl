@@ -27,6 +27,7 @@ Manifest.toml
 model_TH_macos/*
 model_TH_win/*
 coverage/*
+local_coverage.jl
 
 old/*
 demo/esrel_extended_abstract.jl
