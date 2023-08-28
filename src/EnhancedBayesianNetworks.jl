@@ -1,5 +1,6 @@
 module EnhancedBayesianNetworks
 
+using Distributed
 using Distributions
 using GraphRecipes
 using Graphs

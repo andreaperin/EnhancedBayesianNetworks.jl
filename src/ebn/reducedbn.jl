@@ -161,8 +161,19 @@ function evaluate_ebn(ebn::EnhancedBayesianNetwork, markov::Bool=true)
             if isempty(filter(x -> isa(x, DiscreteFunctionalNode), node.parents))
                 srp_node = _build_structuralreliabilityproblem_node(rbn, ebn, node)
                 node.parents = srp_node.parents
-                node.pf, node.cov, node.samples = _get_failure_probability(srp_node)
+
+                results = pmap((comb, srp) -> begin
+                        return (comb, probability_of_failure(srp.models, srp.performance, srp.inputs, srp.simulation))
+                    end, keys(srp_node.srps), values(srp_node.srps))
+
                 ## Create new DiscreteStandardNode
+                for (key, res) in results
+                    node.pf[key] = res[1]
+                    node.cov[key] = res[2]
+                    node.samples[key] = res[3]
+                end
+
+                f = x -> Dict(Symbol("fail_" * String(node.name)) => x, Symbol("safe_" * String(node.name)) => 1 - x)
                 new_node = _map_functional_to_standard_node(node)
                 ## Insert new node into ebn and rbn
                 rbn = _update_network_with_evaluation(rbn, node, new_node)
@@ -260,15 +271,11 @@ function _build_structuralreliabilityproblem_node(rbn::ReducedBayesianNetwork, e
 end
 
 ##TODO (incomplete and not reliable TEST)
-function _get_failure_probability(node::StructuralReliabilityProblemNode)
+function _get_failure_probability(srp::EnhancedBayesianNetworks.StructuralReliabilityProblem)
     pf = Dict()
     cov = Dict()
     samples = Dict()
-    for (comb, srp) in node.srps
-        pf[comb] = probability_of_failure(srp.models, srp.performance, srp.inputs, srp.simulation)[1]
-        cov[comb] = probability_of_failure(srp.models, srp.performance, srp.inputs, srp.simulation)[2]
-        samples[comb] = probability_of_failure(srp.models, srp.performance, srp.inputs, srp.simulation)[3]
-    end
+    pf[comb], cov[comb], samples[comb] = probability_of_failure(srp.models, srp.performance, srp.inputs, srp.simulation)
     return pf, cov, samples
 end
 
