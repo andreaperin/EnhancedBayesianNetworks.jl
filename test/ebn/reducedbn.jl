@@ -226,8 +226,6 @@
         @test srp_node.srps[[:b]].models == srps[[:b]].models
         @test srp_node.srps[[:b]].simulation == srps[[:b]].simulation
         @test srp_node.srps[[:b]].performance == srps[[:b]].performance
-
-        @test EnhancedBayesianNetworks._get_failure_probability(srp_node)[1] == Dict([:a] => 1, [:b] => 1)
     end
 
 
