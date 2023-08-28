@@ -1,4 +1,4 @@
-function plot(bn::Union{BayesianNetwork,EnhancedBayesianNetwork,ReducedBayesianNetwork}, layout=:tree, nodesize=0.2, fontsize=13)
+function plot(bn::Union{BayesianNetwork,EnhancedBayesianNetwork,ReducedBayesianNetwork}, layout=:tree, nodesize=0.1, fontsize=13)
     graphplot(
         bn.dag,
         names=[i.name for i in bn.nodes],
