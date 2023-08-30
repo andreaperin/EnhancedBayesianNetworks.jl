@@ -162,9 +162,10 @@ function evaluate_ebn(ebn::EnhancedBayesianNetwork, markov::Bool=true)
                 srp_node = _build_structuralreliabilityproblem_node(rbn, ebn, node)
                 node.parents = srp_node.parents
 
-                results = pmap((comb, srp) -> begin
-                        return (comb, probability_of_failure(srp.models, srp.performance, srp.inputs, srp.simulation))
-                    end, keys(srp_node.srps), values(srp_node.srps))
+                results = map(zip(keys(srp_node.srps), values(srp_node.srps))) do (comb, srp)
+                    @show(comb, srp)
+                    return (comb, probability_of_failure(srp.models, srp.performance, srp.inputs, srp.simulation))
+                end
 
                 ## Create new DiscreteStandardNode
                 for (key, res) in results
