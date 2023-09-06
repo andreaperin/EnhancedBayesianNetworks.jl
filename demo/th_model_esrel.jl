@@ -138,10 +138,7 @@ ebn = EnhancedBayesianNetwork(nodes)
 # rbn = reduce_ebn_standard(ebn)
 # EnhancedBayesianNetworks.plot(rbn, :spring, 0.1, 8)
 # Plots.savefig("/Users/andreaperin_macos/Documents/PhD/3_Academic/Papers_Presentations/Conferences/2023_ESREL/ExtendedAbstract-Template/imgs/Rbn_salt_dome.png")
-
-# a = evaluate_ebn(ebn)
-
-# @save "prova.jld2" a
+a = evaluate_ebn(ebn)
 
 
 # rbn = a[1]
@@ -152,3 +149,5 @@ ebn = EnhancedBayesianNetwork(nodes)
 
 
 # infer(bn, query, e)
+
+rmprocs(workers())
