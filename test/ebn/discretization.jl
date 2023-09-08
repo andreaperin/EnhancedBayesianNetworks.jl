@@ -1,4 +1,4 @@
-@testset "Enhanced Bayesian Networks" begin
+@testset "Discretization Algorithm" begin
     @testset "Node Discretization" begin
 
         root1 = DiscreteRootNode(:x, Dict(:y => 0.2, :n => 0.8), Dict(:y => [Parameter(1, :x)], :n => [Parameter(0, :x), Parameter(5.6, :x1)]))
@@ -14,7 +14,7 @@
             [:n, :no] => Dict(:a => 0.5, :b => 0.5)
         )
         standard1_parameters = Dict(:a => [Parameter(3, :α)], :b => [Parameter(10, :α)])
-        standard1_node = DiscreteStandardNode(standard1_name, standard1_parents, standard1_states, standard1_parameters)
+        standard1_node = DiscreteChildNode(standard1_name, standard1_parents, standard1_states, standard1_parameters)
 
         standard2_name = :β
         standard2_parents = [root1]
@@ -26,7 +26,7 @@
             [:y] => Normal(),
             [:n] => Normal(2, 2)
         )
-        standard2_node = ContinuousStandardNode(standard2_name, standard2_parents, standard2_states)
+        standard2_node = ContinuousChildNode(standard2_name, standard2_parents, standard2_states)
 
         functional2_name = :f2
         functional2_parents = [standard1_node, root3]
@@ -50,8 +50,8 @@
         nodes = [standard1_node, root1, root3, root2, standard2_node, functional2_node]
         ebn = EnhancedBayesianNetwork(nodes)
 
-        @test_throws ErrorException("non continuous range of intervals") EnhancedBayesianNetworks._discretize_node(ebn, root3, [[-1.1, 0.1], [0.2, 1]])
-        @test_throws ErrorException("overlapping intervals") EnhancedBayesianNetworks._discretize_node(ebn, root3, [[-1.1, 0.1], [0.0, 1]])
+        @test_throws ErrorException("non continuous range of intervals in [[-1.1, 0.1], [0.2, 1.0]]") EnhancedBayesianNetworks._discretize_node(ebn, root3, [[-1.1, 0.1], [0.2, 1]])
+        @test_throws ErrorException("overlapping intervals [[-1.1, 0.1], [0.0, 1.0]]") EnhancedBayesianNetworks._discretize_node(ebn, root3, [[-1.1, 0.1], [0.0, 1]])
 
         e_ebn = EnhancedBayesianNetworks._discretize_node(ebn, root3, [[-1.1, 0.1], [0.1, 1]])
 
@@ -64,7 +64,7 @@
             )
         )
 
-        z_c_node = ContinuousStandardNode(:z, [z_d_node],
+        z_c_node = ContinuousChildNode(:z, [z_d_node],
             Dict(
                 [Symbol("[-1.1, 0.1]")] => truncated(Normal(0.0, 1.0), -1.1, 0.1),
                 [Symbol("[0.1, 1.0]")] => truncated(Normal(0.0, 1.0), 0.1, 1.0),
@@ -80,7 +80,7 @@
 
         e_ebn = EnhancedBayesianNetworks._discretize_node(ebn, standard2_node, [[-1.1, 0], [0, 0.11]], 2)
 
-        β_d_node = DiscreteStandardNode(:β_d, [root1], Dict(
+        β_d_node = DiscreteChildNode(:β_d, [root1], Dict(
             [:y] => Dict(
                 Symbol("[-Inf, -1.1]") => 0.13566606094638262,
                 Symbol("[0.11, Inf]") => 0.45620468745768317,
@@ -94,7 +94,7 @@
         )
         )
 
-        β_c_node = ContinuousStandardNode(:β, [β_d_node], Dict(
+        β_c_node = ContinuousChildNode(:β, [β_d_node], Dict(
             [Symbol("[-1.1, 0.0]")] => Uniform(-1.1, 0.0),
             [Symbol("[0.0, 0.11]")] => Uniform(0.0, 0.11),
             [Symbol("[-Inf, -1.1]")] => truncated(Normal(-1.1, 2.0), -Inf, -1.1),

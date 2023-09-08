@@ -19,7 +19,7 @@ function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousRootNode
     distributions_symbols = [[i] for i in states_symbols]
     distributions = Dict(distributions_symbols .=> f_c.(intervals))
 
-    continuous_node = ContinuousStandardNode(Symbol(string(node.name)), [discrete_node], distributions)
+    continuous_node = ContinuousChildNode(Symbol(string(node.name)), [discrete_node], distributions)
 
     children = get_children(ebn, node)
     children = filter(x -> x.name in [j.name for j in children], nodes)
@@ -32,7 +32,7 @@ function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousRootNode
     return nodes
 end
 
-function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousStandardNode, intervals::Vector{Vector{Float64}}, variance::Real)
+function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousChildNode, intervals::Vector{Vector{Float64}}, variance::Real)
     ## Check intervals
     verify_intervals(intervals)
     lower_buond = minimum(support(i).lb for i in values(node.distributions))
@@ -48,7 +48,7 @@ function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousStandard
         states[key] = Dict(Symbol.(intervals) .=> f_d.(dist, intervals))
     end
 
-    discrete_node = DiscreteStandardNode(Symbol(string(node.name) * "_d"), node.parents, states)
+    discrete_node = DiscreteChildNode(Symbol(string(node.name) * "_d"), node.parents, states)
 
     ## Approximation function is a truncated normal (thicker tails)
     f_c = i -> begin
@@ -58,7 +58,7 @@ function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousStandard
 
     distributions = Dict([Symbol(i)] => f_c(i) for i in intervals)
 
-    continuous_node = ContinuousStandardNode(Symbol(string(node.name)), [discrete_node], distributions)
+    continuous_node = ContinuousChildNode(Symbol(string(node.name)), [discrete_node], distributions)
 
     children = get_children(ebn, node)
     children = filter(x -> x.name in [j.name for j in children], nodes)

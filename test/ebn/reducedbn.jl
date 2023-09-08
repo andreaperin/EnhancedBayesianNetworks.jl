@@ -1,5 +1,4 @@
 @testset "Reduced Bayesian Networks" begin
-
     @testset "Node Elimination" begin
         badjlist = Vector{Vector{Int}}([[], [1], [1, 2]])
         fadjlist = Vector{Vector{Int}}([[2, 3], [3], []])
@@ -46,10 +45,10 @@
         root2 = DiscreteRootNode(:z, Dict(:y => 0.2, :n => 0.8), Dict(:y => [Parameter(1, :z)], :n => [Parameter(0, :z)]))
 
         states_child1 = Dict([:yes] => Dict(:a => 0.5, :b => 0.5), [:no] => Dict(:a => 0.5, :b => 0.5))
-        child1 = DiscreteStandardNode(:child1, [root1], states_child1, Dict(:a => [Parameter(1, :child1)], :b => [Parameter(0, :child1)]))
+        child1 = DiscreteChildNode(:child1, [root1], states_child1, Dict(:a => [Parameter(1, :child1)], :b => [Parameter(0, :child1)]))
 
         distributions_child2 = Dict([:a] => Normal(), [:b] => Normal(2, 2))
-        child2 = ContinuousStandardNode(:child2, [child1], distributions_child2)
+        child2 = ContinuousChildNode(:child2, [child1], distributions_child2)
 
         model = Model(df -> sqrt.(df.child1 .^ 2 + df.child2 .- df.z .^ 2), :value1)
 
@@ -93,10 +92,10 @@
         root3 = ContinuousRootNode(:z, Normal())
 
         standard1_states = Dict([:yes, :y] => Dict(:a => 0.2, :b => 0.8), [:no, :y] => Dict(:a => 0.3, :b => 0.7), [:yes, :n] => Dict(:a => 0.4, :b => 0.6), [:no, :n] => Dict(:a => 0.5, :b => 0.5))
-        standard1_node = DiscreteStandardNode(:α, [root1, root2], standard1_states, Dict(:a => [Parameter(1, :α)], :b => [Parameter(0, :α)]))
+        standard1_node = DiscreteChildNode(:α, [root1, root2], standard1_states, Dict(:a => [Parameter(1, :α)], :b => [Parameter(0, :α)]))
 
         standard2_states = Dict([:yes] => Normal(), [:no] => Normal(2, 2))
-        standard2_node = ContinuousStandardNode(:β, [root1], standard2_states)
+        standard2_node = ContinuousChildNode(:β, [root1], standard2_states)
 
         functional1_model = Model(df -> sqrt.(df.x .^ 2 + df.β .^ 2), :value1)
         functional1_models = Dict([:y] => [functional1_model], [:n] => [functional1_model])
@@ -156,7 +155,7 @@
             [:n, :no] => Dict(:a => 0.5, :b => 0.5)
         )
         standard1_parameters = Dict(:a => [Parameter(3, :α)], :b => [Parameter(10, :α)])
-        standard1_node = DiscreteStandardNode(standard1_name, standard1_parents, standard1_states, standard1_parameters)
+        standard1_node = DiscreteChildNode(standard1_name, standard1_parents, standard1_states, standard1_parameters)
 
         standard2_name = :β
         standard2_parents = [root1]
@@ -168,7 +167,7 @@
             [:y] => Normal(),
             [:n] => Normal(2, 2)
         )
-        standard2_node = ContinuousStandardNode(standard2_name, standard2_parents, standard2_states)
+        standard2_node = ContinuousChildNode(standard2_name, standard2_parents, standard2_states)
 
         functional1_name = :f1
         functional1_parents = [root2, standard2_node]

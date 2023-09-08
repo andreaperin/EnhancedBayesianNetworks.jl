@@ -8,21 +8,6 @@ function ReducedBayesianNetwork(nodes_::Vector{<:AbstractNode})
     nodes = deepcopy(nodes_)
     ordered_dag, ordered_nodes, ordered_name_to_index = _topological_ordered_dag(nodes)
     rbn = ReducedBayesianNetwork(ordered_dag, ordered_nodes, ordered_name_to_index)
-    # continuous_nodes = filter(j -> !isa(j, FunctionalNode), (filter(x -> isa(x, ContinuousNode), nodes)))
-    # a = isempty.([i.intervals for i in continuous_nodes])
-    # evidence_node = continuous_nodes[.!a]
-    # while !isempty(evidence_node)
-    #     if isa(evidence_node[1], RootNode)
-    #         nodes = _discretize_node(ebn, evidence_node[1], evidence_node[1].intervals)
-    #         ordered_dag, ordered_nodes, ordered_name_to_index = _topological_ordered_dag(nodes)
-    #         ebn = ReducedBayesianNetwork(ordered_dag, ordered_nodes, ordered_name_to_index)
-    #     elseif isa(evidence_node[1], StandardNode)
-    #         nodes = _discretize_node(ebn, evidence_node[1], evidence_node[1].intervals, evidence_node[1].sigma)
-    #         ordered_dag, ordered_nodes, ordered_name_to_index = _topological_ordered_dag(nodes)
-    #         ebn = ReducedBayesianNetwork(ordered_dag, ordered_nodes, ordered_name_to_index)
-    #     end
-    #     popfirst!(evidence_node)
-    # end
     return rbn
 end
 
@@ -40,18 +25,6 @@ function get_neighbors(ebn::ReducedBayesianNetwork, node::N) where {N<:AbstractN
     i = ebn.name_to_index[node.name]
     [ebn.nodes[j] for j in unique(append!(inneighbors(ebn.dag, i), outneighbors(ebn.dag, i)))]
 end
-
-# function plot(ebn::ReducedBayesianNetwork)
-#     graphplot(
-#         ebn.dag,
-#         names=[i.name for i in ebn.nodes],
-#         # nodesize=map(x -> isa(x, ContinuousNode) ? Float64(0.2) : Float64(0.1), ebn.nodes),
-#         font_size=14,
-#         node_shape=map(x -> isa(x, ContinuousNode) ? :circle : :rect, ebn.nodes),
-#         markercolor=map(x -> isa(x, DiscreteFunctionalNode) ? "lightgreen" : "orange", ebn.nodes),
-#         linecolor=:darkgrey,
-#     )
-# end
 
 function reduce_ebn_markov_envelopes(ebn::EnhancedBayesianNetwork)
     markov_envelopes = markov_envelope(ebn)
@@ -163,7 +136,7 @@ function evaluate_ebn(ebn::EnhancedBayesianNetwork, markov::Bool=true)
                 node.parents = srp_node.parents
 
                 results = map(zip(keys(srp_node.srps), values(srp_node.srps))) do (comb, srp)
-                    @show(comb, srp)
+                    # @show(comb, srp)
                     return (comb, probability_of_failure(srp.models, srp.performance, srp.inputs, srp.simulation))
                 end
 
@@ -198,7 +171,7 @@ end
 function _update_network_with_evaluation(
     net::Union{EnhancedBayesianNetwork,ReducedBayesianNetwork},
     old_node::DiscreteFunctionalNode,
-    new_node::DiscreteStandardNode
+    new_node::DiscreteChildNode
 )
     children = get_children(net, old_node)
     for child in children
@@ -215,14 +188,13 @@ end
 function _map_functional_to_standard_node(node::DiscreteFunctionalNode)
     f = x -> Dict(Symbol("fail_" * String(node.name)) => x, Symbol("safe_" * String(node.name)) => 1 - x)
     states = Dict(map((k, v) -> (k, f.(v)), keys(node.pf), values(node.pf)))
-    return DiscreteStandardNode(node.name, node.parents, states, node.parameters)
+    return DiscreteChildNode(node.name, node.parents, states, node.parameters)
 end
 
 function _build_structuralreliabilityproblem_node(rbn::ReducedBayesianNetwork, ebn::EnhancedBayesianNetwork, node::DiscreteFunctionalNode)
     ebn_discrete_parents = filter(x -> isa(x, DiscreteNode), get_parents(ebn, node))
     ebn_continuous_parents = filter(x -> isa(x, ContinuousNode), get_parents(ebn, node))
 
-    ##TODO error here!
     rbn_discrete_parents = filter(x -> isa(x, DiscreteNode), get_parents(rbn, node))
     rbn_discrete_parents_combination = vec(collect(Iterators.product(_get_states.(rbn_discrete_parents)...)))
     rbn_discrete_parents_combination = map(x -> [i for i in x], rbn_discrete_parents_combination)
@@ -245,7 +217,7 @@ function _build_structuralreliabilityproblem_node(rbn::ReducedBayesianNetwork, e
         elseif isempty(ebn_continuous_parents) && !isnothing(ebn_node.simulations)
             error("when a functional node has no Continuous parents one simulation is enough")
         elseif !isempty(ebn_continuous_parents) && isnothing(ebn_node.simulations)
-            error("whene a functional node has at least 1 Continuous parents, SRMs are required to compute the CPT")
+            error("when a functional node has at least 1 Continuous parents, SRMs are required to compute the CPT")
         else
             uq_randomvariables = mapreduce(p -> get_randomvariable(p, evidence), vcat, ebn_continuous_parents)
             simulations = get_simulation(ebn_node, evidence)
@@ -279,6 +251,3 @@ function _get_failure_probability(srp::EnhancedBayesianNetworks.StructuralReliab
     pf[comb], cov[comb], samples[comb] = probability_of_failure(srp.models, srp.performance, srp.inputs, srp.simulation)
     return pf, cov, samples
 end
-
-
-# Base.get(rbn::ReducedBayesianNetwork, node::Symbol)

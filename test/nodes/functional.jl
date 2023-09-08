@@ -23,7 +23,7 @@
 
         root2 = DiscreteRootNode(:y, Dict(:y => 0.4, :n => 0.6), Dict(:y => [Parameter(2.2, :y)], :n => [Parameter(5.5, :y)]))
 
-        @test_throws ErrorException("defined combinations must be equal to the discrete parents combinations") ContinuousFunctionalNode(name, [root1, root2, root3], models)
+        @test_throws ErrorException("In node child, defined combinations are not equal to the theorical discrete parents combinations: [[:yes, :n] [:yes, :y]; [:no, :n] [:no, :y]]") ContinuousFunctionalNode(name, [root1, root2, root3], models)
 
         models = Dict(
             [:yes, :n] => [model],
@@ -32,14 +32,14 @@
             [:no, :yep] => [model]
         )
 
-        @test_throws ErrorException("StandardNode state's keys must contain state from parent and the order of the parents states must be coherent with the order of the parents defined in node.parents") ContinuousFunctionalNode(name, [root1, root2, root3], models)
+        @test_throws ErrorException("In node child, defined parents states are not coherent with its discrete parents states") ContinuousFunctionalNode(name, [root1, root2, root3], models)
 
         models = Dict(
             [:yes, :n] => [model],
             [:yes, :y] => [model],
             [:no, :n] => [model],
         )
-        @test_throws ErrorException("defined combinations must be equal to the discrete parents combinations") ContinuousFunctionalNode(name, [root1, root2, root3], models)
+        @test_throws ErrorException("In node child, defined combinations are not equal to the theorical discrete parents combinations: [[:yes, :n] [:yes, :y]; [:no, :n] [:no, :y]]") ContinuousFunctionalNode(name, [root1, root2, root3], models)
 
         models = Dict(
             [:yes, :n] => [model],
@@ -57,7 +57,7 @@
 
         @test get_randomvariable(node, evidence) == RandomVariable(Normal(), :z)
 
-        @test_throws ErrorException("evidence does not contain all the parents of the ContinuousFunctionalNode") get_models(node, evidence)
+        @test_throws ErrorException("evidence [:a] does not contain all the parents of the ContinuousChildNode child") get_models(node, evidence)
 
         evidence = [:yes, :n]
         @test get_randomvariable(node, evidence) == RandomVariable(Normal{Float64}(0.0, 1.0), :z)
@@ -92,14 +92,14 @@
             [:no, :n] => df -> 1 .- 2 .* df.value1,
             [:no, :y] => df -> 1 .- 2 .* df.value1
         )
-        @test_throws ErrorException("defined parent nodes states must be equal to the number of discrete parent nodes") DiscreteFunctionalNode(name, parents, models, performances, simulations)
+        @test_throws ErrorException("In node child, defined parents states differ from number of its discrete parents") DiscreteFunctionalNode(name, parents, models, performances, simulations)
 
         models = Dict(
             [:yes, :n] => [model],
             [:yes, :y] => [model],
             [:no, :y] => [model]
         )
-        @test_throws ErrorException("defined combinations must be equal to the discrete parents combinations") DiscreteFunctionalNode(name, parents, models, performances, simulations)
+        @test_throws ErrorException("In node child, defined combinations are not equal to the theorical discrete parents combinations: [[:yes, :n], [:no, :n], [:yes, :y], [:no, :y]]") DiscreteFunctionalNode(name, parents, models, performances, simulations)
 
         models = Dict(
             [:yes, :maybe] => [model],
@@ -107,7 +107,7 @@
             [:no, :y] => [model],
             [:no, :n] => [model]
         )
-        @test_throws ErrorException("StandardNode state's keys must contain state from parent and the order of the parents states must be coherent with the order of the parents defined in node.parents") DiscreteFunctionalNode(name, parents, models, performances, simulations)
+        @test_throws ErrorException("In node child, defined parents states are not coherent with its discrete parents states") DiscreteFunctionalNode(name, parents, models, performances, simulations)
 
         models = Dict(
             [:yes, :n] => [model],
@@ -126,11 +126,11 @@
 
         evidence = [:yes]
 
-        @test_throws ErrorException("evidence does not contain all the parents of the DiscreteFunctionalNode") get_models(node, evidence)
+        @test_throws ErrorException("evidence [:yes] does not contain all the parents of child") get_models(node, evidence)
 
-        @test_throws ErrorException("evidence does not contain all the parents of the DiscreteFunctionalNode") get_performance(node, evidence)
+        @test_throws ErrorException("evidence [:yes] does not contain all the parents of child") get_performance(node, evidence)
 
-        @test_throws ErrorException("evidence does not contain all the parents of the DiscreteFunctionalNode") get_simulation(node, evidence)
+        @test_throws ErrorException("evidence [:yes] does not contain all the parents of child") get_simulation(node, evidence)
 
         evidence = [:yes, :n]
 

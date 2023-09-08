@@ -1,4 +1,3 @@
-
 struct InferenceState
     bn::BayesianNetwork
     query::Vector{Symbol}

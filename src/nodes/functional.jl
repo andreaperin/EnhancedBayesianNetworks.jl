@@ -14,13 +14,13 @@ mutable struct ContinuousFunctionalNode <: ContinuousNode
 
         for i in [models]
             for (key, _) in i
-                length(discrete_parents) != length(key) && error("defined parent nodes states must be equal to the number of discrete parent nodes")
+                length(discrete_parents) != length(key) && error("In node $name, defined parents states differ from number of its discrete parents")
 
-                any([k ∉ _get_states(discrete_parents[i]) for (i, k) in enumerate(key)]) && error("StandardNode state's keys must contain state from parent and the order of the parents states must be coherent with the order of the parents defined in node.parents")
+                any([k ∉ _get_states(discrete_parents[i]) for (i, k) in enumerate(key)]) && error("In node $name, defined parents states are not coherent with its discrete parents states")
             end
             discrete_parents_combination = Iterators.product(_get_states.(discrete_parents)...)
             discrete_parents_combination = map(t -> [t...], discrete_parents_combination)
-            length(discrete_parents_combination) != length(i) && error("defined combinations must be equal to the discrete parents combinations")
+            length(discrete_parents_combination) != length(i) && error("In node $name, defined combinations are not equal to the theorical discrete parents combinations: $discrete_parents_combination")
         end
 
         return new(name, parents, models)
@@ -35,7 +35,8 @@ end
 
 function get_models(node::ContinuousFunctionalNode, evidence::Vector{Symbol})
     node_keys = keys(node.models) |> collect
-    all(.![issubset(i, evidence) for i in keys(node.models)]) && error("evidence does not contain all the parents of the ContinuousFunctionalNode")
+    name = node.name
+    all(.![issubset(i, evidence) for i in keys(node.models)]) && error("evidence $evidence does not contain all the parents of the ContinuousChildNode $name")
     key = node_keys[findfirst([issubset(evidence, i) for i in node_keys])]
     return node.models[key]
 end
@@ -79,14 +80,14 @@ mutable struct DiscreteFunctionalNode <: DiscreteNode
 
             for i in [models, performances, simulations]
                 for (key, _) in i
-                    length(discrete_parents) != length(key) && error("defined parent nodes states must be equal to the number of discrete parent nodes")
+                    length(discrete_parents) != length(key) && error("In node $name, defined parents states differ from number of its discrete parents")
 
-                    any([k ∉ _get_states(discrete_parents[i]) for (i, k) in enumerate(key)]) && error("StandardNode state's keys must contain state from parent and the order of the parents states must be coherent with the order of the parents defined in node.parents")
+                    any([k ∉ _get_states(discrete_parents[i]) for (i, k) in enumerate(key)]) && error("In node $name, defined parents states are not coherent with its discrete parents states")
                 end
 
                 discrete_parents_combination = vec(collect(Iterators.product(_get_states.(discrete_parents)...)))
                 discrete_parents_combination = map(x -> [i for i in x], discrete_parents_combination)
-                length(discrete_parents_combination) != length(i) && error("defined combinations must be equal to the discrete parents combinations")
+                length(discrete_parents_combination) != length(i) && error("In node $name, defined combinations are not equal to the theorical discrete parents combinations: $discrete_parents_combination")
             end
         end
         pf = Dict{Vector{Symbol},Real}()
@@ -117,21 +118,24 @@ end
 
 function get_models(node::DiscreteFunctionalNode, evidence::Vector{Symbol})
     node_keys = keys(node.models) |> collect
-    all(.![issubset(i, evidence) for i in keys(node.models)]) && error("evidence does not contain all the parents of the DiscreteFunctionalNode")
+    name = node.name
+    all(.![issubset(i, evidence) for i in keys(node.models)]) && error("evidence $evidence does not contain all the parents of $name")
     key = node_keys[findfirst([issubset(i, evidence) for i in node_keys])]
     return node.models[key]
 end
 
 function get_performance(node::DiscreteFunctionalNode, evidence::Vector{Symbol})
     node_keys = keys(node.performances) |> collect
-    all(.![issubset(i, evidence) for i in keys(node.performances)]) && error("evidence does not contain all the parents of the DiscreteFunctionalNode")
+    name = node.name
+    all(.![issubset(i, evidence) for i in keys(node.performances)]) && error("evidence $evidence does not contain all the parents of $name")
     key = node_keys[findfirst([issubset(i, evidence) for i in node_keys])]
     return node.performances[key]
 end
 
 function get_simulation(node::DiscreteFunctionalNode, evidence::Vector{Symbol})
     node_keys = keys(node.simulations) |> collect
-    all(.![issubset(i, evidence) for i in keys(node.simulations)]) && error("evidence does not contain all the parents of the DiscreteFunctionalNode")
+    name = node.name
+    all(.![issubset(i, evidence) for i in keys(node.simulations)]) && error("evidence $evidence does not contain all the parents of $name")
     key = node_keys[findfirst([issubset(i, evidence) for i in node_keys])]
     return node.simulations[key]
 end
@@ -146,7 +150,6 @@ function Base.hash(node::DiscreteFunctionalNode, h::UInt)
     h = hash(node.models, h)
     h = hash(node.performances, h)
     h = hash(node.simulations, h)
-
     return h
 end
 

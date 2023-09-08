@@ -7,6 +7,6 @@ const AbstractSimulation = Union{AbstractMonteCarlo,LineSampling,SubSetSimulatio
 # include("evidencedistribution.jl")
 include("functional.jl")
 include("root.jl")
-include("standard.jl")
+include("child.jl")
 include("structuralreliabilityproblemnode.jl")
 

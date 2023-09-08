@@ -45,8 +45,8 @@
 
         @test EnhancedBayesianNetworks._get_states(node) == [:yes, :no]
 
-        @test_throws ErrorException("evidence does not contain DiscreteRootNode") get_parameters(node, [:y])
-        @test_throws ErrorException("node does has an empty parameters vector") get_parameters(node_, [:y, :yes])
+        @test_throws ErrorException("evidence [:y] does not contain x") get_parameters(node, [:y])
+        @test_throws ErrorException("node x has an empty parameters vector") get_parameters(node_, [:y, :yes])
 
         @test get_parameters(node, [:yes]) == [Parameter(2, :d)]
 

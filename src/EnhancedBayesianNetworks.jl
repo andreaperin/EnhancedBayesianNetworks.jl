@@ -24,17 +24,17 @@ export BayesianNetwork
 export ConditionalProbabilityDistribution
 export ContinuousFunctionalNode
 export ContinuousRootNode
-export ContinuousStandardNode
+export ContinuousChildNode
 export DiscreteFunctionalNode
 export DiscreteRootNode
-export DiscreteStandardNode
+export DiscreteChildNode
 export EnhancedBayesianNetwork
 export Factor
 export FunctionalNode
 export InferenceState
 export RootNode
 export ReducedBayesianNetwork
-export StandardNode
+export ChildNode
 
 # Constants
 const Evidence = Dict{Symbol,Symbol}

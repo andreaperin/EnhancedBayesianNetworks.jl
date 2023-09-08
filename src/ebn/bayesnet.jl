@@ -46,11 +46,3 @@ function get_cpd(bn::BayesianNetwork, i::Int)
 end
 
 get_cpd(bn::BayesianNetwork, name::Symbol) = get_cpd(bn, bn.name_to_index[name])
-
-# function _get_discretestandardnode(node::DiscreteFunctionalNode)
-#     states = Dict{Vector{Symbol},Dict{Symbol,Float64}}()
-#     for (k, v) in node.pf
-#         states[k] = Dict(:f => v, :s => 1 - v)
-#     end
-#     return DiscreteStandardNode(node.name, node.parents, states)
-# end

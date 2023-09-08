@@ -24,7 +24,7 @@ function EnhancedBayesianNetwork(nodes_::Vector{<:AbstractNode})
             nodes = _discretize_node(ebn, evidence_node[1], evidence_node[1].intervals)
             ordered_dag, ordered_nodes, ordered_name_to_index = _topological_ordered_dag(nodes)
             ebn = EnhancedBayesianNetwork(ordered_dag, ordered_nodes, ordered_name_to_index)
-        elseif isa(evidence_node[1], StandardNode)
+        elseif isa(evidence_node[1], ChildNode)
             nodes = _discretize_node(ebn, evidence_node[1], evidence_node[1].intervals, evidence_node[1].sigma)
             ordered_dag, ordered_nodes, ordered_name_to_index = _topological_ordered_dag(nodes)
             ebn = EnhancedBayesianNetwork(ordered_dag, ordered_nodes, ordered_name_to_index)
@@ -64,18 +64,6 @@ function _topological_ordered_dag(nodes::Vector{<:AbstractNode})
     ordered_dag = _build_digraph(ordered_nodes)
     return ordered_dag, ordered_nodes, ordered_name_to_index
 end
-
-# function plot(ebn::EnhancedBayesianNetwork)
-#     graphplot(
-#         ebn.dag,
-#         names=[i.name for i in ebn.nodes],
-#         # nodesize=map(x -> isa(x, ContinuousNode) ? Float64(0.2) : Float64(0.1), ebn.nodes),
-#         font_size=14,
-#         node_shape=map(x -> isa(x, ContinuousNode) ? :circle : :rect, ebn.nodes),
-#         markercolor=map(x -> isa(x, DiscreteFunctionalNode) ? "lightgreen" : "orange", ebn.nodes),
-#         linecolor=:darkgrey,
-#     )
-# end
 
 function get_children(ebn::EnhancedBayesianNetwork, node::N) where {N<:AbstractNode}
     i = ebn.name_to_index[node.name]
