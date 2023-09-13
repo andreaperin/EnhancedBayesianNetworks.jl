@@ -138,7 +138,7 @@ function _create_ebn_from_envelope(ebn::EnhancedBayesianNetwork, envelope::Vecto
     EnhancedBayesianNetwork(unique!(nodes))
 end
 
-function _get_node_given_state(ebn::EnhancedBayesianNetwork, state::Symbol)
-    nodes = filter(x -> !isa(x, DiscreteFunctionalNode) && isa(x, DiscreteNode), ebn.nodes)
-    [node for node in nodes if state ∈ _get_states(node)][1]
-end
+# function _get_node_given_state(ebn::EnhancedBayesianNetwork, state::Symbol)
+#     nodes = filter(x -> !isa(x, DiscreteFunctionalNode) && isa(x, DiscreteNode), ebn.nodes)
+#     [node for node in nodes if state ∈ _get_states(node)][1]
+# end
