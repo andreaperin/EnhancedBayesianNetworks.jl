@@ -14,16 +14,21 @@
             [:yes, :y] => [model],
             [:no, :n] => [model],
         )
+        simulations = Dict(
+            [:yes, :n] => MonteCarlo(200),
+            [:yes, :y] => MonteCarlo(200),
+            [:no, :n] => MonteCarlo(200),
+        )
 
-        @test_throws ErrorException("all discrete parents of a functional node must have different named states") ContinuousFunctionalNode(name, parents, models)
+        @test_throws ErrorException("all discrete parents of a functional node must have different named states") ContinuousFunctionalNode(name, parents, models, simulations)
 
         root2 = DiscreteRootNode(:y, Dict(:y => 0.4, :n => 0.6))
 
-        @test_throws ErrorException("all discrete parents of a functional node must have a non-empty parameters dictionary") ContinuousFunctionalNode(name, [root1, root2, root3], models)
+        @test_throws ErrorException("all discrete parents of a functional node must have a non-empty parameters dictionary") ContinuousFunctionalNode(name, [root1, root2, root3], models, simulations)
 
         root2 = DiscreteRootNode(:y, Dict(:y => 0.4, :n => 0.6), Dict(:y => [Parameter(2.2, :y)], :n => [Parameter(5.5, :y)]))
 
-        @test_throws ErrorException("In node child, defined combinations are not equal to the theorical discrete parents combinations: [[:yes, :n] [:yes, :y]; [:no, :n] [:no, :y]]") ContinuousFunctionalNode(name, [root1, root2, root3], models)
+        @test_throws ErrorException("In node child, defined combinations are not equal to the theorical discrete parents combinations: [[:yes, :n] [:yes, :y]; [:no, :n] [:no, :y]]") ContinuousFunctionalNode(name, [root1, root2, root3], models, simulations)
 
         models = Dict(
             [:yes, :n] => [model],
@@ -32,14 +37,14 @@
             [:no, :yep] => [model]
         )
 
-        @test_throws ErrorException("In node child, defined parents states are not coherent with its discrete parents states") ContinuousFunctionalNode(name, [root1, root2, root3], models)
+        @test_throws ErrorException("In node child, defined parents states are not coherent with its discrete parents states") ContinuousFunctionalNode(name, [root1, root2, root3], models, simulations)
 
         models = Dict(
             [:yes, :n] => [model],
             [:yes, :y] => [model],
             [:no, :n] => [model],
         )
-        @test_throws ErrorException("In node child, defined combinations are not equal to the theorical discrete parents combinations: [[:yes, :n] [:yes, :y]; [:no, :n] [:no, :y]]") ContinuousFunctionalNode(name, [root1, root2, root3], models)
+        @test_throws ErrorException("In node child, defined combinations are not equal to the theorical discrete parents combinations: [[:yes, :n] [:yes, :y]; [:no, :n] [:no, :y]]") ContinuousFunctionalNode(name, [root1, root2, root3], models, simulations)
 
         models = Dict(
             [:yes, :n] => [model],
@@ -47,7 +52,16 @@
             [:no, :n] => [model],
             [:no, :y] => [model]
         )
-        node = ContinuousFunctionalNode(name, [root1, root2, root3], models)
+        simulations = Dict(
+            [:yes, :n] => MonteCarlo(200),
+            [:yes, :y] => MonteCarlo(200),
+            [:no, :n] => MonteCarlo(200),
+            [:no, :y] => MonteCarlo(200)
+        )
+
+        ContinuousFunctionalNode(name, [root1, root2, root3], models, simulations)
+
+        node = ContinuousFunctionalNode(name, [root1, root2, root3], models, simulations)
 
         @test node.name == name
         @test issetequal(node.parents, [root1, root2, root3])
@@ -59,9 +73,13 @@
 
         @test_throws ErrorException("evidence [:a] does not contain all the parents of the ContinuousChildNode child") get_models(node, evidence)
 
+        @test_throws ErrorException("evidence [:a] does not contain all the parents of the ContinuousChildNode child") get_simulation(node, evidence)
+
         evidence = [:yes, :n]
         @test get_randomvariable(node, evidence) == RandomVariable(Normal{Float64}(0.0, 1.0), :z)
         @test get_models(node, evidence) == [model]
+        @test get_simulation(node, evidence) == MonteCarlo(200)
+
     end
 
     @testset "DiscreteFunctionalNode" begin
