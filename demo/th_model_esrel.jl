@@ -1,6 +1,6 @@
 using EnhancedBayesianNetworks
 using Plots
-# using JLD2
+using JLD2
 
 include("./TH_model/1_model_build/model_builder.jl")
 include("./TH_model/1_model_build/heads_model.jl")
@@ -14,7 +14,7 @@ porosity_states = Dict(
     [:earthquake] => truncated(Normal(0.1, 0.05); lower=0, upper=4),
     [:no_earthquake] => truncated(Normal(3.0, 0.05); lower=0, upper=4)
 )
-porosity_node = ContinuousStandardNode(porosity_name, porosity_parents, porosity_states)
+porosity_node = ContinuousChildNode(porosity_name, porosity_parents, porosity_states)
 
 kx = ContinuousRootNode(:KX, truncated(Normal(9.81 * 10^(-6), 10^(-4)); lower=0, upper=0.001))
 kz = ContinuousRootNode(:KZ, truncated(Normal(9.81 * 10^(-6), 10^(-4)); lower=0, upper=0.001))
@@ -32,7 +32,7 @@ diff_coeff_states = Dict(
     [:astoday] => truncated(Normal(2 * 10^(-8), 10^(-7)); lower=0, upper=0.00001),
     [:cooling] => truncated(Normal(2 * 10^(-9), 10^(-6)); lower=0, upper=0.00001)
 )
-diff_coeff_node = ContinuousStandardNode(diff_coeff_name, diff_coeff_parents, diff_coeff_states)
+diff_coeff_node = ContinuousChildNode(diff_coeff_name, diff_coeff_parents, diff_coeff_states)
 
 
 ## EXTREMERAIN => head_factor Par
@@ -86,10 +86,13 @@ output_file = "smoker_cxz.plt"
 
 ###################################################################################################################
 
-model0 = HeadsModel(df -> heads_values(df))
-model1 = build_th_model(sourcedir, inputs, [concentration_radionuclides(output_file)], numberformats, true)
-model2 = UncertaintyQuantification.Model(df -> sum_surface_concentration(df), :surface_conc)
-models = [model0, model1, model2]
+# model0 = HeadsModel(df -> heads_values(df))
+# model1 = build_th_model(sourcedir, inputs, [concentration_radionuclides(output_file)], numberformats, true)
+# model2 = UncertaintyQuantification.Model(df -> sum_surface_concentration(df), :surface_conc)
+# models = [model0, model1, model2]
+@load "./TH_model/Projects_Unix/230821_1752/SteadyState_GWflow/100000_days/Result_PCE/3PCE_GQ_Leg.jld2"
+pce_model = pceGQ_leg
+models = [pce_model]
 performance = df -> 0.9 .- df.surface_conc
 
 
@@ -105,37 +108,37 @@ functional_models = Dict(
 )
 
 functional_simulations = Dict(
-    [:extremerain, :short, :steadystate] => MonteCarlo(2),
-    [:extremerain, :short, :transient] => MonteCarlo(2),
-    [:extremerain, :long, :steadystate] => MonteCarlo(2),
-    [:extremerain, :long, :transient] => MonteCarlo(2),
-    [:no_extremerain, :short, :steadystate] => MonteCarlo(2),
-    [:no_extremerain, :short, :transient] => MonteCarlo(2),
-    [:no_extremerain, :long, :steadystate] => MonteCarlo(2),
-    [:no_extremerain, :long, :transient] => MonteCarlo(2)
+    [:extremerain, :short, :steadystate] => MonteCarlo(200),
+    [:extremerain, :short, :transient] => MonteCarlo(200),
+    [:extremerain, :long, :steadystate] => MonteCarlo(200),
+    [:extremerain, :long, :transient] => MonteCarlo(200),
+    [:no_extremerain, :short, :steadystate] => MonteCarlo(200),
+    [:no_extremerain, :short, :transient] => MonteCarlo(200),
+    [:no_extremerain, :long, :steadystate] => MonteCarlo(200),
+    [:no_extremerain, :long, :transient] => MonteCarlo(200)
 )
 
-functional_performances = Dict(
-    [:extremerain, :short, :steadystate] => df -> 0.9 .- df.surface_conc,
-    [:extremerain, :short, :transient] => df -> 0.9 .- df.surface_conc,
-    [:extremerain, :long, :steadystate] => df -> 0.9 .- df.surface_conc,
-    [:extremerain, :long, :transient] => df -> 0.9 .- df.surface_conc,
-    [:no_extremerain, :short, :steadystate] => df -> 0.9 .- df.surface_conc,
-    [:no_extremerain, :short, :transient] => df -> 0.9 .- df.surface_conc,
-    [:no_extremerain, :long, :steadystate] => df -> 0.9 .- df.surface_conc,
-    [:no_extremerain, :long, :transient] => df -> 0.9 .- df.surface_conc
-)
+# functional_performances = Dict(
+#     [:extremerain, :short, :steadystate] => df -> 0.9 .- df.surface_conc,
+#     [:extremerain, :short, :transient] => df -> 0.9 .- df.surface_conc,
+#     [:extremerain, :long, :steadystate] => df -> 0.9 .- df.surface_conc,
+#     [:extremerain, :long, :transient] => df -> 0.9 .- df.surface_conc,
+#     [:no_extremerain, :short, :steadystate] => df -> 0.9 .- df.surface_conc,
+#     [:no_extremerain, :short, :transient] => df -> 0.9 .- df.surface_conc,
+#     [:no_extremerain, :long, :steadystate] => df -> 0.9 .- df.surface_conc,
+#     [:no_extremerain, :long, :transient] => df -> 0.9 .- df.surface_conc
+# )
 
-functional_node = DiscreteFunctionalNode(functional_name, functional_parents, functional_models, functional_performances, functional_simulations)
+functional_node = ContinuousFunctionalNode(functional_name, functional_parents, functional_models, functional_simulations)
 
 nodes = [earthquake, global_warming, porosity_node, kz, kx, disp_long_hz, disp_long_vr, diff_coeff_node, extremerain, timescenario, flowtype, functional_node]
 
 ebn = EnhancedBayesianNetwork(nodes)
 
-# EnhancedBayesianNetworks.plot(ebn, :spring, 0.1, 8)
+EnhancedBayesianNetworks.plot(ebn, :spring, 0.1, 8)
 # Plots.savefig("/Users/andreaperin_macos/Documents/PhD/3_Academic/Papers_Presentations/Conferences/2023_ESREL/ExtendedAbstract-Template/imgs/ebn_salt_dome.png")
 
-# rbn = reduce_ebn_standard(ebn)
+rbn = reduce_ebn_standard(ebn)
 # EnhancedBayesianNetworks.plot(rbn, :spring, 0.1, 8)
 # Plots.savefig("/Users/andreaperin_macos/Documents/PhD/3_Academic/Papers_Presentations/Conferences/2023_ESREL/ExtendedAbstract-Template/imgs/Rbn_salt_dome.png")
 a = evaluate_ebn(ebn)

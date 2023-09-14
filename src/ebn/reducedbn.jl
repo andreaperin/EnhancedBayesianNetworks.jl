@@ -35,11 +35,12 @@ end
 function reduce_ebn_standard(ebn::EnhancedBayesianNetwork)
     ## Always starts with the link to the continuous nodes with fewest parents
     rbn = deepcopy(ebn)
-    continuous_nodes = filter(x -> isa(x, ContinuousNode), rbn.nodes)
+    continuous_notfun_nodes = filter(x -> isa(x, ContinuousNode), rbn.nodes)
+    continuous_notfun_nodes = filter(x -> !isa(x, ContinuousFunctionalNode), continuous_notfun_nodes)
     r_dag_nodes = copy(rbn.nodes)
     r_dag = rbn.dag
-    while !isempty(continuous_nodes)
-        starting_node = continuous_nodes[findmin(map(x -> length(get_parents(rbn, x)), continuous_nodes))[2]]
+    while !isempty(continuous_notfun_nodes)
+        starting_node = continuous_notfun_nodes[findmin(map(x -> length(get_parents(rbn, x)), continuous_notfun_nodes))[2]]
         starting_node_index = findall(isequal.(repeat([starting_node], length(r_dag_nodes)), r_dag_nodes))[1]
 
         children = get_children(rbn, starting_node)
@@ -59,7 +60,7 @@ function reduce_ebn_standard(ebn::EnhancedBayesianNetwork)
         end
 
         r_dag_nodes = deleteat!(r_dag_nodes, starting_node_index)
-        deleteat!(continuous_nodes, findall(x -> x == starting_node, continuous_nodes))
+        deleteat!(continuous_notfun_nodes, findall(x -> x == starting_node, continuous_notfun_nodes))
     end
 
     ordered_rdag, ordered_rnodes, ordered_rname_to_index = _topological_ordered_dag(r_dag_nodes)
@@ -127,16 +128,48 @@ Reduced BN Operations
 ```
 function evaluate_ebn(ebn::EnhancedBayesianNetwork, markov::Bool=true)
     markov ? rbns = reduce_ebn_markov_envelopes(ebn) : rbns = [reduce_ebn_standard(ebn)]
+    ## Check if there's any Continuous Functional Node that needs to be transformed in ContinuousChildNode
     for rbn in rbns
-        functional_nodes = filter(x -> isa(x, DiscreteFunctionalNode), rbn.nodes)
-        while !isempty(functional_nodes)
-            node = functional_nodes[1]
-            if isempty(filter(x -> isa(x, DiscreteFunctionalNode), node.parents))
+        continuous_functional_nodes = filter(x -> isa(x, ContinuousFunctionalNode), rbn.nodes)
+        while !isempty(continuous_functional_nodes)
+            node = continuous_functional_nodes[1]
+            if isempty(filter(x -> isa(x, FunctionalNode), node.parents))
                 srp_node = _build_structuralreliabilityproblem_node(rbn, ebn, node)
                 node.parents = srp_node.parents
 
                 results = map(zip(keys(srp_node.srps), values(srp_node.srps))) do (comb, srp)
-                    # @show(comb, srp)
+                    samples = UncertaintyQuantification.sample(srp.inputs, 1000)
+                    evaluate!(srp.models, samples)
+                    res = samples[:, srp.models[end].output]
+                    pdf = EmpiricalDistribution(res)
+                    return (comb, pdf, samples)
+                end
+                ## Create new ContinuousChildNode
+                for (key, pdf, samples) in results
+                    node.distributions[key] = pdf
+                    node.samples[key] = samples
+                end
+                new_node = _fun2child_map(node)
+                ##TODO check how to ```updatenetwork``` for continuousfunctionalnode)
+
+
+            end
+        end
+
+
+
+
+
+
+
+        discrete_functional_nodes = filter(x -> isa(x, DiscreteFunctionalNode), rbn.nodes)
+        while !isempty(discrete_functional_nodes)
+            node = discrete_functional_nodes[1]
+            if isempty(filter(x -> isa(x, FunctionalNode), node.parents))
+                srp_node = _build_structuralreliabilityproblem_node(rbn, ebn, node)
+                node.parents = srp_node.parents
+
+                results = map(zip(keys(srp_node.srps), values(srp_node.srps))) do (comb, srp)
                     return (comb, probability_of_failure(srp.models, srp.performance, srp.inputs, srp.simulation))
                 end
 
@@ -148,20 +181,20 @@ function evaluate_ebn(ebn::EnhancedBayesianNetwork, markov::Bool=true)
                 end
 
                 f = x -> Dict(Symbol("fail_" * String(node.name)) => x, Symbol("safe_" * String(node.name)) => 1 - x)
-                new_node = _map_functional_to_standard_node(node)
+                new_node = _fun2child_map(node)
                 ## Insert new node into ebn and rbn
                 rbn = _update_network_with_evaluation(rbn, node, new_node)
                 ebn = _update_network_with_evaluation(ebn, node, new_node)
-                popfirst!(functional_nodes)
-                ## Update functional_nodes vector
-                for n in functional_nodes
+                popfirst!(discrete_functional_nodes)
+                ## Update discrete_functional_nodes vector
+                for n in discrete_functional_nodes
                     if !isempty(findall(x -> x.name == new_node.name, n.parents))
                         n.parents[findall(x -> x.name == new_node.name, n.parents)[1]] = new_node
                     end
                 end
             else
-                push!(functional_nodes, node)
-                popfirst!(functional_nodes)
+                push!(discrete_functional_nodes, node)
+                popfirst!(discrete_functional_nodes)
             end
         end
     end
@@ -185,11 +218,17 @@ function _update_network_with_evaluation(
 end
 
 
-function _map_functional_to_standard_node(node::DiscreteFunctionalNode)
+function _fun2child_map(node::DiscreteFunctionalNode)
     f = x -> Dict(Symbol("fail_" * String(node.name)) => x, Symbol("safe_" * String(node.name)) => 1 - x)
     states = Dict(map((k, v) -> (k, f.(v)), keys(node.pf), values(node.pf)))
     return DiscreteChildNode(node.name, node.parents, states, node.parameters)
 end
+
+function _fun2child_map(node::ContinuousFunctionalNode)
+    return ContinuousChildNode(node.name, node.parents, node.distributions)
+end
+
+
 
 function _build_structuralreliabilityproblem_node(rbn::ReducedBayesianNetwork, ebn::EnhancedBayesianNetwork, node::DiscreteFunctionalNode)
     ebn_discrete_parents = filter(x -> isa(x, DiscreteNode), get_parents(ebn, node))
@@ -241,6 +280,57 @@ function _build_structuralreliabilityproblem_node(rbn::ReducedBayesianNetwork, e
     e = collect(keys(srps))[1]
     parents = _get_node_given_state.(repeat([rbn], length(e)), e)
     return StructuralReliabilityProblemNode(node.name, parents, srps, node.parameters)
+end
+
+
+function _build_structuralreliabilityproblem_node(rbn::ReducedBayesianNetwork, ebn::EnhancedBayesianNetwork, node::ContinuousFunctionalNode)
+    ebn_discrete_parents = filter(x -> isa(x, DiscreteNode), get_parents(ebn, node))
+    ebn_continuous_parents = filter(x -> isa(x, ContinuousNode), get_parents(ebn, node))
+
+    rbn_discrete_parents = filter(x -> isa(x, DiscreteNode), get_parents(rbn, node))
+    rbn_discrete_parents_combination = vec(collect(Iterators.product(_get_states.(rbn_discrete_parents)...)))
+    rbn_discrete_parents_combination = map(x -> [i for i in x], rbn_discrete_parents_combination)
+    srps = Dict{Vector{Symbol},StructuralReliabilityPDF}()
+
+    for evidence in rbn_discrete_parents_combination
+
+        ebn_node = filter(x -> x.name == node.name, ebn.nodes)[1]
+        ordered_functional_node = [ebn_node]
+        get_cont_fun_parents = n -> filter(x -> isa(x, ContinuousFunctionalNode), n.parents)
+
+        if isempty(ebn_discrete_parents)
+            uq_parameters = Vector{UQInput}()
+        else
+            uq_parameters = mapreduce(p -> get_parameters(p, evidence), vcat, ebn_discrete_parents)
+        end
+        if isempty(ebn_continuous_parents) && isnothing(ebn_node.simulations)
+            uq_randomvariables = Vector{UQInput}()
+            simulations = MonteCarlo(1)
+        elseif isempty(ebn_continuous_parents) && !isnothing(ebn_node.simulations)
+            error("when a functional node has no Continuous parents one simulation is enough")
+        elseif !isempty(ebn_continuous_parents) && isnothing(ebn_node.simulations)
+            error("when a functional node has at least 1 Continuous parents, SRMs are required to compute the CPT")
+        else
+            uq_randomvariables = mapreduce(p -> get_randomvariable(p, evidence), vcat, ebn_continuous_parents)
+            simulations = get_simulation(ebn_node, evidence)
+        end
+
+        uqinputs = vcat(uq_parameters, uq_randomvariables)
+
+
+        cont_fun_parents = get_cont_fun_parents(ebn_node)
+        while !isempty(cont_fun_parents)
+            append!(ordered_functional_node, cont_fun_parents)
+            cont_fun_parents = mapreduce(p -> get_cont_fun_parents(p), vcat, cont_fun_parents)
+        end
+        # get_models(ordered_functional_node[1], evidence)
+        models = mapreduce(p -> get_models(p, evidence), vcat, reverse(ordered_functional_node))
+
+        srps[evidence] = StructuralReliabilityPDF(models, uqinputs, simulations)
+    end
+    e = collect(keys(srps))[1]
+    parents = _get_node_given_state.(repeat([rbn], length(e)), e)
+    return StructuralReliabilityProblemNode(node.name, parents, srps, Dict{Symbol,Vector{Parameter}}())
 end
 
 ##TODO (incomplete and not reliable TEST)

@@ -4,14 +4,13 @@ mutable struct ContinuousFunctionalNode <: ContinuousNode
     models::Dict{Vector{Symbol},Vector{UQModel}}
     simulations::Union{Dict{Vector{Symbol},S},Nothing} where {S<:AbstractSimulation}
     samples::Dict{Vector{Symbol},Any}
-    parameters::Dict{Symbol,Vector{Parameter}}
+    distributions::Dict{Vector{Symbol},D} where {D<:Distribution}
 
     function ContinuousFunctionalNode(
         name::Symbol,
         parents::Vector{<:AbstractNode},
         models::Dict{Vector{Symbol},Vector{M}},
         simulations::Union{Dict{Vector{Symbol},S},Nothing},
-        parameters::Dict{Symbol,Vector{Parameter}}
     ) where {M<:UQModel,S<:AbstractSimulation}
 
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
@@ -28,19 +27,10 @@ mutable struct ContinuousFunctionalNode <: ContinuousNode
             length(discrete_parents_combination) != length(i) && error("In node $name, defined combinations are not equal to the theorical discrete parents combinations: $discrete_parents_combination")
         end
         samples = Dict{Vector{Symbol},Any}()
-        return new(name, parents, models, simulations, samples, parameters)
+        distributions = Dict{Vector{Symbol},Distribution}()
+        return new(name, parents, models, simulations, samples, distributions)
     end
 end
-
-function ContinuousFunctionalNode(
-    name::Symbol,
-    parents::Vector{<:AbstractNode},
-    models::Dict{Vector{Symbol},Vector{M}},
-    simulations::Union{Dict{Vector{Symbol},S},Nothing}
-) where {M<:UQModel,S<:AbstractSimulation}
-    ContinuousFunctionalNode(name, parents, models, simulations, Dict{Symbol,Vector{Parameter}}())
-end
-
 
 ## Get all the parents random variable if the evidence gives uniques random variables 
 function get_randomvariable(node::ContinuousFunctionalNode, evidence::Vector{Symbol})
@@ -52,7 +42,7 @@ function get_models(node::ContinuousFunctionalNode, evidence::Vector{Symbol})
     node_keys = keys(node.models) |> collect
     name = node.name
     all(.![issubset(i, evidence) for i in keys(node.models)]) && error("evidence $evidence does not contain all the parents of the ContinuousChildNode $name")
-    key = node_keys[findfirst([issubset(evidence, i) for i in node_keys])]
+    key = node_keys[findfirst([issubset(i, evidence) for i in node_keys])]
     return node.models[key]
 end
 
@@ -174,6 +164,5 @@ function Base.hash(node::DiscreteFunctionalNode, h::UInt)
     h = hash(node.simulations, h)
     return h
 end
-
 
 const global FunctionalNode = Union{DiscreteFunctionalNode,ContinuousFunctionalNode}

@@ -1,7 +1,7 @@
 struct ContinuousRootNode <: ContinuousNode
     name::Symbol
     distribution::Distribution
-    intervals::Vector{Vector{Float64}}
+    intervals::Vector{Vector{Float64}} # discretization just as increasing values?
 end
 
 ContinuousRootNode(name::Symbol, distribution::Distribution) = ContinuousRootNode(name, distribution, Vector{Vector{Float64}}())
