@@ -1,17 +1,17 @@
 struct ContinuousRootNode <: ContinuousNode
     name::Symbol
     distribution::Distribution
-    intervals::Vector{Vector{Float64}} # discretization just as increasing values?
+    discretization::ExactDiscretization # discretization just as increasing values?
 end
 
-ContinuousRootNode(name::Symbol, distribution::Distribution) = ContinuousRootNode(name, distribution, Vector{Vector{Float64}}())
+ContinuousRootNode(name::Symbol, distribution::Distribution) = ContinuousRootNode(name, distribution, ExactDiscretization())
 
 function get_randomvariable(node::ContinuousRootNode, ::Vector{Symbol})
     RandomVariable(node.distribution, node.name)
 end
 
 function Base.isequal(node1::ContinuousRootNode, node2::ContinuousRootNode)
-    node1.name == node2.name && node1.distribution == node2.distribution && node1.intervals == node2.intervals
+    node1.name == node2.name && node1.distribution == node2.distribution && node1.discretization.intervals == node2.discretization.intervals
 end
 
 function Base.hash(node::ContinuousRootNode, h::UInt)

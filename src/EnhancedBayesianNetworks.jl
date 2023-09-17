@@ -1,5 +1,6 @@
 module EnhancedBayesianNetworks
 
+using DataFrames
 using Distributed
 using Distributions
 using GraphRecipes
@@ -16,8 +17,11 @@ import Base: *, sum
 
 # Types
 export AbstractNode
+export AbstractDiscretization
+export ApproximatedDiscretization
 export ContinuousNode
 export DiscreteNode
+export ExactDiscretization
 
 # struct
 export BayesianNetwork
@@ -68,10 +72,9 @@ export pdf
 export cdf
 export logpdf
 
-
+include("ebn/discretization/discretization.jl")
 include("nodes/nodes.jl")
 include("util/wrap.jl")
-include("util/interval_verification.jl")
 include("util/node_verification.jl")
 include("ebn/ebn.jl")
 include("util/plots.jl")
