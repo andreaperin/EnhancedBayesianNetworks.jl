@@ -104,24 +104,27 @@ mutable struct DiscreteChildNode <: DiscreteNode
         parameters::Dict{Symbol,Vector{Parameter}}
     ) where {T<:Real}
 
+        normalized_states = Dict{Vector{Symbol},Dict{Symbol,Real}}()
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
         for (key, val) in states
             verify_probabilities(val)
+            normalized_prob = normalize(collect(values(val)))
+            normalized_states[key] = Dict(zip(collect(keys(val)), normalized_prob))
             verify_parameters(val, parameters)
             length(discrete_parents) != length(key) && error("In node $name, defined parents states differ from number of its discrete parents")
             any([k ∉ _get_states(discrete_parents[i]) for (i, k) in enumerate(key)]) && error("In node $name, defined parents states are not coherent with its discrete parents states")
         end
 
-        node_states = [keys(s) for s in values(states)]
+        node_states = [keys(s) for s in values(normalized_states)]
         if length(reduce(intersect, node_states)) != length(reduce(union, node_states))
             error("node $name: non-coherent definition of nodes states")
         end
 
         discrete_parents_combination = Iterators.product(_get_states.(discrete_parents)...)
         discrete_parents_combination = map(t -> [t...], discrete_parents_combination)
-        length(discrete_parents_combination) != length(states) && error("In node $name, defined combinations are not equal to the theorical discrete parents combinations: $discrete_parents_combination")
+        length(discrete_parents_combination) != length(normalized_states) && error("In node $name, defined combinations are not equal to the theorical discrete parents combinations: $discrete_parents_combination")
 
-        return new(name, parents, states, covs, samples, parameters)
+        return new(name, parents, normalized_states, covs, samples, parameters)
     end
 end
 
