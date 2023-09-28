@@ -1,4 +1,4 @@
-function _build_structuralreliabilityproblem_node(ebn::EnhancedBayesianNetwork, node::DiscreteFunctionalNode)
+function _build_structuralreliabilityproblem_node(node::DiscreteFunctionalNode)
     ebn_discrete_parents = filter(x -> isa(x, DiscreteNode), node.parents)
     ebn_continuous_parents = filter(x -> isa(x, ContinuousNode), node.parents)
 
@@ -24,7 +24,7 @@ function _build_structuralreliabilityproblem_node(ebn::EnhancedBayesianNetwork, 
     return DiscreteStructuralReliabilityProblemNode(node.name, rbn_discrete_parents, srps, node.parameters)
 end
 
-function _build_structuralreliabilityproblem_node(ebn::EnhancedBayesianNetwork, node::ContinuousFunctionalNode)
+function _build_structuralreliabilityproblem_node(node::ContinuousFunctionalNode)
     ebn_discrete_parents = filter(x -> isa(x, DiscreteNode), node.parents)
     ebn_continuous_parents = filter(x -> isa(x, ContinuousNode), node.parents)
 

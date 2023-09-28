@@ -1,14 +1,22 @@
+function evaluate!(ebn::EnhancedBayesianNetwork)
+    functional_nodes = [i.name for i in filter(x -> isa(x, FunctionalNode), ebn.nodes)]
+    e_ebn = deepcopy(ebn)
+    while !isempty(functional_nodes)
+        e_ebn, evaluated_nodes = evaluate_single_layer(e_ebn)
+        functional_nodes = setdiff(functional_nodes, evaluated_nodes)
+    end
+    return reduce!(e_ebn)
+end
+
 function evaluate_single_layer(ebn::EnhancedBayesianNetwork)
     ## Discretization
     disc_ebn = discretize!(ebn)
     ## Nodes to be evaluate from ebn
     functional_nodes = filter(x -> isa(x, FunctionalNode), disc_ebn.nodes)
     functional_nodes_to_eval = filter(x -> all(!isa(y, FunctionalNode) for y in x.parents), functional_nodes)
-    res = map(n -> (n, _build_structuralreliabilityproblem_node(ebn, n)), functional_nodes_to_eval)
-    ## Reduction
-    r_ebn = reduce!(disc_ebn)
+    res = map(n -> (n, _build_structuralreliabilityproblem_node(n)), functional_nodes_to_eval)
     ## rbn with StructuralReliabilityProblemNode
-    srp_ebn = deepcopy(r_ebn)
+    srp_ebn = deepcopy(disc_ebn)
     for (old, new) in res
         srp_ebn = update_network!(srp_ebn, old, new)
     end
@@ -20,8 +28,7 @@ function evaluate_single_layer(ebn::EnhancedBayesianNetwork)
     for (old, new) in res2
         e_ebn = update_network!(e_ebn, old, new)
     end
-    functional_nodes = filter(x -> isa(x, FunctionalNode), e_ebn.nodes)
-    return e_ebn
+    return e_ebn, [i.name for i in functional_nodes_to_eval]
 end
 
 
