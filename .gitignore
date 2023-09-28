@@ -34,6 +34,5 @@ demo/TH_model/*
 coverage/*
 
 old/*
-demo/esrel_extended_abstract.jl
 demo/th_model_esrel_res.jl
 .DS_Store
