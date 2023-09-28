@@ -1,7 +1,6 @@
 abstract type ProbabilisticGraphicalModel end
 
 include("enhancedbn.jl")
-include("reducedbn.jl")
 include("discretization/discretize_root.jl")
 include("discretization/discretize_child.jl")
 include("discretization/discretize_net.jl")

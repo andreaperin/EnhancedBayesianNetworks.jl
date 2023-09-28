@@ -23,9 +23,11 @@ function BayesianNetwork(nodes::Vector{<:AbstractNode})
     BayesianNetwork(ordered_dag, ordered_nodes, ordered_name_to_index)
 end
 
-function BayesianNetwork(rbn::ReducedBayesianNetwork)
-    functional_nodes = filter(x -> isa(x, DiscreteFunctionalNode), rbn.nodes)
+function BayesianNetwork(rbn::EnhancedBayesianNetwork)
+    functional_nodes = filter(x -> isa(x, FunctionalNode), rbn.nodes)
     !isempty(functional_nodes) && error("rbn needs to evaluated!")
+    continuous_nodes = filter(x -> isa(x, ContinuousNode), rbn.nodes)
+    !isempty(continuous_nodes) && error("ebn needs to reduced!")
     BayesianNetwork(rbn.nodes)
 end
 

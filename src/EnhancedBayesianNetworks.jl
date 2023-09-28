@@ -38,7 +38,6 @@ export Factor
 export FunctionalNode
 export InferenceState
 export RootNode
-export ReducedBayesianNetwork
 export StructuralReliabilityProblemNode
 
 # Constants

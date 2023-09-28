@@ -25,11 +25,9 @@ function reduce!(net::EnhancedBayesianNetwork)
     end
 
     ordered_rdag, ordered_rnodes, ordered_rname_to_index = _topological_ordered_dag(r_dag_nodes)
-    if all(isa(ordered_rnodes, DiscreteNode))
-        new_net = ReducedBayesianNetwork(ordered_rdag, ordered_rnodes, ordered_rname_to_index)
-    else
-        new_net = EnhancedBayesianNetwork(ordered_rdag, ordered_rnodes, ordered_rname_to_index)
-    end
+
+    new_net = EnhancedBayesianNetwork(ordered_rdag, ordered_rnodes, ordered_rname_to_index)
+
     return new_net
 end
 
@@ -79,7 +77,7 @@ function _remove_barren_node(dag::SimpleDiGraph, node_index::Int)
     return SimpleDiGraph(dag.ne, new_fadjlist, new_badjlist)
 end
 
-function _get_node_given_state(rbn::ReducedBayesianNetwork, state::Symbol)
-    nodes = filter(x -> !isa(x, DiscreteFunctionalNode) && isa(x, DiscreteNode), rbn.nodes)
-    [node for node in nodes if state ∈ _get_states(node)][1]
-end
+# function _get_node_given_state(rbn::EnhancedBayesianNetwork, state::Symbol)
+#     nodes = filter(x -> !isa(x, DiscreteFunctionalNode) && isa(x, DiscreteNode), rbn.nodes)
+#     [node for node in nodes if state ∈ _get_states(node)][1]
+# end

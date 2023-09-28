@@ -33,33 +33,7 @@ functional2_node = DiscreteFunctionalNode(functional2_name, functional2_parents,
 nodes = [root1, root2, root3, root4, functional1_node, functional2_node, standard3_node]
 ebn = EnhancedBayesianNetwork(nodes)
 
-# ## Discretization
-# disc_ebn = discretize!(ebn)
-# ## Nodes to be evaluate from ebn
-# functional_nodes = filter(x -> isa(x, FunctionalNode), disc_ebn.nodes)
-# functional_nodes_to_eval = filter(x -> all(!isa(y, FunctionalNode) for y in x.parents), functional_nodes)
-# res = map(n -> (n, EnhancedBayesianNetworks._build_structuralreliabilityproblem_node(ebn, n)), functional_nodes_to_eval)
-# ## Reduction
-# r_ebn = reduce!(disc_ebn)
-# ## rbn with StructuralReliabilityProblemNode
-# srp_ebn = deepcopy(r_ebn)
-# for (old, new) in res
-#     global srp_ebn = update_network!(srp_ebn, old, new)
-# end
-
-# srp_nodes = filter(x -> isa(x, StructuralReliabilityProblemNode), srp_ebn.nodes)
-# res2 = map(n -> (n, evaluate!(n)), srp_nodes)
-# e_ebn = deepcopy(srp_ebn)
-# for (old, new) in res2
-#     global e_ebn = update_network!(e_ebn, old, new)
-# end
-
 r_ebn = evaluate!(ebn)
-
-
-# net_e = EnhancedBayesianNetworks.evaluate_single_layer(net1)
-
-# e_ebn2 = EnhancedBayesianNetworks.evaluate_single_layer(net_e)
 
 # ##TODO creare nuovo esempio per avere i plot fatti bene per evidence e reduction
 # gr();
