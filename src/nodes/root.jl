@@ -17,7 +17,7 @@ end
 function Base.hash(node::ContinuousRootNode, h::UInt)
     h = hash(node.name, h)
     h = hash(node.distribution, h)
-    h = hash(node.intervals, h)
+    h = hash(node.discretization.intervals, h)
     return h
 end
 

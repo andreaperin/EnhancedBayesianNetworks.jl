@@ -7,9 +7,20 @@ function plot(bn::Union{BayesianNetwork,EnhancedBayesianNetwork,ReducedBayesianN
         nodesize=nodesize,
         fontsize=fontsize,
         node_shape=map(x -> isa(x, ContinuousNode) ? :circle : :rect, bn.nodes),
-        markercolor=map(x -> isa(x, FunctionalNode) ? "lightgreen" : "orange", bn.nodes),
+        markercolor=_marker_color.(bn.nodes),
         linecolor=:darkgrey,
     )
+end
+
+function _marker_color(node::AbstractNode)
+    if isa(node, FunctionalNode)
+        mc = "lightgreen"
+    elseif isa(node, StructuralReliabilityProblemNode)
+        mc = "lightblue"
+    else
+        mc = "orange"
+    end
+    return mc
 end
 
 ```

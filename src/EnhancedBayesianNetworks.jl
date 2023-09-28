@@ -25,6 +25,7 @@ export ExactDiscretization
 
 # struct
 export BayesianNetwork
+export ChildNode
 export ConditionalProbabilityDistribution
 export ContinuousFunctionalNode
 export ContinuousRootNode
@@ -38,15 +39,17 @@ export FunctionalNode
 export InferenceState
 export RootNode
 export ReducedBayesianNetwork
-export ChildNode
+export StructuralReliabilityProblemNode
 
 # Constants
 const Evidence = Dict{Symbol,Symbol}
 export Evidence
 
 # Methods
-export evaluate_ebn
+export discretize!
+export evaluate!
 export factorize_cpd
+export get_discrete_ancestors
 export get_children
 export get_cpd
 export get_models
@@ -62,11 +65,13 @@ export is_equal
 export markov_blanket
 export markov_envelope
 export minimal_increase_in_complexity
+export reduce!
 export reducedim
 export reducedim!
 export reduce_ebn_markov_envelopes
 export reduce_ebn_standard
 export show
+export update_network!
 
 export pdf
 export cdf
@@ -75,7 +80,6 @@ export logpdf
 include("ebn/discretization/discretization.jl")
 include("nodes/nodes.jl")
 include("util/wrap.jl")
-include("util/node_verification.jl")
 include("ebn/ebn.jl")
 include("util/plots.jl")
 include("util/evidence_verification.jl")

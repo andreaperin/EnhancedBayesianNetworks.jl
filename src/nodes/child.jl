@@ -72,15 +72,16 @@ function get_randomvariable(node::ContinuousChildNode, evidence::Vector{Symbol})
 end
 
 function Base.isequal(node1::ContinuousChildNode, node2::ContinuousChildNode)
-    node1.name == node2.name && issetequal(node1.parents, node2.parents) && node1.distributions == node2.distributions && node1.discretization.intervals == node2.discretization.intervals && node1.discretization.sigma == node2.discretization.sigma
+    node1.name == node2.name && issetequal(node1.parents, node2.parents) && keys(node1.distributions) == keys(node2.distributions) && node1.discretization.intervals == node2.discretization.intervals && node1.discretization.sigma == node2.discretization.sigma
 end
 
 function Base.hash(node::ContinuousChildNode, h::UInt)
     h = hash(node.name, h)
     h = hash(node.parents, h)
     h = hash(node.distributions, h)
-    h = hash(node.intervals, h)
-    h = hash(node.sigma, h)
+    h = hash(node.samples, h)
+    h = hash(node.discretization.intervals, h)
+    h = hash(node.discretization.sigma, h)
     return h
 end
 
@@ -90,6 +91,7 @@ mutable struct DiscreteChildNode <: DiscreteNode
     name::Symbol
     parents::Vector{<:AbstractNode}
     states::Dict{Vector{Symbol},Dict{Symbol,Real}}
+    covs::Dict{Vector{Symbol},Number}
     samples::Dict{Vector{Symbol},DataFrame}
     parameters::Dict{Symbol,Vector{Parameter}}
 
@@ -97,6 +99,7 @@ mutable struct DiscreteChildNode <: DiscreteNode
         name::Symbol,
         parents::Vector{<:AbstractNode},
         states::Dict{Vector{Symbol},Dict{Symbol,T}},
+        covs::Dict{Vector{Symbol},Number},
         samples::Dict{Vector{Symbol},DataFrame},
         parameters::Dict{Symbol,Vector{Parameter}}
     ) where {T<:Real}
@@ -118,7 +121,7 @@ mutable struct DiscreteChildNode <: DiscreteNode
         discrete_parents_combination = map(t -> [t...], discrete_parents_combination)
         length(discrete_parents_combination) != length(states) && error("In node $name, defined combinations are not equal to the theorical discrete parents combinations: $discrete_parents_combination")
 
-        return new(name, parents, states, samples, parameters)
+        return new(name, parents, states, covs, samples, parameters)
     end
 end
 
@@ -126,11 +129,12 @@ function DiscreteChildNode(
     name::Symbol,
     parents::Vector{<:AbstractNode},
     states::Dict{Vector{Symbol},Dict{Symbol,T}},
+    covs::Dict{Vector{Symbol},Number},
     samples::Dict{Vector{Symbol},DataFrame}
 ) where {T<:Real}
 
     parameters = Dict{Symbol,Vector{Parameter}}()
-    DiscreteChildNode(name, parents, states, samples, parameters)
+    DiscreteChildNode(name, parents, states, covs, samples, parameters)
 end
 
 function DiscreteChildNode(
@@ -139,19 +143,22 @@ function DiscreteChildNode(
     states::Dict{Vector{Symbol},Dict{Symbol,T}}
 ) where {T<:Real}
 
+    covs = Dict{Vector{Symbol},Number}()
     samples = Dict{Vector{Symbol},DataFrame}()
     parameters = Dict{Symbol,Vector{Parameter}}()
-    DiscreteChildNode(name, parents, states, samples, parameters)
+    DiscreteChildNode(name, parents, states, covs, samples, parameters)
 end
 
 function DiscreteChildNode(
     name::Symbol,
     parents::Vector{<:AbstractNode},
     states::Dict{Vector{Symbol},Dict{Symbol,T}},
-    parameters::Dict{Symbol,Vector{Parameter}}) where {T<:Real}
+    parameters::Dict{Symbol,Vector{Parameter}}
+) where {T<:Real}
 
+    covs = Dict{Vector{Symbol},Number}()
     samples = Dict{Vector{Symbol},DataFrame}()
-    DiscreteChildNode(name, parents, states, samples, parameters)
+    DiscreteChildNode(name, parents, states, covs, samples, parameters)
 end
 
 
@@ -174,6 +181,8 @@ function Base.hash(node::DiscreteChildNode, h::UInt)
     h = hash(node.name, h)
     h = hash(node.parents, h)
     h = hash(node.states, h)
+    h = hash(node.covs, h)
+    h = hash(node.samples, h)
     h = hash(node.parameters, h)
 
     return h
