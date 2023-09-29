@@ -3,9 +3,10 @@ using Test
 using EnhancedBayesianNetworks
 using Graphs
 
-# include("nodes/root.jl")
+include("nodes/root.jl")
 include("nodes/child.jl")
-# include("nodes/functional.jl")
+include("nodes/functional.jl")
+include("nodes/structuralreliabilityproblemnode.jl")
 # include("ebn/enhancedbn.jl")
 # include("ebn/reducedbn.jl")
 # include("ebn/discretization.jl")
