@@ -8,12 +8,11 @@ using Graphs
 using LinearAlgebra
 using Reexport
 
-
 @reexport using Graphs
 @reexport using UncertaintyQuantification
+@reexport using DataFrames
 
 import Base: *, sum
-
 
 # Types
 export AbstractNode

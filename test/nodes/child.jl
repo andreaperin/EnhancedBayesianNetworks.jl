@@ -45,8 +45,8 @@
         @test node.name == name
         @test issetequal(node.parents, [root1, root2])
         @test node.distributions == distributions
-        @test node.intervals == Vector{Vector{Float64}}()
-        @test node.sigma == 0
+        @test isequal(node.discretization, ApproximatedDiscretization())
+        @test node.samples == Dict{Vector{Symbol},DataFrame}()
 
         node = ContinuousChildNode(:child, [root1], Dict([:yes] => Normal(), [:no] => Normal(2, 2)))
 
@@ -79,7 +79,14 @@
             [:yes] => Dict(:yes => 0.3, :no => 0.9),
             [:no] => Dict(:yes => 0.2, :no => 0.8)
         )
-        @test_throws ErrorException("Probabilites must sum up to 1.0") DiscreteChildNode(name, [root1], states)
+        @test_throws ErrorException("defined states probabilities Dict(:yes => 0.3, :no => 0.9) are wrong") DiscreteChildNode(name, [root1], states)
+
+        states = Dict(
+            [:yes] => Dict(:yes => 0.4999, :no => 0.4999),
+            [:no] => Dict(:yes => 0.2, :no => 0.8)
+        )
+
+        @test_logs (:warn, "total probaility should be one, but the evaluated value is 0.9998 , and will be normalized") DiscreteChildNode(name, [root1], states)
 
         states = Dict(
             [:yes, :yes] => Dict(:yes => 0.1, :no => 0.9),
@@ -123,6 +130,8 @@
         @test issetequal(node.parents, parents)
         @test node.states == states
         @test node.parameters == Dict{Symbol,Vector{Parameter}}()
+        @test node.covs == Dict{Vector{Symbol},Number}()
+        @test node.samples == Dict{Symbol,Vector{Parameter}}()
 
         @test EnhancedBayesianNetworks._get_states(node) == [:a, :b]
 

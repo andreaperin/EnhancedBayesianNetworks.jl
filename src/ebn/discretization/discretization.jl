@@ -49,11 +49,12 @@ struct ApproximatedDiscretization <: AbstractDiscretization
 end
 
 function Base.isequal(discretization1::ApproximatedDiscretization, discretization2::ApproximatedDiscretization)
-    discretization1.intervals == discretization2.intervals
+    discretization1.intervals == discretization2.intervals && discretization1.sigma == discretization2.sigma
 end
 
 function Base.hash(discretization::ApproximatedDiscretization, h::UInt)
     h = hash(discretization.intervals, h)
+    h = hash(discretization.sigma, h)
     return h
 end
 
