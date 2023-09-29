@@ -18,6 +18,15 @@ struct ExactDiscretization <: AbstractDiscretization
     end
 end
 
+function Base.isequal(discretization1::ExactDiscretization, discretization2::ExactDiscretization)
+    discretization1.intervals == discretization2.intervals
+end
+
+function Base.hash(discretization::ExactDiscretization, h::UInt)
+    h = hash(discretization.intervals, h)
+    return h
+end
+
 ExactDiscretization() = ExactDiscretization(Vector{Number}())
 
 ``` ApproximatedDiscretization
@@ -37,6 +46,15 @@ struct ApproximatedDiscretization <: AbstractDiscretization
         end
         new(intervals, sigma)
     end
+end
+
+function Base.isequal(discretization1::ApproximatedDiscretization, discretization2::ApproximatedDiscretization)
+    discretization1.intervals == discretization2.intervals
+end
+
+function Base.hash(discretization::ApproximatedDiscretization, h::UInt)
+    h = hash(discretization.intervals, h)
+    return h
 end
 
 ApproximatedDiscretization() = ApproximatedDiscretization(Vector{Number}(), nothing)

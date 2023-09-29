@@ -108,7 +108,7 @@ mutable struct DiscreteChildNode <: DiscreteNode
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
         for (key, val) in states
             verify_probabilities(val)
-            normalized_prob = normalize(collect(values(val)))
+            normalized_prob = normalize(collect(values(val)), 1)
             normalized_states[key] = Dict(zip(collect(keys(val)), normalized_prob))
             verify_parameters(val, parameters)
             length(discrete_parents) != length(key) && error("In node $name, defined parents states differ from number of its discrete parents")

@@ -10,6 +10,8 @@ function get_randomvariable(node::ContinuousRootNode, ::Vector{Symbol})
     RandomVariable(node.distribution, node.name)
 end
 
+get_randomvariable(node::ContinuousRootNode) = get_randomvariable(node, Vector{Symbol}())
+
 function Base.isequal(node1::ContinuousRootNode, node2::ContinuousRootNode)
     node1.name == node2.name && node1.distribution == node2.distribution && node1.discretization.intervals == node2.discretization.intervals
 end
@@ -23,17 +25,20 @@ end
 
 struct DiscreteRootNode <: DiscreteNode
     name::Symbol
-    states::Dict{Symbol,<:Real}
+    states::Dict{Symbol,<:Number}
     parameters::Dict{Symbol,Vector{Parameter}}
 
-    function DiscreteRootNode(name::Symbol, states::Dict{Symbol,<:Real}, parameters::Dict{Symbol,Vector{Parameter}})
+    function DiscreteRootNode(name::Symbol, states::Dict{Symbol,<:Number}, parameters::Dict{Symbol,Vector{Parameter}})
         verify_probabilities(states)
-        verify_parameters(states, parameters)
-        return new(name, states, parameters)
+        normalized_states = Dict{Symbol,Number}()
+        normalized_prob = normalize(collect(values(states)), 1)
+        normalized_states = Dict(zip(collect(keys(states)), normalized_prob))
+        verify_parameters(normalized_states, parameters)
+        return new(name, normalized_states, parameters)
     end
 end
 
-DiscreteRootNode(name::Symbol, states::Dict{Symbol,<:Real}) = DiscreteRootNode(name, states, Dict{Symbol,Vector{Parameter}}())
+DiscreteRootNode(name::Symbol, states::Dict{Symbol,<:Number}) = DiscreteRootNode(name, states, Dict{Symbol,Vector{Parameter}}())
 
 _get_states(node::DiscreteRootNode) = collect(keys(node.states))
 
