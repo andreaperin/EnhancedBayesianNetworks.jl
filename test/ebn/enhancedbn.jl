@@ -35,10 +35,10 @@
 
         model = Model(df -> sqrt.(df.child1 .^ 2 + df.child2 .^ 2), :value1)
         df -> 1 .- 2 .* df.v
-        models = Dict([:a] => [model], [:b] => [model])
-        simulations = Dict([:a] => MonteCarlo(100), [:b] => MonteCarlo(200))
-        performances = Dict([:a] => df -> 1 .- 2 .* df.v, [:b] => df -> 1 .- 2 .* df.v)
-        functional = DiscreteFunctionalNode(:functional, [child1, child2], models, performances, simulations)
+        models = [model]
+        simulation = MonteCarlo(200)
+        performance = df -> 1 .- 2 .* df.v
+        functional = DiscreteFunctionalNode(:functional, [child1, child2], models, performance, simulation)
 
         badjlist = Vector{Vector{Int}}([[], [1], [2], [2, 3]])
         fadjlist = Vector{Vector{Int}}([[2], [3, 4], [4], []])
@@ -76,29 +76,17 @@
         child2 = ContinuousChildNode(:child2, [child1], distributions_child2)
 
         model = Model(df -> sqrt.(df.child1 .^ 2 + df.child2 .- df.z .^ 2), :value1)
-
-        models = Dict([:a, :yes] => [model], [:b, :yes] => [model], [:a, :no] => [model], [:b, :no] => [model])
-        performances = Dict(
-            [:a, :yes] => df -> 1 .- 2 .* df.value1,
-            [:b, :yes] => df -> 1 .- 2 .* df.value1,
-            [:a, :no] => df -> 1 .- 2 .* df.value1,
-            [:b, :no] => df -> 1 .- 2 .* df.value1
-        )
-        simulations = Dict([:a, :yes] => MonteCarlo(100), [:b, :yes] => MonteCarlo(200), [:a, :no] => MonteCarlo(300), [:b, :no] => MonteCarlo(400))
-        functional = DiscreteFunctionalNode(:functional, [child1, child2, root2], models, performances, simulations)
+        models = [model]
+        simulation = MonteCarlo(400)
+        performance = df -> 1 .- 2 .* df.v
+        functional = DiscreteFunctionalNode(:functional, [child1, child2, root2], models, performance, simulation)
 
         ebn = EnhancedBayesianNetwork([root1, root2, child1, child2, functional])
 
         @test issetequal(get_parents(ebn, child1), [root1])
-
         @test issetequal(get_children(ebn, child2), [functional])
-
         @test issetequal(get_neighbors(ebn, child2), [child1, functional])
-
         @test issetequal(markov_blanket(ebn, child2), [child1, root2, functional])
-
         @test issetequal(markov_envelope(ebn)[1], [child1, root1, root2, functional, child2])
-
-        # @test isequal(EnhancedBayesianNetworks._get_node_given_state(ebn, :a), child1)
     end
 end
