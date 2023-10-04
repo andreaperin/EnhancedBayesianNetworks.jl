@@ -76,8 +76,3 @@ function _remove_barren_node(dag::SimpleDiGraph, node_index::Int)
     end
     return SimpleDiGraph(dag.ne, new_fadjlist, new_badjlist)
 end
-
-# function _get_node_given_state(rbn::EnhancedBayesianNetwork, state::Symbol)
-#     nodes = filter(x -> !isa(x, DiscreteFunctionalNode) && isa(x, DiscreteNode), rbn.nodes)
-#     [node for node in nodes if state ∈ _get_states(node)][1]
-# end
