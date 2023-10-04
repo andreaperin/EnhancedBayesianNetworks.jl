@@ -20,7 +20,7 @@ function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousChildNod
     end
 
     nodes = deepcopy(ebn.nodes)
-    intervals = [[intervals[i], intervals[i+1]] for i in range(1, length(intervals) - 1)]
+    intervals = [[intervals[i], intervals[i+1]] for (i, _) in enumerate(intervals[1:end-1])]
     variance = node.discretization.sigma
 
     f_d = (d, i) -> cdf(d, i[2]) - cdf(d, i[1])

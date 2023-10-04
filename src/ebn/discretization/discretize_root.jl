@@ -19,7 +19,7 @@ function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousRootNode
     end
 
     nodes = deepcopy(ebn.nodes)
-    intervals = [[intervals[i], intervals[i+1]] for i in range(1, length(intervals) - 1)]
+    intervals = [[intervals[i], intervals[i+1]] for (i, _) in enumerate(intervals[1:end-1])]
 
     f_d = i -> cdf(node.distribution, i[2]) - cdf(node.distribution, i[1])
 
