@@ -43,6 +43,10 @@ struct ApproximatedDiscretization <: AbstractDiscretization
     function ApproximatedDiscretization(intervals::Vector{<:Number}, sigma::Union{Number,Nothing})
         if sort(intervals) != intervals
             error("interval values $intervals are not sorted")
+        elseif !isa(sigma, Nothing) && sigma ≤ 0
+            error("variance must be positive")
+        elseif !isa(sigma, Nothing) && sigma > 2
+            @warn "Selected variance values $sigma can be too big, and the approximation not realistic"
         end
         new(intervals, sigma)
     end
