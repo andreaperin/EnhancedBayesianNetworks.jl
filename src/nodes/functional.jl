@@ -29,11 +29,6 @@ function ContinuousFunctionalNode(
     ContinuousFunctionalNode(name, parents, models, simulations, discretization)
 end
 
-function get_randomvariable(node::ContinuousFunctionalNode, evidence::Vector{Symbol})
-    continuous_parents = filter(x -> isa(x, ContinuousNode), node.parents)
-    return mapreduce(p -> get_randomvariable(p, evidence), vcat, continuous_parents)
-end
-
 function Base.isequal(node1::ContinuousFunctionalNode, node2::ContinuousFunctionalNode)
     node1.name == node2.name && issetequal(node1.parents, node2.parents) && node1.models == node2.models && node1.simulations == node2.simulations && isequal(node1.discretization, node2.discretization)
 end
