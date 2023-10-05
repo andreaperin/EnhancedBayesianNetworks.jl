@@ -16,8 +16,7 @@ include("ebn/discretization/discretize_child.jl")
 include("ebn/discretization/discretize_net.jl")
 
 include("ebn/reduction/reduction_alghorithm.jl")
-# include("ebn/reducedbn.jl")
-# include("ebn/discretization.jl")
+
 # include("ebn/bayesiannet.jl")
 # include("Inference/inferencestate.jl")
 # include("Inference/factors.jl")
