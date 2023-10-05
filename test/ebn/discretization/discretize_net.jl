@@ -85,7 +85,7 @@
 
     functional2_r_node = DiscreteFunctionalNode(functional2_name, [standard1_node, z_c_node], [functional2_model], functional2_performance, functional2_simulation)
 
-    @test all(isequal.(disc_ebn.nodes, [root2, root1, standard1_node, β_d_node, β_c_node, z_d_node, z_c_node, functional2_r_node]))
+    @test issetequal(disc_ebn.nodes, [root2, root1, standard1_node, β_d_node, β_c_node, z_d_node, z_c_node, functional2_r_node])
     @test disc_ebn.dag == SimpleDiGraph{Int64}(ne1, fadjlist, badjlist)
     @test disc_ebn.name_to_index == name_to_index
 end
