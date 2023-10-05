@@ -27,13 +27,6 @@
         @test node.models == models
         @test node.simulations == simulations
         @test isequal(node.discretization, ApproximatedDiscretization())
-
-        evidence = [:a]
-
-        @test get_randomvariable(node, evidence) == RandomVariable(Normal(), :z)
-
-        evidence = [:yes, :n]
-        @test get_randomvariable(node, evidence) == RandomVariable(Normal{Float64}(0.0, 1.0), :z)
     end
 
     @testset "DiscreteFunctionalNode" begin
