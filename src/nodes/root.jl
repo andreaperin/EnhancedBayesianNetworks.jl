@@ -13,13 +13,13 @@ end
 get_randomvariable(node::ContinuousRootNode) = get_randomvariable(node, Vector{Symbol}())
 
 function Base.isequal(node1::ContinuousRootNode, node2::ContinuousRootNode)
-    node1.name == node2.name && node1.distribution == node2.distribution && node1.discretization.intervals == node2.discretization.intervals
+    node1.name == node2.name && node1.distribution == node2.distribution && isequal(node1.discretization, node2.discretization)
 end
 
 function Base.hash(node::ContinuousRootNode, h::UInt)
     h = hash(node.name, h)
     h = hash(node.distribution, h)
-    h = hash(node.discretization.intervals, h)
+    h = hash(node.discretization, h)
     return h
 end
 

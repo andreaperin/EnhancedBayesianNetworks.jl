@@ -1,4 +1,4 @@
-@testset "Enhanced Bayesian Network Discretization" begin
+@testset "Discretization Enhanced Bayesian Network" begin
 
     root1 = DiscreteRootNode(:x, Dict(:y => 0.2, :n => 0.8), Dict(:y => [Parameter(1, :x)], :n => [Parameter(0, :x), Parameter(5.6, :x1)]))
     root2 = DiscreteRootNode(:y, Dict(:yes => 0.4, :no => 0.6), Dict(:yes => [Parameter(2.2, :y)], :no => [Parameter(5.5, :y)]))
@@ -79,8 +79,8 @@
     ))
 
     β_c_node = ContinuousChildNode(:β, [β_d_node], Dict(
-        [Symbol("[-Inf, 0.1]")] => truncated(Normal(0.0, 1.5), -Inf, 0.1),
-        [Symbol("[0.1, Inf]")] => truncated(Normal(0.0, 1.5), 0.1, Inf)
+        [Symbol("[-Inf, 0.1]")] => truncated(Normal(0.1, 1.5), -Inf, 0.1),
+        [Symbol("[0.1, Inf]")] => truncated(Normal(0.1, 1.5), 0.1, Inf)
     ))
 
     functional2_r_node = DiscreteFunctionalNode(functional2_name, [standard1_node, z_c_node], [functional2_model], functional2_performance, functional2_simulation)

@@ -35,7 +35,7 @@ function get_randomvariable(node::ContinuousFunctionalNode, evidence::Vector{Sym
 end
 
 function Base.isequal(node1::ContinuousFunctionalNode, node2::ContinuousFunctionalNode)
-    node1.name == node2.name && issetequal(node1.parents, node2.parents) && node1.models == node2.models && node1.simulations == node2.simulations && node1.discretization.intervals == node2.discretization.intervals && node1.discretization.sigma == node2.discretization.sigma
+    node1.name == node2.name && issetequal(node1.parents, node2.parents) && node1.models == node2.models && node1.simulations == node2.simulations && isequal(node1.discretization, node2.discretization)
 end
 
 function Base.hash(node::ContinuousFunctionalNode, h::UInt)
@@ -43,8 +43,7 @@ function Base.hash(node::ContinuousFunctionalNode, h::UInt)
     h = hash(node.parents, h)
     h = hash(node.models, h)
     h = hash(node.simulations, h)
-    h = hash(node.discretization.intervals, h)
-    h = hash(node.discretization.sigma, h)
+    h = hash(node.discretization, h)
     return h
 end
 mutable struct DiscreteFunctionalNode <: DiscreteNode

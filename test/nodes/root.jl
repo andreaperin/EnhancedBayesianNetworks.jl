@@ -12,6 +12,7 @@
         @test isequal(node2.discretization, ExactDiscretization([-1, 0, 1]))
 
         @test get_randomvariable(node1) == RandomVariable(node1.distribution, node1.name)
+        @test isequal(node1, ContinuousRootNode(:x1, Normal()))
     end
 
     @testset "DiscreteRootNode" begin
@@ -47,5 +48,8 @@
         @test_throws ErrorException("node x has an empty parameters vector") get_parameters(node2, [:y, :yes])
 
         @test get_parameters(node1, [:yes]) == [Parameter(2, :d)]
+
+        @test isequal(node1, DiscreteRootNode(name, states, parameters))
+
     end
 end

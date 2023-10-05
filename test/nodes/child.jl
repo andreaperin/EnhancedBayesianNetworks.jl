@@ -55,6 +55,8 @@
 
         evidence = [:yes]
         @test get_randomvariable(node, evidence) == RandomVariable(Normal(), node.name)
+
+        @test isequal(node, ContinuousChildNode(:child, [root1], Dict([:yes] => Normal(), [:no] => Normal(2, 2))))
     end
 
     @testset "DiscreteChildNode" begin
@@ -126,6 +128,7 @@
         )
 
         node = DiscreteChildNode(name, parents, states)
+
         @test node.name == name
         @test issetequal(node.parents, parents)
         @test node.states == states
@@ -134,6 +137,8 @@
         @test node.samples == Dict{Symbol,Vector{Parameter}}()
 
         @test EnhancedBayesianNetworks._get_states(node) == [:a, :b]
+
+        @test isequal(node, DiscreteChildNode(name, parents, states))
 
         node = DiscreteChildNode(name, parents, states, Dict(:a => [Parameter(1.1, :g)], :b => [Parameter(1.2, :g)]))
         evidence = [:yes]
@@ -144,5 +149,7 @@
 
         evidence = [:a, :yes]
         @test get_parameters(node, evidence) == [Parameter(1.1, :g)]
+
+
     end
 end

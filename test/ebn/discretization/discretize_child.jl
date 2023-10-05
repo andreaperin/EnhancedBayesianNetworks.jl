@@ -1,4 +1,4 @@
-@testset "Child Node Discretization" begin
+@testset "Discretization Child Node" begin
     root1 = DiscreteRootNode(:x, Dict(:y => 0.2, :n => 0.8), Dict(:y => [Parameter(1, :x)], :n => [Parameter(0, :x), Parameter(5.6, :x1)]))
     root3 = ContinuousRootNode(:z1, Normal())
 

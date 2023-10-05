@@ -1,6 +1,5 @@
 ``` ContinuousChildNode
 ```
-
 mutable struct ContinuousChildNode <: ContinuousNode
     name::Symbol
     parents::Vector{<:AbstractNode}
@@ -48,19 +47,19 @@ function ContinuousChildNode(
     samples::Dict{Vector{Symbol},DataFrame}
 ) where {D<:Distribution}
 
-    discretizations = ApproximatedDiscretization()
-    ContinuousChildNode(name, parents, distributions, samples, discretizations)
+    discretization = ApproximatedDiscretization()
+    ContinuousChildNode(name, parents, distributions, samples, discretization)
 end
 
 function ContinuousChildNode(
     name::Symbol,
     parents::Vector{<:AbstractNode},
     distributions::Dict{Vector{Symbol},D},
-    discretizatio::ApproximatedDiscretization
+    discretization::ApproximatedDiscretization
 ) where {D<:Distribution}
 
     samples = Dict{Vector{Symbol},DataFrame}()
-    ContinuousChildNode(name, parents, distributions, samples, discretizatio)
+    ContinuousChildNode(name, parents, distributions, samples, discretization)
 end
 
 function get_randomvariable(node::ContinuousChildNode, evidence::Vector{Symbol})
@@ -72,7 +71,7 @@ function get_randomvariable(node::ContinuousChildNode, evidence::Vector{Symbol})
 end
 
 function Base.isequal(node1::ContinuousChildNode, node2::ContinuousChildNode)
-    node1.name == node2.name && issetequal(node1.parents, node2.parents) && keys(node1.distributions) == keys(node2.distributions) && node1.discretization.intervals == node2.discretization.intervals && node1.discretization.sigma == node2.discretization.sigma
+    node1.name == node2.name && issetequal(node1.parents, node2.parents) && node1.distributions == node2.distributions && isequal(node1.discretization, node2.discretization)
 end
 
 function Base.hash(node::ContinuousChildNode, h::UInt)
@@ -80,8 +79,7 @@ function Base.hash(node::ContinuousChildNode, h::UInt)
     h = hash(node.parents, h)
     h = hash(node.distributions, h)
     h = hash(node.samples, h)
-    h = hash(node.discretization.intervals, h)
-    h = hash(node.discretization.sigma, h)
+    h = hash(node.discretization, h)
     return h
 end
 
@@ -164,7 +162,6 @@ function DiscreteChildNode(
     DiscreteChildNode(name, parents, states, covs, samples, parameters)
 end
 
-
 _get_states(node::DiscreteChildNode) = keys(first(values(node.states))) |> collect
 
 function get_parameters(node::DiscreteChildNode, evidence::Vector{Symbol})
@@ -174,7 +171,6 @@ function get_parameters(node::DiscreteChildNode, evidence::Vector{Symbol})
     isempty(e) && error("evidence $evidence does not contain $name")
     return node.parameters[e[1]]
 end
-
 
 function Base.isequal(node1::DiscreteChildNode, node2::DiscreteChildNode)
     node1.name == node2.name && issetequal(node1.parents, node2.parents) && node1.states == node2.states && node1.parameters == node2.parameters

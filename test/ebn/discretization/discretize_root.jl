@@ -1,4 +1,4 @@
-@testset "Root Node Discretization" begin
+@testset "Discretization Root Node" begin
 
     root1 = DiscreteRootNode(:x, Dict(:y => 0.2, :n => 0.8), Dict(:y => [Parameter(1, :x)], :n => [Parameter(0, :x), Parameter(5.6, :x1)]))
     root2 = DiscreteRootNode(:y, Dict(:yes => 0.4, :no => 0.6), Dict(:yes => [Parameter(2.2, :y)], :no => [Parameter(5.5, :y)]))
@@ -42,7 +42,6 @@
     ebn = EnhancedBayesianNetwork(nodes)
 
     @test_logs (:warn, "selected minimum intervals value 0.0 ≥ support lower buond -Inf. Support lower bound will be used as intervals starting value!") EnhancedBayesianNetworks._discretize_node(ebn, root3)
-
     @test_logs (:warn, "selected maximum intervals value 0.0 ≤ support's upper buond Inf. Support's upper bound will be used as intervals final value!") EnhancedBayesianNetworks._discretize_node(ebn, root4)
 
     discretization_root3 = ExactDiscretization([-Inf, 0, Inf])
