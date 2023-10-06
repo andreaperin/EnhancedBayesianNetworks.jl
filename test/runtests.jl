@@ -19,7 +19,7 @@ include("ebn/discretization/discretize_net.jl")
 include("ebn/reduction/reduction_alghorithm.jl")
 
 include("ebn/srp/build_srp.jl")
-# include("ebn/srp/evaluate_srp.jl")
+include("ebn/srp/evaluate_srp.jl")
 
 # include("ebn/bayesiannet.jl")
 # include("Inference/inferencestate.jl")

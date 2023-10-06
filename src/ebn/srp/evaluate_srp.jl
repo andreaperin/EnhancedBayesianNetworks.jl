@@ -2,13 +2,13 @@ function evaluate!(ebn::EnhancedBayesianNetwork)
     functional_nodes = [i.name for i in filter(x -> isa(x, FunctionalNode), ebn.nodes)]
     e_ebn = deepcopy(ebn)
     while !isempty(functional_nodes)
-        e_ebn, evaluated_nodes = evaluate_single_layer(e_ebn)
+        e_ebn, evaluated_nodes = _evaluate_single_layer(e_ebn)
         functional_nodes = setdiff(functional_nodes, evaluated_nodes)
     end
     return reduce!(e_ebn)
 end
 
-function evaluate_single_layer(ebn::EnhancedBayesianNetwork)
+function _evaluate_single_layer(ebn::EnhancedBayesianNetwork)
     ## Discretization
     disc_ebn = discretize!(ebn)
     ## Nodes to be evaluate from ebn
