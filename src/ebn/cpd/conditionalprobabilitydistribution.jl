@@ -1,0 +1,19 @@
+struct ConditionalProbabilityDistribution
+    target::Symbol
+    parents::Vector{Symbol}
+    parents_states_mapping_dict::Dict{Symbol,Dict{Symbol,Int64}}
+    parental_ncategories::Vector{Int64}
+    states::Vector{Symbol}
+    distributions::Dict{Vector{Symbol},Dict{Symbol,Float64}}
+
+    # function ConditionalProbabilityDistribution(
+    #     target::Symbol,
+    #     parents::Vector{Symbol},
+    #     parents_states_mapping_dict::Dict{Symbol,Dict{Symbol,Int64}},
+    #     parental_ncategories::Vector{Int64},
+    #     states::Vector{Symbol},
+    #     distributions::Dict{Vector{Symbol},Dict{Symbol,Float64}},
+    # )
+    #     new(target, parents, parents_states_mapping_dict, parental_ncategories, states, distributions)
+    # end
+end
