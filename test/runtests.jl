@@ -21,7 +21,9 @@ include("ebn/reduction/reduction_alghorithm.jl")
 include("ebn/srp/build_srp.jl")
 include("ebn/srp/evaluate_srp.jl")
 
-# include("ebn/bayesiannet.jl")
+include("ebn/cpd/conditionalprobabilitydistribution.jl")
+include("ebn/bayesiannet.jl")
+
 # include("Inference/inferencestate.jl")
 # include("Inference/factors.jl")
 # include("Inference/factor_methods.jl")

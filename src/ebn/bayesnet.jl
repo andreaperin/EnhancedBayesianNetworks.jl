@@ -1,19 +1,16 @@
-struct ConditionalProbabilityDistribution
-    target::Symbol
-    parents::Vector{Symbol}
-    parents_states_mapping_dict::Dict{Symbol,Dict{Symbol,Int}}
-    parental_ncategories::Vector{Int}
-    states::Vector{Symbol}
-    distributions::Dict{Vector{Symbol},Dict{Symbol,Real}}
-end
 mutable struct BayesianNetwork <: ProbabilisticGraphicalModel
     dag::SimpleDiGraph
     nodes::Vector{<:DiscreteNode}
     name_to_index::Dict{Symbol,Int}
 
     function BayesianNetwork(dag::DiGraph, nodes::Vector{AbstractNode}, name_to_index::Dict{Symbol,Int})
-        any([!isa(x, DiscreteNode) for x in nodes]) && error("Bayesian Network allows discrete node only!")
-        nodes = Vector{DiscreteNode}(nodes)
+        if any([isa(x, FunctionalNode) for x in nodes])
+            error("Network needs to be evaluated first")
+        elseif any([!isa(x, DiscreteNode) for x in nodes])
+            error("Bayesian Network allows discrete node only!")
+        else
+            nodes = Vector{DiscreteNode}(nodes)
+        end
         new(dag, nodes, name_to_index)
     end
 end
@@ -23,13 +20,7 @@ function BayesianNetwork(nodes::Vector{<:AbstractNode})
     BayesianNetwork(ordered_dag, ordered_nodes, ordered_name_to_index)
 end
 
-function BayesianNetwork(rbn::EnhancedBayesianNetwork)
-    functional_nodes = filter(x -> isa(x, FunctionalNode), rbn.nodes)
-    !isempty(functional_nodes) && error("rbn needs to evaluated!")
-    continuous_nodes = filter(x -> isa(x, ContinuousNode), rbn.nodes)
-    !isempty(continuous_nodes) && error("ebn needs to reduced!")
-    BayesianNetwork(rbn.nodes)
-end
+BayesianNetwork(rbn::EnhancedBayesianNetwork) = BayesianNetwork(rbn.nodes)
 
 function get_cpd(bn::BayesianNetwork, i::Int)
     n = bn.nodes[i]

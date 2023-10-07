@@ -1,7 +1,7 @@
 @testset "Bayesian Networks" begin
     @testset "Beyesian Network" begin
         r = ContinuousRootNode(:R, Normal())
-        v = DiscreteRootNode(:V, Dict(:yesV => 0.01, :noV => 0.99))
+        v = DiscreteRootNode(:V, Dict(:yesV => 0.01, :noV => 0.99), Dict(:yesV => [Parameter(0, :v1)], :noV => [Parameter(1, :v1)]))
         s = DiscreteRootNode(:S, Dict(:yesS => 0.5, :noS => 0.5))
         t = DiscreteChildNode(:T, [v], Dict(
             [:yesV] => Dict(:yesT => 0.05, :noT => 0.95),
@@ -11,6 +11,12 @@
             [:yesS] => Dict(:yesL => 0.1, :noL => 0.9),
             [:noS] => Dict(:yesL => 0.01, :noL => 0.99))
         )
+        f1 = DiscreteFunctionalNode(
+            :F1, [r, v], [Model(df -> df.v1 .+ df.R, :f1)], df -> 0.8 .- df.f1, MonteCarlo(200)
+        )
+        nodes = [r, v, s, t, f1]
+        @test_throws ErrorException("Network needs to be evaluated first") BayesianNetwork(nodes)
+
         nodes = [r, v, s, t]
         @test_throws ErrorException("Bayesian Network allows discrete node only!") BayesianNetwork(nodes)
 
@@ -24,34 +30,23 @@
         root2 = DiscreteRootNode(:y, Dict(:yes => 0.4, :no => 0.6), Dict(:yes => [Parameter(2.2, :y)], :no => [Parameter(5.5, :y)]))
         root3 = ContinuousRootNode(:z, Normal())
 
-        functional_model = Model(df -> (df.y .^ 2 + df.z .^ 2) ./ 2, :value1)
-        functional_models = Dict(
-            [:yes] => [functional_model],
-            [:no] => [functional_model],
-        )
-        functional_simulations = Dict(
-            [:yes] => MonteCarlo(200),
-            [:no] => MonteCarlo(300),
-        )
-        functional_performances = Dict(
-            [:yes] => df -> 1 .- 2 .* df.value1,
-            [:no] => df -> 1 .- 2 .* df.value1,
-        )
-        functional = DiscreteFunctionalNode(:f1, [root2, root3], functional_models, functional_performances, functional_simulations)
+        functional_model = [Model(df -> (df.y .^ 2 + df.z .^ 2) ./ 2, :value1)]
+        functional_simulation = MonteCarlo(300)
+        functional_performance = df -> 1 .- 2 .* df.value1
+        functional = DiscreteFunctionalNode(:f1, [root2, root3], functional_model, functional_performance, functional_simulation)
 
-        rbn = reduce_ebn_standard(EnhancedBayesianNetwork([root2, root3, functional]))
-        @test_throws ErrorException("rbn needs to evaluated!") BayesianNetwork(rbn)
+        ebn = EnhancedBayesianNetwork([root2, root3, functional])
+        e_ebn = evaluate!(ebn)
+        bn = BayesianNetwork(e_ebn)
 
-        rbn = evaluate_ebn(EnhancedBayesianNetwork([root2, root3, functional]), true)[1]
-        bn = BayesianNetwork(rbn)
         dag = SimpleDiGraph{Int64}(1, [[2], Int64[]], [Int64[], [1]])
 
         @test bn.dag == dag
         @test bn.name_to_index == Dict(:f1 => 2, :y => 1)
-        @test issetequal(bn.nodes, rbn.nodes)
+        @test issetequal(bn.nodes, e_ebn.nodes)
     end
 
-    @testset "Conditional Probability Distribiution" begin
+    @testset "Additional Conditional Probability Distribiution" begin
         v = DiscreteRootNode(:V, Dict(:yesV => 0.01, :noV => 0.99))
         s = DiscreteRootNode(:S, Dict(:yesS => 0.5, :noS => 0.5))
         t = DiscreteChildNode(:T, [v], Dict(
