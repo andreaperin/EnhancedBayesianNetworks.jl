@@ -39,7 +39,7 @@
     evidence = Evidence()
     factors = map(n -> Factor(bn, n.name, evidence), bn.nodes)
     n = 8
-    fadjlist = [[2, 1], [3, 1], [5, 4], [6, 5], [6, 3], [5, 3], [7, 6], [8, 2], [8, 6], [2, 6]]
+    fadjlist = [[2, 1], [3, 1], [5, 4], [6, 5], [6, 2], [5, 2], [7, 3], [7, 6], [3, 6], [8, 6]]
     moral_graph = EnhancedBayesianNetworks._moral_graph_from_dimensions([x.dimensions for x in factors], bn.name_to_index)
 
     @test moral_graph == SimpleGraph(n, fadjlist)
@@ -51,7 +51,11 @@
     @test listv[end][1] == :E
 
     inf = InferenceState(bn, :B, Dict(:X => :yesX))
-    @test all(isapprox.(infer(inf).potential, [0.226 0.284; 0.279 0.2088]; atol=0.01))
+    res = infer(inf)
+
+    @test res.dimensions == [:B]
+    @test isapprox(res.potential, [0.5063261560155387, 0.49367384398446135])
+    @test res.states_mapping == Dict(:B => Dict(:yesB => 1, :noB => 2))
 
     a = DiscreteRootNode(:a, Dict(:yesa => 1.0, :noa => 0.0))
     b = DiscreteRootNode(:b, Dict(:yesb => 0.0, :nob => 1.0))
