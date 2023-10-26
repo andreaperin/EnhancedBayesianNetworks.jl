@@ -25,15 +25,16 @@ function discrete_ancestors(_::RootNode)
     return AbstractNode[]
 end
 
-function get_states_combinantions(node::AbstractNode)
-    if isa(node, RootNode)
-        discrete_parents_combination = []
-    else
-        par = discrete_ancestors(node)
-        discrete_parents = filter(x -> isa(x, DiscreteNode), par)
-        discrete_parents_combination = Iterators.product(_get_states.(discrete_parents)...)
-        discrete_parents_combination = map(t -> [t...], discrete_parents_combination)
-    end
+function state_combinations(node::AbstractNode)
+    par = discrete_ancestors(node)
+    discrete_parents = filter(x -> isa(x, DiscreteNode), par)
+    discrete_parents_combination = Iterators.product(_get_states.(discrete_parents)...)
+    discrete_parents_combination = map(t -> [t...], discrete_parents_combination)
     return vec(discrete_parents_combination)
 end
+
+function state_combinations(_::RootNode)
+    return AbstractNode[]
+end
+
 

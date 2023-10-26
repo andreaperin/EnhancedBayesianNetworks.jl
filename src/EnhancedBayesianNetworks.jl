@@ -56,7 +56,7 @@ export get_parameters
 export get_parents
 export get_performance
 export get_simulation
-export get_states_combinantions
+export state_combinations
 export get_state_probability
 export get_randomvariable
 export infer

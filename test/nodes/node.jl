@@ -19,7 +19,7 @@
         @test issetequal([root2, child1], discrete_ancestors(functional1_node))
     end
     @testset "States Combinations" begin
-        @test issetequal([[:c1y, :yes], [:c1n, :yes], [:c1y, :no], [:c1n, :no]], get_states_combinantions(functional1_node))
+        @test issetequal([[:c1y, :yes], [:c1n, :yes], [:c1y, :no], [:c1n, :no]], state_combinations(functional1_node))
     end
 
 end
