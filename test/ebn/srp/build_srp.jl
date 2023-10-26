@@ -17,6 +17,6 @@
 
     @test srp.name == functional1_node.name
     @test isequal(srp.discretization, functional1_node.discretization)
-    @test issetequal(srp.parents, get_discrete_ancestors(functional1_node))
+    @test issetequal(srp.parents, discrete_ancestors(functional1_node))
     @test isequal(srp.srps, srps)
 end

@@ -2,7 +2,7 @@ function _build_structuralreliabilityproblem_node(node::DiscreteFunctionalNode)
     ebn_discrete_parents = filter(x -> isa(x, DiscreteNode), node.parents)
     ebn_continuous_parents = filter(x -> isa(x, ContinuousNode), node.parents)
 
-    rbn_discrete_parents = get_discrete_ancestors(node)
+    rbn_discrete_parents = discrete_ancestors(node)
     rbn_discrete_parents_combination = vec(collect(Iterators.product(_get_states.(rbn_discrete_parents)...)))
     rbn_discrete_parents_combination = map(x -> [i for i in x], rbn_discrete_parents_combination)
     srps = Dict{Vector{Symbol},StructuralReliabilityProblemPMF}()
@@ -28,7 +28,7 @@ function _build_structuralreliabilityproblem_node(node::ContinuousFunctionalNode
     ebn_discrete_parents = filter(x -> isa(x, DiscreteNode), node.parents)
     ebn_continuous_parents = filter(x -> isa(x, ContinuousNode), node.parents)
 
-    rbn_discrete_parents = get_discrete_ancestors(node)
+    rbn_discrete_parents = discrete_ancestors(node)
     rbn_discrete_parents_combination = vec(collect(Iterators.product(_get_states.(rbn_discrete_parents)...)))
     rbn_discrete_parents_combination = map(x -> [i for i in x], rbn_discrete_parents_combination)
     srps = Dict{Vector{Symbol},StructuralReliabilityProblemPDF}()

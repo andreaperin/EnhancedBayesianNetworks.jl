@@ -47,7 +47,7 @@ export Evidence
 export discretize!
 export evaluate!
 export factorize_cpd
-export get_discrete_ancestors
+export discrete_ancestors
 export get_children
 export get_cpd
 export get_models

@@ -16,7 +16,7 @@
     simulation1 = MonteCarlo(300)
     functional1_node = ContinuousFunctionalNode(:F1, functional1_parents, model1, simulation1, disc_D)
     @testset "Discrete Ancestors" begin
-        @test issetequal([root2, child1], get_discrete_ancestors(functional1_node))
+        @test issetequal([root2, child1], discrete_ancestors(functional1_node))
     end
     @testset "States Combinations" begin
         @test issetequal([[:c1y, :yes], [:c1n, :yes], [:c1y, :no], [:c1n, :no]], get_states_combinantions(functional1_node))

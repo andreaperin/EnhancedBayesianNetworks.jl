@@ -10,28 +10,26 @@ include("child.jl")
 include("functional.jl")
 include("structuralreliabilityproblemnode.jl")
 
-function get_discrete_ancestors(node::AbstractNode)
-    discrete_nodes = filter(x -> isa(x, DiscreteNode), node.parents)
-    continuous_nodes = filter(x -> isa(x, ContinuousNode), node.parents)
-    while !isempty(continuous_nodes)
-        if isa(continuous_nodes[1], RootNode)
-            popfirst!(continuous_nodes)
-        else
-            new_discrete_nodes = filter(x -> isa(x, DiscreteNode), continuous_nodes[1].parents)
-            append!(discrete_nodes, new_discrete_nodes)
-            new_continuous_nodes = filter(x -> isa(x, ContinuousNode), continuous_nodes[1].parents)
-            append!(continuous_nodes, new_continuous_nodes)
-            popfirst!(continuous_nodes)
-        end
+function discrete_ancestors(node::AbstractNode)
+    discrete_parents = filter(x -> isa(x, DiscreteNode), node.parents)
+    continuous_parents = filter(x -> isa(x, ContinuousNode), node.parents)
+
+    if isempty(continuous_parents)
+        return discrete_parents
     end
-    return discrete_nodes
+
+    return unique([discrete_parents..., mapreduce(discrete_ancestors, vcat, continuous_parents)...])
+end
+
+function discrete_ancestors(_::RootNode)
+    return AbstractNode[]
 end
 
 function get_states_combinantions(node::AbstractNode)
     if isa(node, RootNode)
         discrete_parents_combination = []
     else
-        par = get_discrete_ancestors(node)
+        par = discrete_ancestors(node)
         discrete_parents = filter(x -> isa(x, DiscreteNode), par)
         discrete_parents_combination = Iterators.product(_get_states.(discrete_parents)...)
         discrete_parents_combination = map(t -> [t...], discrete_parents_combination)
