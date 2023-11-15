@@ -3,7 +3,7 @@
 mutable struct ContinuousChildNode <: ContinuousNode
     name::Symbol
     parents::Vector{<:AbstractNode}
-    distributions::Dict{Vector{Symbol},Distribution}
+    distributions::Dict{Vector{Symbol},UnivariateDistribution}
     samples::Dict{Vector{Symbol},DataFrame}
     discretization::ApproximatedDiscretization
 
@@ -13,7 +13,7 @@ mutable struct ContinuousChildNode <: ContinuousNode
         distributions::Dict{Vector{Symbol},D},
         samples::Dict{Vector{Symbol},DataFrame},
         discretization::ApproximatedDiscretization
-    ) where {D<:Distribution}
+    ) where {D<:UnivariateDistribution}
 
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
         !issetequal(discrete_parents, parents) && error("ContinuousChildNode $name cannot have continuous parents! Use ContinuousFunctionalNode instead")
@@ -33,7 +33,7 @@ function ContinuousChildNode(
     name::Symbol,
     parents::Vector{<:AbstractNode},
     distributions::Dict{Vector{Symbol},D}
-) where {D<:Distribution}
+) where {D<:UnivariateDistribution}
 
     samples = Dict{Vector{Symbol},DataFrame}()
     discretization = ApproximatedDiscretization()
@@ -45,7 +45,7 @@ function ContinuousChildNode(
     parents::Vector{<:AbstractNode},
     distributions::Dict{Vector{Symbol},D},
     samples::Dict{Vector{Symbol},DataFrame}
-) where {D<:Distribution}
+) where {D<:UnivariateDistribution}
 
     discretization = ApproximatedDiscretization()
     ContinuousChildNode(name, parents, distributions, samples, discretization)
@@ -56,7 +56,7 @@ function ContinuousChildNode(
     parents::Vector{<:AbstractNode},
     distributions::Dict{Vector{Symbol},D},
     discretization::ApproximatedDiscretization
-) where {D<:Distribution}
+) where {D<:UnivariateDistribution}
 
     samples = Dict{Vector{Symbol},DataFrame}()
     ContinuousChildNode(name, parents, distributions, samples, discretization)

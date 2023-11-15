@@ -1,10 +1,10 @@
 struct ContinuousRootNode <: ContinuousNode
     name::Symbol
-    distribution::Distribution
+    distribution::UnivariateDistribution
     discretization::ExactDiscretization # discretization just as increasing values?
 end
 
-ContinuousRootNode(name::Symbol, distribution::Distribution) = ContinuousRootNode(name, distribution, ExactDiscretization())
+ContinuousRootNode(name::Symbol, distribution::UnivariateDistribution) = ContinuousRootNode(name, distribution, ExactDiscretization())
 
 function get_randomvariable(node::ContinuousRootNode, ::Vector{Symbol})
     RandomVariable(node.distribution, node.name)

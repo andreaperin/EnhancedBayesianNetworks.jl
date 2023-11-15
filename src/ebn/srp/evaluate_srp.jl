@@ -61,7 +61,7 @@ function evaluate!(srp_node::ContinuousStructuralReliabilityProblemNode)
         pdf = EmpiricalDistribution(res)
         return (comb, pdf, samples)
     end
-    distributions = Dict{Vector{Symbol},Distribution}()
+    distributions = Dict{Vector{Symbol},UnivariateDistribution}()
     samples = Dict{Vector{Symbol},DataFrame}()
 
     for (key, pdf, sam) in results
