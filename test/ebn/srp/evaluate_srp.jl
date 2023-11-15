@@ -1,4 +1,4 @@
-@testset "Evaluate Structural Reliability Problem" begin
+@testset "SRP evaluate" begin
     root1 = DiscreteRootNode(:X1, Dict(:y => 0.2, :n => 0.8), Dict(:y => [Parameter(1, :X1)], :n => [Parameter(0, :X1)]))
     root2 = DiscreteRootNode(:X2, Dict(:yes => 0.4, :no => 0.6), Dict(:yes => [Parameter(2.2, :X2)], :no => [Parameter(5.5, :X2)]))
     root3 = ContinuousRootNode(:Y1, Uniform(-1, 1))
@@ -32,8 +32,8 @@
     nodes = [root1, root2, root3, root4, functional1_node, functional2_node, standard3_node]
     ebn = EnhancedBayesianNetwork(nodes)
 
-    @testset "Evaluate StructuralReliabilityProblemNode" begin
-        @testset "ContinuousStructuralReliabilityProblemNode" begin
+    @testset "SRP Node evaluate" begin
+        @testset "Continouos SRP Node" begin
             target1 = Uniform(-1, 1)
             target2 = Uniform(0, 2)
             @test evaluated_node1.name == :F1
@@ -44,7 +44,7 @@
             @test isapprox(mean(get_randomvariable(evaluated_node1, [:n]).dist), mean(target1); atol=0.1)
             @test isapprox(var(get_randomvariable(evaluated_node1, [:n]).dist), var(target1); atol=0.1)
         end
-        @testset "DiscreteStructuralReliabilityProblemNode" begin
+        @testset "Discrete SRP Node" begin
             @test evaluated_node2.name == :F2
             @test issetequal(evaluated_node2.parents, discrete_srpnode2.parents)
             @test isequal(evaluated_node2.parameters, Dict{Symbol,Vector{Parameter}}())
@@ -82,7 +82,7 @@
 
     end
 
-    @testset "Evaluate EnhancedBayesianNetwork Single Layer" begin
+    @testset "EBN evaluate -Single Layer" begin
 
         root1 = DiscreteRootNode(:X1, Dict(:y => 0.2, :n => 0.8), Dict(:y => [Parameter(1, :X1)], :n => [Parameter(0, :X1)]))
         root2 = DiscreteRootNode(:X2, Dict(:yes => 0.4, :no => 0.6), Dict(:yes => [Parameter(2.2, :X2)], :no => [Parameter(5.5, :X2)]))
@@ -127,7 +127,7 @@
 
     end
 
-    @testset "Evaluate EnhancedBayesianNetwork Global" begin
+    @testset "EBN evaluate" begin
         e_ebn = evaluate!(ebn)
         node_names = [i.name for i in filter(x -> isa(x, FunctionalNode), ebn.nodes)]
         node_to_test = filter(x -> x.name in node_names, e_ebn.nodes)
