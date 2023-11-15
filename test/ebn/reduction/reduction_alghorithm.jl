@@ -1,4 +1,4 @@
-@testset "Reduced Bayesian Networks" begin
+@testset "EBN reduction" begin
     @testset "Node Elimination" begin
         badjlist = Vector{Vector{Int}}([[], [1], [1, 2]])
         fadjlist = Vector{Vector{Int}}([[2, 3], [3], []])
@@ -39,7 +39,7 @@
         @test EnhancedBayesianNetworks._remove_barren_node(copy(dag), 3) == resulting_dag
     end
 
-    @testset "ebn Reduction" begin
+    @testset "EBN Reduction" begin
 
         root1 = DiscreteRootNode(:x, Dict(:yes => 0.5, :no => 0.5))
         root2 = DiscreteRootNode(:z, Dict(:y => 0.2, :n => 0.8), Dict(:y => [Parameter(1, :z)], :n => [Parameter(0, :z)]))

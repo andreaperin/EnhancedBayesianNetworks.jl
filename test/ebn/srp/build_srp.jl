@@ -1,4 +1,4 @@
-@testset "Build Structural Reliability Problem" begin
+@testset "Build SRP" begin
     root1 = DiscreteRootNode(:X1, Dict(:y => 0.2, :n => 0.8), Dict(:y => [Parameter(1, :X1)], :n => [Parameter(0, :X1)]))
     root3 = ContinuousRootNode(:Y1, Normal(), ExactDiscretization([0, 0.2, 1]))
 

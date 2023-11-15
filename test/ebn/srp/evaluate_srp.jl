@@ -1,4 +1,4 @@
-@testset "SRP evaluate" begin
+@testset "Evaluate SRP" begin
     root1 = DiscreteRootNode(:X1, Dict(:y => 0.2, :n => 0.8), Dict(:y => [Parameter(1, :X1)], :n => [Parameter(0, :X1)]))
     root2 = DiscreteRootNode(:X2, Dict(:yes => 0.4, :no => 0.6), Dict(:yes => [Parameter(2.2, :X2)], :no => [Parameter(5.5, :X2)]))
     root3 = ContinuousRootNode(:Y1, Uniform(-1, 1))
@@ -32,7 +32,7 @@
     nodes = [root1, root2, root3, root4, functional1_node, functional2_node, standard3_node]
     ebn = EnhancedBayesianNetwork(nodes)
 
-    @testset "SRP Node evaluate" begin
+    @testset "Evaluate SRP Node" begin
         @testset "Continouos SRP Node" begin
             target1 = Uniform(-1, 1)
             target2 = Uniform(0, 2)

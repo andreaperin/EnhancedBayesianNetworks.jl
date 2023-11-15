@@ -1,5 +1,5 @@
-@testset "StructuralReliabilityProblem Nodes" begin
-    @testset "ContinuousStructuralReliabilitylProblem Node" begin
+@testset "SRP Nodes" begin
+    @testset "Continuous SRP Node" begin
 
         root1 = DiscreteRootNode(:x, Dict(:yes_1 => 0.2, :no_1 => 0.8), Dict(:yes_1 => [Parameter(2.2, :x)], :no_1 => [Parameter(5.5, :x)]))
         root2 = DiscreteRootNode(:y, Dict(:yes_2 => 0.4, :no_2 => 0.6), Dict(:yes_2 => [Parameter(2.2, :y)], :no_2 => [Parameter(5.5, :y)]))
@@ -32,7 +32,7 @@
         @test isequal(node.discretization, ApproximatedDiscretization())
     end
 
-    @testset "DiscreteStructuralReliabilityProblem Node" begin
+    @testset "Discrete SRP Node" begin
         root1 = DiscreteRootNode(:x, Dict(:yes_1 => 0.2, :no_1 => 0.8), Dict(:yes_1 => [Parameter(2.2, :x)], :no_1 => [Parameter(5.5, :x)]))
         root2 = DiscreteRootNode(:y, Dict(:yes_2 => 0.4, :no_2 => 0.6), Dict(:yes_2 => [Parameter(2.2, :y)], :no_2 => [Parameter(5.5, :y)]))
         root3 = ContinuousRootNode(:z, Normal())

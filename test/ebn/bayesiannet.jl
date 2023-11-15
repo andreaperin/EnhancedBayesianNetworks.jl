@@ -46,7 +46,7 @@
         @test issetequal(bn.nodes, e_ebn.nodes)
     end
 
-    @testset "Additional Conditional Probability Distribiution" begin
+    @testset "Additional CPDs" begin
         v = DiscreteRootNode(:V, Dict(:yesV => 0.01, :noV => 0.99))
         s = DiscreteRootNode(:S, Dict(:yesS => 0.5, :noS => 0.5))
         t = DiscreteChildNode(:T, [v], Dict(

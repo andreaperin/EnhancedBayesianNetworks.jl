@@ -1,4 +1,4 @@
-@testset "Conditional Probability Distribution" begin
+@testset "CPD" begin
     target = :A
     parents = [:B, :C]
     parents_states_mapping_dict = Dict(
