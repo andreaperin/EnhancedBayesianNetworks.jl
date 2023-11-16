@@ -45,3 +45,10 @@ function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousRootNode
     deleteat!(nodes, findall(isequal.(repeat([node], length(nodes)), nodes)))
     return nodes
 end
+
+function _get_node_distribution_bounds(node::ContinuousChildNode)
+    lower_bound = support(node.distribution).lb
+    upper_bound = support(node.distribution).ub
+    return lower_bound, upper_bound
+end
+

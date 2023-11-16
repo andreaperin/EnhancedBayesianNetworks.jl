@@ -8,10 +8,10 @@ abstract type AbstractDiscretization end
 
 ```
 struct ExactDiscretization <: AbstractDiscretization
-    intervals::Vector{<:Number}
+    intervals::Vector{<:Real}
 
-    function ExactDiscretization(intervals::Vector{<:Number})
-        if sort(intervals) != intervals
+    function ExactDiscretization(intervals::Vector{<:Real})
+        if !issorted(intervals)
             error("interval values $intervals are not sorted")
         end
         new(intervals)
@@ -27,7 +27,7 @@ function Base.hash(discretization::ExactDiscretization, h::UInt)
     return h
 end
 
-ExactDiscretization() = ExactDiscretization(Vector{Number}())
+ExactDiscretization() = ExactDiscretization(Vector{Real}())
 
 ``` ApproximatedDiscretization
 
@@ -37,10 +37,10 @@ ExactDiscretization() = ExactDiscretization(Vector{Number}())
 
 ```
 struct ApproximatedDiscretization <: AbstractDiscretization
-    intervals::Vector{<:Number}
-    sigma::Union{Number,Nothing}
+    intervals::Vector{<:Real}
+    sigma::Union{Real,Nothing}
 
-    function ApproximatedDiscretization(intervals::Vector{<:Number}, sigma::Union{Number,Nothing})
+    function ApproximatedDiscretization(intervals::Vector{<:Real}, sigma::Union{Real,Nothing})
         if sort(intervals) != intervals
             error("interval values $intervals are not sorted")
         elseif !isa(sigma, Nothing) && sigma ≤ 0
@@ -62,4 +62,4 @@ function Base.hash(discretization::ApproximatedDiscretization, h::UInt)
     return h
 end
 
-ApproximatedDiscretization() = ApproximatedDiscretization(Vector{Number}(), nothing)
+ApproximatedDiscretization() = ApproximatedDiscretization(Vector{Real}(), nothing)

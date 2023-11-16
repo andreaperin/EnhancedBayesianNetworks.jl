@@ -12,8 +12,7 @@ include("nodes/node.jl")
 include("ebn/enhancedbn.jl")
 
 include("ebn/discretization/discretization.jl")
-include("ebn/discretization/discretize_root.jl")
-include("ebn/discretization/discretize_child.jl")
+include("ebn/discretization/discretize_node.jl")
 include("ebn/discretization/discretize_net.jl")
 
 include("ebn/reduction/reduction_alghorithm.jl")
