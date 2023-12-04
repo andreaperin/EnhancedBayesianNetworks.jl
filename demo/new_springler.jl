@@ -39,18 +39,27 @@ wetfloor_parents = [random, rain_node]
 wetfloor_model1 = Model(df -> df.Rnd .^ 2 .* df.rn, :final_floor)
 wetfloor_models = [wetfloor_model1]
 wetfloor_simulations = MonteCarlo(200)
-
 wetfloor_node = ContinuousFunctionalNode(wetfloor_name, wetfloor_parents, wetfloor_models, wetfloor_simulations)
 
-nodes = [random, cloudy, rain_node, sprinkler_node, wetgrass_node, wetfloor_node]
+wetfloor_d_name = :dWF
+wetfloor_d_parents = [wetfloor_node]
+wetfloor_d_model1 = Model(df -> df.final_wet .+ 1, :final_floor_d)
+wetfloor_d_models = [wetfloor_d_model1]
+wetfloor_d_simulations = MonteCarlo(200)
+wetgfloor_d_performances = df -> df.final_floor_d .- 1
+wetfloor_d_node = DiscreteFunctionalNode(wetfloor_d_name, wetfloor_d_parents, wetfloor_d_models, wetgrass_performances, wetfloor_d_simulations)
+
+nodes = [random, cloudy, rain_node, sprinkler_node, wetgrass_node, wetfloor_node, wetfloor_d_node]
 
 ebn = EnhancedBayesianNetwork(nodes)
 
-gr();
-nodesize = 0.12
-fontsize = 18
-EnhancedBayesianNetworks.plot(ebn, :tree, nodesize, fontsize)
-Plots.savefig("C:\\Users\\Administrator\\Resilio Sync\\PhD\\3_Academic\\Papers_Presentations\\Conferences\\2024_ICVRAM\\ASCE-ICVRAM-ISUMA 2024-Abstract-LaTeX\\Figures\\ebn.png")
+oo = EnhancedBayesianNetworks.transfer_continuous(ebn)
+
+# gr();
+# nodesize = 0.12
+# fontsize = 18
+# EnhancedBayesianNetworks.plot(ebn, :tree, nodesize, fontsize)
+# Plots.savefig("C:\\Users\\Administrator\\Resilio Sync\\PhD\\3_Academic\\Papers_Presentations\\Conferences\\2024_ICVRAM\\ASCE-ICVRAM-ISUMA 2024-Abstract-LaTeX\\Figures\\ebn.png")
 
 
 # rbn = reduce!(ebn)
@@ -61,3 +70,5 @@ Plots.savefig("C:\\Users\\Administrator\\Resilio Sync\\PhD\\3_Academic\\Papers_P
 # a = evaluate!(ebn)
 # EnhancedBayesianNetworks.plot(a, :tree, nodesize, fontsize)
 # Plots.savefig("C:\\Users\\Administrator\\Resilio Sync\\PhD\\3_Academic\\Papers_Presentations\\Conferences\\2024_ICVRAM\\ASCE-ICVRAM-ISUMA 2024-Abstract-LaTeX\\Figures\\rbn.png")
+
+
