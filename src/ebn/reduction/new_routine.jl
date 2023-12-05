@@ -38,6 +38,8 @@ function _transfer_single_continuous_functional(ebn::EnhancedBayesianNetwork, pa
         new_nodes = filter(x -> x.name ∉ name, ebn.nodes)
         append!(new_nodes, new_children)
         new_ebn = EnhancedBayesianNetwork(new_nodes)
+    else
+        new_ebn = ebn
     end
     return new_ebn
 end
