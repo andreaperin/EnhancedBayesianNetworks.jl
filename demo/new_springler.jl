@@ -39,18 +39,19 @@ wetgrass_node = DiscreteFunctionalNode(wetgrass_name, wetgrass_parents, wetgrass
 
 wetgrass2_name = :WG2
 wetgrass2_parents = Vector{AbstractNode}()
-append!(wetgrass2_parents, [wetgrass_node])
-wetgrass2_model1 = Model(df -> df.wgp, :final_state2)
+append!(wetgrass2_parents, [wetgrass_node, random])
+wetgrass2_model1 = Model(df -> df.wgp .* df.Rnd, :final_state2)
 wetgrass2_models = [wetgrass2_model1]
 wetgrass2_simulations = MonteCarlo(200)
 wetgrass2_models = [wetgrass2_model1]
-wetgrass2_node = ContinuousFunctionalNode(wetgrass2_name, wetgrass2_parents, wetgrass2_models, wetgrass2_simulations)
+wetgrass2_discretization = ApproximatedDiscretization([-1.1, 0, 0.11], 2)
+wetgrass2_node = ContinuousFunctionalNode(wetgrass2_name, wetgrass2_parents, wetgrass2_models, wetgrass2_simulations, wetgrass2_discretization)
 
 
 wetgrass3_name = :WG3
 wetgrass3_parents = Vector{AbstractNode}()
 append!(wetgrass3_parents, [wetgrass2_node])
-wetgrass3_model1 = Model(df -> df.final_state2, :final_state3)
+wetgrass3_model1 = Model(df -> df.WG2, :final_state3)
 wetgrass3_models = [wetgrass3_model1]
 wetgrass3_simulations = MonteCarlo(200)
 wetgrass3_performances = df -> df.final_state3
@@ -79,12 +80,16 @@ nodes = [random, cloudy, rain_node, sprinkler_node, wetgrass_node, wetgrass2_nod
 ebn = EnhancedBayesianNetwork(nodes)
 
 
+
 # oo = EnhancedBayesianNetworks.transfer_continuous(ebn)
 # e_ebn, b = EnhancedBayesianNetworks._evaluate_single_layer(oo)
 # e_ebn2, b2 = EnhancedBayesianNetworks._evaluate_single_layer(e_ebn)
+
+# e_ebn2, b2 = EnhancedBayesianNetworks._evaluate_single_layer(e_ebn2)
+
 ooo = evaluate!(ebn)
-EnhancedBayesianNetworks.plot(ooo)
-model_nodes=filter(x->x.name ∈ [:WG, :WG3, :dWF], ooo.nodes)
+# EnhancedBayesianNetworks.plot(ooo)
+# model_nodes=filter(x->x.name ∈ [:WG, :WG3, :dWF], ooo.nodes)
 # rr = evaluate!(oo)
 
 

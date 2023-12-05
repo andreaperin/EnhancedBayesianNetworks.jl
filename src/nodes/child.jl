@@ -71,7 +71,8 @@ function get_randomvariable(node::ContinuousChildNode, evidence::Vector{Symbol})
 end
 
 function Base.isequal(node1::ContinuousChildNode, node2::ContinuousChildNode)
-    node1.name == node2.name && issetequal(node1.parents, node2.parents) && node1.distributions == node2.distributions && isequal(node1.discretization, node2.discretization)
+    node1.name == node2.name && issetequal(node1.parents, node2.parents) && keys(node1.distributions) == keys(node2.distributions) && isequal(node1.discretization, node2.discretization)
+    ##TODO missing `isequal` function for EmpiricalDistribution (must be implemented in UQ.jl)
 end
 
 function Base.hash(node::ContinuousChildNode, h::UInt)
