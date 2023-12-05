@@ -43,7 +43,11 @@ function _build_structuralreliabilityproblem_node(node::ContinuousFunctionalNode
         else
             uq_parameters = mapreduce(p -> get_parameters(p, evidence), vcat, ebn_discrete_parents)
         end
-        uq_randomvariables = mapreduce(p -> get_randomvariable(p, evidence), vcat, ebn_continuous_parents)
+        if isempty(ebn_continuous_parents)
+            uq_randomvariables = Vector{UQInput}()
+        else
+            uq_randomvariables = mapreduce(p -> get_randomvariable(p, evidence), vcat, ebn_continuous_parents)
+        end
         uqinputs = vcat(uq_parameters, uq_randomvariables)
         simulations = node.simulations
         models = node.models
