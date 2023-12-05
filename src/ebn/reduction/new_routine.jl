@@ -5,7 +5,7 @@ function transfer_continuous(ebn::EnhancedBayesianNetwork)
     while !isempty(continuous_functional_to_transfer)
         level = ContinuousFunctionalNode[]
         for i in continuous_functional
-            if !any(isa.(i.parents, FunctionalNode))
+            if !any(isa.(i.parents, ContinuousFunctionalNode))
                 push!(level, i)
             end
         end
@@ -26,12 +26,8 @@ function _transfer_continuous_functional(ebn::EnhancedBayesianNetwork, first_lev
 end
 
 function _transfer_single_continuous_functional_single_child(parent::ContinuousFunctionalNode, child::FunctionalNode)
-    if parent.simulations != child.simulations
-        error("node $parent.name and node $child.name should have the same simulations because they belong to the same SRP")
-    end
     child.parents = append!(parent.parents, filter(x -> x.name != parent.name, child.parents))
     child.models = append!(parent.models, child.models)
-
     return child
 end
 
