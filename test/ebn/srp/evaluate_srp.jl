@@ -9,6 +9,9 @@
     simulation1 = MonteCarlo(1000000)
     functional1_node = ContinuousFunctionalNode(:F1, functional1_parents, model1, simulation1)
 
+    functional1_d_performance = df -> df.fun1
+    functional1_d_node = DiscreteFunctionalNode(:F1, functional1_parents, model1,functional1_d_performance, simulation1)
+
     standard3_parents = [root1]
     standard3_states = Dict(
         [:y] => Normal(),
@@ -29,7 +32,7 @@
     discrete_srpnode2 = EnhancedBayesianNetworks._build_structuralreliabilityproblem_node(functional2_node)
     evaluated_node2 = evaluate!(discrete_srpnode2)
 
-    nodes = [root1, root2, root3, root4, functional1_node, functional2_node, standard3_node]
+    nodes = [root1, root2, root3, root4, functional1_d_node, functional2_node, standard3_node]
     ebn = EnhancedBayesianNetwork(nodes)
 
     @testset "Evaluate SRP Node" begin
@@ -128,6 +131,37 @@
     end
 
     @testset "EBN evaluate" begin
+        root1 = DiscreteRootNode(:X1, Dict(:y => 0.2, :n => 0.8), Dict(:y => [Parameter(1, :X1)], :n => [Parameter(0, :X1)]))
+        root2 = DiscreteRootNode(:X2, Dict(:yes => 0.4, :no => 0.6), Dict(:yes => [Parameter(2.2, :X2)], :no => [Parameter(5.5, :X2)]))
+        root3 = ContinuousRootNode(:Y1, Uniform(-1, 1))
+        root4 = ContinuousRootNode(:Y2, Normal())
+
+        functional1_d_performance = df -> df.fun1
+        functional1_d_node = DiscreteFunctionalNode(:F1, functional1_parents, model1, functional1_d_performance, simulation1)
+
+        standard3_parents = [root1]
+        standard3_states = Dict(
+            [:y] => Normal(),
+            [:n] => Normal(2, 2)
+        )
+        standard3_node = ContinuousChildNode(:Std3, standard3_parents, standard3_states)
+
+        functional2_name = :F2
+        functional2_parents = [root2, root3, root4]
+        model2 = [Model(df -> (df.X2 .^ 2 .+ df.Y1 .^ 2) ./ 2 .- df.Y1 .- df.Y2, :fun2)]
+        performance = df -> 1 .- 2 .* df.fun2
+        simulation2 = MonteCarlo(100000)
+        functional2_node = DiscreteFunctionalNode(functional2_name, functional2_parents, model2, performance, simulation2)
+
+        continuous_srpnode1 = EnhancedBayesianNetworks._build_structuralreliabilityproblem_node(functional1_node)
+        evaluated_node1 = evaluate!(continuous_srpnode1)
+
+        discrete_srpnode2 = EnhancedBayesianNetworks._build_structuralreliabilityproblem_node(functional2_node)
+        evaluated_node2 = evaluate!(discrete_srpnode2)
+
+        nodes = [root1, root2, root3, root4, functional1_d_node, functional2_node, standard3_node]
+        ebn = EnhancedBayesianNetwork(nodes)
+
         e_ebn = evaluate!(ebn)
         node_names = [i.name for i in filter(x -> isa(x, FunctionalNode), ebn.nodes)]
         node_to_test = filter(x -> x.name in node_names, e_ebn.nodes)
