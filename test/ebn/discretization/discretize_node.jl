@@ -1,145 +1,68 @@
 @testset "Node Discretization" begin
 
-    @testset "Child Nodes" begin
-        root1 = DiscreteRootNode(:x, Dict(:y => 0.2, :n => 0.8), Dict(:y => [Parameter(1, :x)], :n => [Parameter(0, :x), Parameter(5.6, :x1)]))
+    @testset "Format Intervals" begin
+        discretization = ExactDiscretization([-Inf, 0, Inf])
+        root = ContinuousRootNode(:z1, Normal(), discretization)
 
-        standard2_name = :β
-        standard2_parents = [root1]
-        standard2_states = Dict(
-            [:y] => Normal(),
-            [:n] => Normal(2, 2)
-        )
-        standard2_states = Dict(
-            [:y] => Normal(),
-            [:n] => Normal(2, 2)
-        )
-        standard1_name = :β1
-        standard1_parents = [root1]
-        standard1_states = Dict(
-            [:y] => Normal(),
-            [:n] => Normal(2, 2)
-        )
-        standard1_states = Dict(
-            [:y] => Normal(),
-            [:n] => Normal(2, 2)
-        )
-        discretization_standard1 = ApproximatedDiscretization([-Inf, 0], 1.5)
-        standard1_node = ContinuousChildNode(standard1_name, standard1_parents, standard1_states, discretization_standard1)
+        formatted_intervals = EnhancedBayesianNetworks._format_interval(root)
+        @test formatted_intervals == [[-Inf, 0.0], [0.0, Inf]]
 
-        discretization_standard2 = ApproximatedDiscretization([0, Inf], 1.5)
-        standard2_node = ContinuousChildNode(standard2_name, standard2_parents, standard2_states, discretization_standard2)
+        discretization = ExactDiscretization([0, Inf])
+        root = ContinuousRootNode(:z1, Normal(), discretization)
 
-        functional2_name = :f2
-        functional2_parents = [standard2_node, root1]
-        functional2_model = Model(df -> df.z1_d .+ df.x, :value1)
-        functional2_simulation = MonteCarlo(800)
-        functional2_performance = df -> 2 .- df.value1
-        functional2_node = DiscreteFunctionalNode(functional2_name, functional2_parents, [functional2_model], functional2_performance, functional2_simulation)
+        @test_logs (:warn, "Minimum intervals value 0.0 >= support lower bound -Inf. Lower bound will be used as intervals start.") EnhancedBayesianNetworks._format_interval(root)
 
-        nodes = [root1, standard1_node, standard2_node, functional2_node]
-        ebn = EnhancedBayesianNetwork(nodes)
+        discretization = ExactDiscretization([-Inf, 0.0])
+        root = ContinuousRootNode(:z1, Normal(), discretization)
 
-        @test_logs (:warn, "selected minimum intervals value 0.0 ≥ support lower buond -Inf. Support lower bound will be used as intervals starting value!") EnhancedBayesianNetworks._discretize_node(ebn, standard2_node)
-        @test_logs (:warn, "selected maximum intervals value 0.0 ≤ support's upper buond Inf. Support's upper bound will be used as intervals final value!") EnhancedBayesianNetworks._discretize_node(ebn, standard1_node)
-
-        discretization_standard2 = ApproximatedDiscretization([-Inf, 0, Inf], 1.5)
-        standard2_node = ContinuousChildNode(standard2_name, standard2_parents, standard2_states, discretization_standard2)
-        functional2_parents = [standard2_node, root1]
-        functional2_node = DiscreteFunctionalNode(functional2_name, functional2_parents, [functional2_model], functional2_performance, functional2_simulation)
-        nodes = [root1, standard2_node, functional2_node]
-        ebn = EnhancedBayesianNetwork(nodes)
-
-        disc_ebn_nodes = EnhancedBayesianNetworks._discretize_node(ebn, standard2_node)
-
-        β_d_node = DiscreteChildNode(:β_d, [root1], Dict(
-            [:y] => Dict(
-                Symbol("[-Inf, 0.0]") => 0.5,
-                Symbol("[0.0, Inf]") => 0.5
-            ),
-            [:n] => Dict(
-                Symbol("[-Inf, 0.0]") => 0.15865525393145702,
-                Symbol("[0.0, Inf]") => 0.841344746068543
-            )
-        ))
-
-        β_c_node = ContinuousChildNode(:β, [β_d_node], Dict(
-            [Symbol("[-Inf, 0.0]")] => truncated(Normal(0.0, 1.5), -Inf, 0.0),
-            [Symbol("[0.0, Inf]")] => truncated(Normal(0.0, 1.5), 0.0, Inf)
-        ))
-
-        functional2_r_node = DiscreteFunctionalNode(functional2_name, [root1, β_c_node], [functional2_model], functional2_performance, functional2_simulation)
-
-        @test issetequal(disc_ebn_nodes, [root1, functional2_r_node, β_c_node, β_d_node])
+        @test_logs (:warn, "Maximum intervals value 0.0 <= support upper bound Inf. Upper bound will be used as intervals end.") EnhancedBayesianNetworks._format_interval(root)
     end
 
-    @testset "Child Nodes" begin
-        root1 = DiscreteRootNode(:x, Dict(:y => 0.2, :n => 0.8), Dict(:y => [Parameter(1, :x)], :n => [Parameter(0, :x), Parameter(5.6, :x1)]))
-        root2 = DiscreteRootNode(:y, Dict(:yes => 0.4, :no => 0.6), Dict(:yes => [Parameter(2.2, :y)], :no => [Parameter(5.5, :y)]))
-        discretization_root3 = ExactDiscretization([0, Inf])
-        root3 = ContinuousRootNode(:z1, Normal(), discretization_root3)
+    @testset "Root node" begin
+        discretization = ExactDiscretization([0, Inf])
+        root = ContinuousRootNode(:z1, Normal(), discretization)
 
-        discretization_root4 = ExactDiscretization([-Inf, 0])
-        root4 = ContinuousRootNode(:z2, Normal(), discretization_root4)
+        continuous_node, discretized_root = @suppress EnhancedBayesianNetworks._discretize(root)
 
-        standard1_name = :α
-        standard1_parents = [root1, root2]
-        standard1_states = Dict(
-            [:y, :yes] => Dict(:a => 0.2, :b => 0.8),
-            [:n, :yes] => Dict(:a => 0.3, :b => 0.7),
-            [:y, :no] => Dict(:a => 0.4, :b => 0.6),
-            [:n, :no] => Dict(:a => 0.5, :b => 0.5)
-        )
-        standard1_parameters = Dict(:a => [Parameter(3, :α)], :b => [Parameter(10, :α)])
-        standard1_node = DiscreteChildNode(standard1_name, standard1_parents, standard1_states, standard1_parameters)
+        @test discretized_root.name == :z1_d
 
-        standard2_name = :β
-        standard2_parents = [root1]
-        standard2_states = Dict(
+        @test continuous_node.distributions[[Symbol("[-Inf, 0.0]")]] == truncated(Normal(), -Inf, 0.0)
+        @test continuous_node.distributions[[Symbol("[0.0, Inf]")]] == truncated(Normal(), 0.0, Inf)
+
+        @test discretized_root.states[Symbol("[-Inf, 0.0]")] == 0.5
+        @test discretized_root.states[Symbol("[0.0, Inf]")] == 0.5
+
+        discretization = ExactDiscretization([-Inf, 0, Inf])
+
+        continuous_node, discretized_root = @suppress EnhancedBayesianNetworks._discretize(root)
+
+        @test discretized_root.name == :z1_d
+
+        @test continuous_node.distributions[[Symbol("[-Inf, 0.0]")]] == truncated(Normal(), -Inf, 0.0)
+        @test continuous_node.distributions[[Symbol("[0.0, Inf]")]] == truncated(Normal(), 0.0, Inf)
+
+        @test discretized_root.states[Symbol("[-Inf, 0.0]")] == 0.5
+        @test discretized_root.states[Symbol("[0.0, Inf]")] == 0.5
+    end
+
+    @testset "Child node" begin
+        discretization = ApproximatedDiscretization([-Inf, -1, 0, 1, Inf], 1.5)
+
+        root = DiscreteRootNode(:x, Dict(:y => 0.2, :n => 0.8))
+
+        states = Dict(
             [:y] => Normal(),
             [:n] => Normal(2, 2)
         )
-        standard2_states = Dict(
-            [:y] => Normal(),
-            [:n] => Normal(2, 2)
-        )
-        standard2_node = ContinuousChildNode(standard2_name, standard2_parents, standard2_states)
 
-        functional2_name = :f2
-        functional2_parents = [standard1_node, root3]
-        functional2_model = Model(df -> (df.α .^ 2 + df.z .^ 2) ./ 2, :value1)
-        functional2_simulation = MonteCarlo(800)
-        functional2_performance = df -> 1 .- 2 .* df.value1
-        functional2_node = DiscreteFunctionalNode(functional2_name, functional2_parents, [functional2_model], functional2_performance, functional2_simulation)
+        child = ContinuousChildNode(:β, [root], states, discretization)
 
-        nodes = [standard1_node, root1, root3, root2, root4, standard2_node, functional2_node]
-        ebn = EnhancedBayesianNetwork(nodes)
+        approximated_node, discretized_child = @suppress EnhancedBayesianNetworks._discretize(child)
 
-        @test_logs (:warn, "selected minimum intervals value 0.0 ≥ support lower buond -Inf. Support lower bound will be used as intervals starting value!") EnhancedBayesianNetworks._discretize_node(ebn, root3)
-        @test_logs (:warn, "selected maximum intervals value 0.0 ≤ support's upper buond Inf. Support's upper bound will be used as intervals final value!") EnhancedBayesianNetworks._discretize_node(ebn, root4)
+        @test approximated_node.distributions[[Symbol("[-Inf, -1.0]")]] == truncated(Normal(-1, 1.5), -Inf, -1)
+        @test approximated_node.distributions[[Symbol("[-1.0, 0.0]")]] == Uniform(-1, 0)
+        @test approximated_node.distributions[[Symbol("[0.0, 1.0]")]] == Uniform(0, 1.0)
+        @test approximated_node.distributions[[Symbol("[1.0, Inf]")]] == truncated(Normal(1, 1.5), 1, Inf)
 
-        discretization_root3 = ExactDiscretization([-Inf, 0, Inf])
-        root3 = ContinuousRootNode(:z1, Normal(), discretization_root3)
-        functional2_parents = [standard1_node, root3]
-        functional2_node = DiscreteFunctionalNode(functional2_name, functional2_parents, [functional2_model], functional2_performance, functional2_simulation)
-
-        nodes = [standard1_node, root1, root3, root2, root4, standard2_node, functional2_node]
-        ebn = EnhancedBayesianNetwork(nodes)
-
-        disc_ebn_nodes = EnhancedBayesianNetworks._discretize_node(ebn, root3)
-        z_d_node = DiscreteRootNode(:z1_d,
-            Dict(
-                Symbol("[-Inf, 0.0]") => 0.5,
-                Symbol("[0.0, Inf]") => 0.5
-            )
-        )
-        z_c_node = ContinuousChildNode(:z1, [z_d_node],
-            Dict(
-                [Symbol("[-Inf, 0.0]")] => truncated(Normal(0.0, 1.0), -Inf, 0.0),
-                [Symbol("[0.0, Inf]")] => truncated(Normal(0.0, 1.0), 0.0, Inf)
-            )
-        )
-        functional2_r_node = DiscreteFunctionalNode(functional2_name, [standard1_node, z_c_node], [functional2_model], functional2_performance, functional2_simulation)
-
-        @test issetequal(disc_ebn_nodes, [root2, root1, root4, standard2_node, standard1_node, functional2_r_node, z_c_node, z_d_node])
     end
 end

@@ -1,5 +1,6 @@
 module EnhancedBayesianNetworks
 
+using AutoHashEquals
 using DataFrames
 using Distributed
 using Distributions
@@ -44,7 +45,7 @@ const Evidence = Dict{Symbol,Symbol}
 export Evidence
 
 # Methods
-export discretize!
+export discretize
 export evaluate!
 export factorize_cpd
 export discrete_ancestors

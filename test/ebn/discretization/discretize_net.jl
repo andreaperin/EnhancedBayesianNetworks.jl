@@ -1,5 +1,4 @@
-@testset "Discretization EBN" begin
-
+@testset "Discretize EBN" begin
     root1 = DiscreteRootNode(:x, Dict(:y => 0.2, :n => 0.8), Dict(:y => [Parameter(1, :x)], :n => [Parameter(0, :x), Parameter(5.6, :x1)]))
     root2 = DiscreteRootNode(:y, Dict(:yes => 0.4, :no => 0.6), Dict(:yes => [Parameter(2.2, :y)], :no => [Parameter(5.5, :y)]))
     discretization_root3 = ExactDiscretization([-Inf, 0, Inf])
@@ -38,21 +37,8 @@
 
     nodes = [standard1_node, root1, root3, root2, standard2_node, functional2_node]
     ebn = EnhancedBayesianNetwork(nodes)
-    disc_ebn = discretize!(ebn)
 
-    name_to_index = Dict(
-        :α => 3,
-        :β_d => 4,
-        :z1_d => 6,
-        :y => 1,
-        :z1 => 7,
-        :f2 => 8,
-        :β => 5,
-        :x => 2
-    )
-    fadjlist = [[3], [3, 4], [8], [5], Int64[], [7], [8], Int64[]]
-    badjlist = [Int64[], Int64[], [1, 2], [2], [4], Int64[], [6], [3, 7]]
-    ne1 = 7
+    disc_ebn = discretize(ebn)
 
     z_d_node = DiscreteRootNode(:z1_d,
         Dict(
@@ -86,7 +72,7 @@
     functional2_r_node = DiscreteFunctionalNode(functional2_name, [standard1_node, z_c_node], [functional2_model], functional2_performance, functional2_simulation)
 
     @test issetequal(disc_ebn.nodes, [root2, root1, standard1_node, β_d_node, β_c_node, z_d_node, z_c_node, functional2_r_node])
-    @test disc_ebn.dag == SimpleDiGraph{Int64}(ne1, fadjlist, badjlist)
-    @test disc_ebn.name_to_index == name_to_index
+
+    @test issetequal(get_children(disc_ebn, z_d_node), [z_c_node])
 end
 

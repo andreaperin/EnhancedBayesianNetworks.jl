@@ -7,7 +7,7 @@ abstract type AbstractDiscretization end
         intervals: vector of Float64 that discretize initial distribution support
 
 """
-struct ExactDiscretization <: AbstractDiscretization
+@auto_hash_equals struct ExactDiscretization <: AbstractDiscretization
     intervals::Vector{<:Real}
 
     function ExactDiscretization(intervals::Vector{<:Real})
@@ -20,15 +20,6 @@ end
 
 ExactDiscretization() = ExactDiscretization(Vector{Real}())
 
-function Base.isequal(discretization1::ExactDiscretization, discretization2::ExactDiscretization)
-    discretization1.intervals == discretization2.intervals
-end
-
-function Base.hash(discretization::ExactDiscretization, h::UInt)
-    h = hash(discretization.intervals, h)
-    return h
-end
-
 
 """ ApproximatedDiscretization
 
@@ -37,7 +28,7 @@ end
         sigma: variance of the normal distribution used for appriximate initial continuous distribution
 
 """
-struct ApproximatedDiscretization <: AbstractDiscretization
+@auto_hash_equals struct ApproximatedDiscretization <: AbstractDiscretization
     intervals::Vector{<:Real}
     sigma::Real
 
@@ -54,13 +45,3 @@ struct ApproximatedDiscretization <: AbstractDiscretization
 end
 
 ApproximatedDiscretization() = ApproximatedDiscretization(Vector{Real}(), 0)
-
-function Base.isequal(discretization1::ApproximatedDiscretization, discretization2::ApproximatedDiscretization)
-    discretization1.intervals == discretization2.intervals && discretization1.sigma == discretization2.sigma
-end
-
-function Base.hash(discretization::ApproximatedDiscretization, h::UInt)
-    h = hash(discretization.intervals, h)
-    h = hash(discretization.sigma, h)
-    return h
-end

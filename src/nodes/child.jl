@@ -70,6 +70,12 @@ function get_randomvariable(node::ContinuousChildNode, evidence::Vector{Symbol})
     return RandomVariable(node.distributions[key], node.name)
 end
 
+function _get_node_distribution_bounds(node::ContinuousChildNode)
+    lower_bound = minimum(support(i).lb for i in values(node.distributions))
+    upper_bound = maximum(support(i).ub for i in values(node.distributions))
+    return lower_bound, upper_bound
+end
+
 function Base.isequal(node1::ContinuousChildNode, node2::ContinuousChildNode)
     node1.name == node2.name && issetequal(node1.parents, node2.parents) && keys(node1.distributions) == keys(node2.distributions) && isequal(node1.discretization, node2.discretization)
     ##TODO missing `isequal` function for EmpiricalDistribution (must be implemented in UQ.jl)

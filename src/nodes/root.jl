@@ -1,4 +1,4 @@
-struct ContinuousRootNode <: ContinuousNode
+@auto_hash_equals struct ContinuousRootNode <: ContinuousNode
     name::Symbol
     distribution::UnivariateDistribution
     discretization::ExactDiscretization # discretization just as increasing values?
@@ -12,18 +12,17 @@ end
 
 get_randomvariable(node::ContinuousRootNode) = get_randomvariable(node, Vector{Symbol}())
 
-function Base.isequal(node1::ContinuousRootNode, node2::ContinuousRootNode)
-    node1.name == node2.name && node1.distribution == node2.distribution && isequal(node1.discretization, node2.discretization)
+function _get_node_distribution_bounds(node::ContinuousRootNode)
+    lower_bound = support(node.distribution).lb
+    upper_bound = support(node.distribution).ub
+    return lower_bound, upper_bound
 end
 
-function Base.hash(node::ContinuousRootNode, h::UInt)
-    h = hash(node.name, h)
-    h = hash(node.distribution, h)
-    h = hash(node.discretization, h)
-    return h
+function _truncate(dist::UnivariateDistribution, i::AbstractVector)
+    return truncated(dist, i[1], i[2])
 end
 
-struct DiscreteRootNode <: DiscreteNode
+@auto_hash_equals struct DiscreteRootNode <: DiscreteNode
     name::Symbol
     states::Dict{Symbol,<:Number}
     parameters::Dict{Symbol,Vector{Parameter}}
@@ -50,15 +49,6 @@ function get_parameters(node::DiscreteRootNode, evidence::Vector{Symbol})
     return node.parameters[e[1]]
 end
 
-function Base.isequal(node1::DiscreteRootNode, node2::DiscreteRootNode)
-    node1.name == node2.name && node1.states == node2.states && node1.parameters == node2.parameters
-end
 
-function Base.hash(node::DiscreteRootNode, h::UInt)
-    h = hash(node.name, h)
-    h = hash(node.states, h)
-    h = hash(node.parameters, h)
-    return h
-end
 
 const global RootNode = Union{DiscreteRootNode,ContinuousRootNode}

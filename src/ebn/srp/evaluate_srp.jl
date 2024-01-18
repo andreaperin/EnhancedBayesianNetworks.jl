@@ -1,6 +1,6 @@
 function _evaluate_single_layer(ebn::EnhancedBayesianNetwork)
     ## Discretization
-    disc_ebn = discretize!(ebn)
+    disc_ebn = discretize(ebn)
     ## Nodes to be evaluate from ebn
     functional_nodes = filter(x -> isa(x, FunctionalNode), disc_ebn.nodes)
     functional_nodes_to_eval = filter(x -> all(!isa(y, FunctionalNode) for y in x.parents), functional_nodes)

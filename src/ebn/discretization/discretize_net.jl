@@ -1,20 +1,25 @@
-function discretize!(net::EnhancedBayesianNetwork)
-    ebn = deepcopy(net)
+function discretize(ebn::EnhancedBayesianNetwork)
     nodes = ebn.nodes
-    continuous_nodes = filter(j -> !isa(j, FunctionalNode), (filter(x -> isa(x, ContinuousNode), nodes)))
-    a = isempty.([i.discretization.intervals for i in continuous_nodes])
-    evidence_node = continuous_nodes[.!a]
-    while !isempty(evidence_node)
-        if isa(evidence_node[1], RootNode)
-            nodes = _discretize_node(ebn, evidence_node[1])
-            ordered_dag, ordered_nodes, ordered_name_to_index = _topological_ordered_dag(nodes)
-            ebn = EnhancedBayesianNetwork(ordered_dag, ordered_nodes, ordered_name_to_index)
-        elseif isa(evidence_node[1], ChildNode)
-            nodes = _discretize_node(ebn, evidence_node[1])
-            ordered_dag, ordered_nodes, ordered_name_to_index = _topological_ordered_dag(nodes)
-            ebn = EnhancedBayesianNetwork(ordered_dag, ordered_nodes, ordered_name_to_index)
+    continuous_nodes = filter(n -> !isa(n, FunctionalNode), filter(n -> isa(n, ContinuousNode), nodes))
+    evidence_nodes = filter(n -> !isempty(n.discretization.intervals), continuous_nodes)
+    for n in evidence_nodes
+        continuous_node, discretized_node = _discretize(n)
+
+        # remove original continuous nodes
+        nodes = filter(node -> node ∉ evidence_nodes, nodes)
+
+        # update child nodes
+        for node in nodes
+            if isa(node, RootNode)
+                continue
+            end
+            if n in node.parents
+                node.parents[:] = [filter(x -> x !== n, node.parents)..., continuous_node]
+            end
         end
-        popfirst!(evidence_node)
+
+        append!(nodes, [continuous_node, discretized_node])
     end
-    return ebn
+
+    return EnhancedBayesianNetwork(nodes)
 end

@@ -1,55 +1,48 @@
-
-function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousChildNode)
-    intervals = _format_interval(node)
-    variance = node.discretization.sigma
-
-    f_d = (d, i) -> cdf(d, i[2]) - cdf(d, i[1])
-    states = Dict{Vector{Symbol},Dict{Symbol,Real}}()
-    for (key, dist) in node.distributions
-        states[key] = Dict(Symbol.(intervals) .=> f_d.(dist, intervals))
-    end
-    discrete_node = DiscreteChildNode(Symbol(string(node.name) * "_d"), node.parents, states)
-
-    ## Approximation function is a truncated normal (thicker tails)
-    f_c = i -> begin
-        a = isfinite.(i)
-        all(a) ? Uniform(i...) : truncated(Normal(i[a][1], variance), i...)
-    end
-    distributions = Dict([Symbol(i)] => f_c(i) for i in intervals)
-    continuous_node = ContinuousChildNode(Symbol(string(node.name)), [discrete_node], distributions)
-
-    return _update_nodes_after_discretization(ebn, node, discrete_node, continuous_node)
-end
-
-function _discretize_node(ebn::EnhancedBayesianNetwork, node::ContinuousRootNode)
+function _discretize(node::ContinuousRootNode)
     intervals = _format_interval(node)
 
-    f_d = i -> cdf(node.distribution, i[2]) - cdf(node.distribution, i[1])
-
-    states_symbols = [Symbol(i) for i in intervals]
-    states = Dict(states_symbols .=> f_d.(intervals))
+    states_symbols = Symbol.(intervals)
+    states = Dict(states_symbols .=> _discretize(node.distribution, intervals))
 
     discrete_node = DiscreteRootNode(Symbol(string(node.name) * "_d"), states)
 
     ## Adding continuous node as parents of children of the discretized node
-    f_c = i -> truncated(node.distribution, i[1], i[2])
     distributions_symbols = [[i] for i in states_symbols]
-    distributions = Dict(distributions_symbols .=> f_c.(intervals))
+    distributions = Dict(distributions_symbols .=> _truncate.(node.distribution, intervals))
 
-    continuous_node = ContinuousChildNode(Symbol(string(node.name)), [discrete_node], distributions)
-    return _update_nodes_after_discretization(ebn, node, discrete_node, continuous_node)
+    continuous_node = ContinuousChildNode(node.name, [discrete_node], distributions)
+    return continuous_node, discrete_node
 end
 
-function _get_node_distribution_bounds(node::ContinuousChildNode)
-    lower_bound = minimum(support(i).lb for i in values(node.distributions))
-    upper_bound = maximum(support(i).ub for i in values(node.distributions))
-    return lower_bound, upper_bound
+function _discretize(node::ContinuousChildNode)
+    intervals = _format_interval(node)
+
+    k = keys(node.distributions)
+    dists = values(node.distributions)
+    states = [(key, Dict(Symbol.(intervals) .=> _discretize(dist, intervals))) for (key, dist) in zip(k, dists)]
+    states = Dict(states)
+    discrete_node = DiscreteChildNode(Symbol(string(node.name) * "_d"), node.parents, states)
+
+    distribution_symbols = [[Symbol(i)] for i in intervals]
+    distributions = Dict(distribution_symbols .=> _approximate(intervals, node.discretization.sigma))
+
+    continuous_node = ContinuousChildNode(node.name, [discrete_node], distributions)
+    return continuous_node, discrete_node
 end
 
-function _get_node_distribution_bounds(node::ContinuousRootNode)
-    lower_bound = support(node.distribution).lb
-    upper_bound = support(node.distribution).ub
-    return lower_bound, upper_bound
+function _discretize(dist::UnivariateDistribution, intervals::Vector)
+    return cdf.(dist, getindex.(intervals, 2)) .- cdf.(dist, getindex.(intervals, 1))
+end
+
+function _approximate(intervals::Vector, σ::Real)
+    dists = map(intervals) do i
+        finite = isfinite.(i)
+        if all(finite)
+            return Uniform(i...)
+        end
+        return truncated(Normal(i[finite][1], σ), i...)
+    end
+    return dists
 end
 
 function _format_interval(node::Union{ContinuousChildNode,ContinuousRootNode})
@@ -61,27 +54,14 @@ function _format_interval(node::Union{ContinuousChildNode,ContinuousRootNode})
     lower_bound, upper_bound = _get_node_distribution_bounds(node)
 
     if minimum(min) != lower_bound
-        @warn "selected minimum intervals value $min ≥ support lower buond $lower_bound. Support lower bound will be used as intervals starting value!"
+        @warn "Minimum intervals value $min >= support lower bound $lower_bound. Lower bound will be used as intervals start."
         insert!(intervals, 1, lower_bound)
     end
 
     if maximum(max) != upper_bound
-        @warn "selected maximum intervals value $max ≤ support's upper buond $upper_bound. Support's upper bound will be used as intervals final value!"
+        @warn "Maximum intervals value $max <= support upper bound $upper_bound. Upper bound will be used as intervals end."
         push!(intervals, upper_bound)
     end
 
-    return [[intervals[i], intervals[i+1]] for (i, _) in enumerate(intervals[1:end-1])]
-end
-
-function _update_nodes_after_discretization(ebn, discretizable_node, discretized_node, continuous_auxiliary_node)
-    nodes = deepcopy(ebn.nodes)
-    children = get_children(ebn, discretizable_node)
-    children = filter(x -> x.name in [j.name for j in children], nodes)
-    for child in children
-        deleteat!(child.parents, findall(isequal.(repeat([discretizable_node], length(child.parents)), child.parents)))
-        push!(child.parents, continuous_auxiliary_node)
-    end
-    append!(nodes, [continuous_auxiliary_node, discretized_node])
-    deleteat!(nodes, findall(isequal.(repeat([discretizable_node], length(nodes)), nodes)))
-    return nodes
+    return [[intervals[i], intervals[i+1]] for i in 1:length(intervals)-1]
 end

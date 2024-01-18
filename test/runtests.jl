@@ -2,6 +2,7 @@ using Test
 
 using EnhancedBayesianNetworks
 using Graphs
+using Suppressor
 
 include("nodes/root.jl")
 include("nodes/child.jl")
