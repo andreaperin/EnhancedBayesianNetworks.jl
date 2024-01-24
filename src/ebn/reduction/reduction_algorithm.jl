@@ -1,3 +1,13 @@
+function _is_reducible(net::EnhancedBayesianNetwork)
+    try
+        reduce!(net)
+    catch
+        return false
+    else
+        return true
+    end
+end
+
 function reduce!(net::EnhancedBayesianNetwork)
     rbn = deepcopy(net)
     continuous_nodes = filter(x -> isa(x, ContinuousNode), rbn.nodes)
