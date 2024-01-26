@@ -8,7 +8,7 @@ struct EnhancedBayesianNetwork <: ProbabilisticGraphicalModel
     name_to_index::Dict{Symbol,Int}
 
     function EnhancedBayesianNetwork(dag::DiGraph, nodes::Vector{<:AbstractNode}, name_to_index::Dict{Symbol,Int})
-        all_states = vcat(_get_states.(filter(x -> !isa(x, DiscreteFunctionalNode) && isa(x, DiscreteNode) && !isa(x, DiscreteStructuralReliabilityProblemNode), nodes))...)
+        all_states = vcat(_get_states.(filter(x -> !isa(x, DiscreteFunctionalNode) && isa(x, DiscreteNode), nodes))...)
         if unique([i.name for i in nodes]) != [i.name for i in nodes]
             error("nodes must have different names")
         end
