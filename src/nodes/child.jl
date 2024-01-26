@@ -1,6 +1,6 @@
 ``` ContinuousChildNode
 ```
-mutable struct ContinuousChildNode <: ContinuousNode
+@auto_hash_equals struct ContinuousChildNode <: ContinuousNode
     name::Symbol
     parents::Vector{<:AbstractNode}
     distributions::Dict{Vector{Symbol},UnivariateDistribution}
@@ -76,23 +76,9 @@ function _get_node_distribution_bounds(node::ContinuousChildNode)
     return lower_bound, upper_bound
 end
 
-function Base.isequal(node1::ContinuousChildNode, node2::ContinuousChildNode)
-    node1.name == node2.name && issetequal(node1.parents, node2.parents) && keys(node1.distributions) == keys(node2.distributions) && isequal(node1.discretization, node2.discretization)
-    ##TODO missing `isequal` function for EmpiricalDistribution (must be implemented in UQ.jl)
-end
-
-function Base.hash(node::ContinuousChildNode, h::UInt)
-    h = hash(node.name, h)
-    h = hash(node.parents, h)
-    h = hash(node.distributions, h)
-    h = hash(node.samples, h)
-    h = hash(node.discretization, h)
-    return h
-end
-
 ``` DiscreteChildNode
 ```
-mutable struct DiscreteChildNode <: DiscreteNode
+@auto_hash_equals struct DiscreteChildNode <: DiscreteNode
     name::Symbol
     parents::Vector{<:AbstractNode}
     states::Dict{Vector{Symbol},Dict{Symbol,Real}}
@@ -177,21 +163,6 @@ function get_parameters(node::DiscreteChildNode, evidence::Vector{Symbol})
     e = filter(e -> haskey(node.parameters, e), evidence)
     isempty(e) && error("evidence $evidence does not contain $name")
     return node.parameters[e[1]]
-end
-
-function Base.isequal(node1::DiscreteChildNode, node2::DiscreteChildNode)
-    node1.name == node2.name && issetequal(node1.parents, node2.parents) && node1.states == node2.states && node1.parameters == node2.parameters
-end
-
-function Base.hash(node::DiscreteChildNode, h::UInt)
-    h = hash(node.name, h)
-    h = hash(node.parents, h)
-    h = hash(node.states, h)
-    h = hash(node.covs, h)
-    h = hash(node.samples, h)
-    h = hash(node.parameters, h)
-
-    return h
 end
 
 const global ChildNode = Union{DiscreteChildNode,ContinuousChildNode}

@@ -149,7 +149,5 @@
 
         evidence = [:a, :yes]
         @test get_parameters(node, evidence) == [Parameter(1.1, :g)]
-
-
     end
 end

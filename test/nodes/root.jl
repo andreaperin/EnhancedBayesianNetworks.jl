@@ -16,8 +16,6 @@
     end
 
     @testset "DiscreteRootNode" begin
-        # node = DiscreteRootNode(:d, Dict(:yes => 0.5, :no => 0.5))
-        # evidence = [:yes]
         name = :x
         parameters = Dict(:yes => [Parameter(2, :d)], :no => [Parameter(0, :d)])
 
@@ -32,7 +30,6 @@
 
         states = Dict(:yes => 0.4999, :no => 0.4999)
         @test_logs (:warn, "total probaility should be one, but the evaluated value is 0.9998 , and will be normalized") DiscreteRootNode(name, states, parameters)
-
 
         states = Dict(:yes => 0.2, :no => 0.8)
         node1 = DiscreteRootNode(name, states, parameters)
@@ -50,6 +47,5 @@
         @test get_parameters(node1, [:yes]) == [Parameter(2, :d)]
 
         @test isequal(node1, DiscreteRootNode(name, states, parameters))
-
     end
 end

@@ -8,7 +8,6 @@ include("../util/node_verification.jl")
 include("root.jl")
 include("child.jl")
 include("functional.jl")
-include("structuralreliabilityproblemnode.jl")
 
 function discrete_ancestors(node::AbstractNode)
     discrete_parents = filter(x -> isa(x, DiscreteNode), node.parents)
