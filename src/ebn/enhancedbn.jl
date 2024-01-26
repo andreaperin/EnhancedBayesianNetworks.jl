@@ -15,28 +15,26 @@ struct EnhancedBayesianNetwork <: ProbabilisticGraphicalModel
         if unique(all_states) != all_states
             error("nodes state must have different symbols")
         end
+        functional_nodes = filter(x -> isa(x, FunctionalNode), nodes)
+        non_root = filter(x -> !isa(x, RootNode), nodes)
+        functional_childrens_vect = map(y -> filter(x -> y ∈ x.parents, non_root), functional_nodes)
+        bool_vect = map(y -> all(map(x -> isa(x, FunctionalNode), y)), functional_childrens_vect)
+        if !all(bool_vect)
+            error("FunctionalNodes can have only FunctionalNode as children")
+        end
+        continuous_functianl_nodes = filter(x -> isa(x, ContinuousFunctionalNode), nodes)
+        bool_vect = map(y -> !isempty(filter(x -> y ∈ x.parents, non_root)), continuous_functianl_nodes)
+        if !all(bool_vect)
+            error("Continuous Functional Nodes must have a DiscreteFunctionalNode as child")
+        end
         new(dag, nodes, name_to_index)
     end
 end
 
 function EnhancedBayesianNetwork(nodes::Vector{<:AbstractNode})
     ordered_dag, ordered_nodes, ordered_name_to_index = _topological_ordered_dag(nodes)
-    test_ebn = EnhancedBayesianNetwork(ordered_dag, ordered_nodes, ordered_name_to_index)
-
-    functional_nodes = filter(x -> isa(x, FunctionalNode), nodes)
-    for cont in functional_nodes
-        children = get_children(test_ebn, cont)
-        t = map(x -> isa(x, FunctionalNode), children)
-        if !all(t)
-            error("FunctionalNodes $cont can have only FunctionalNode as children")
-        end
-    end
-    ##TODO this is wrong (!!!)
-    no_children_node = filter(x -> isempty(get_children(test_ebn, x)), nodes)
-    if !isempty(filter(x -> isa(x, ContinuousFunctionalNode), no_children_node))
-        error("Continuous Functional Nodes must have a DiscreteFunctionalNode as child")
-    end
-    return test_ebn
+    ebn = EnhancedBayesianNetwork(ordered_dag, ordered_nodes, ordered_name_to_index)
+    return ebn
 end
 
 function _build_digraph(nodes::Vector{<:AbstractNode})

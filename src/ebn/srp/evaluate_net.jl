@@ -1,36 +1,29 @@
-
-function _evaluate_single_layer(ebn::EnhancedBayesianNetwork)
-    ## Discretize ebn
-    disc_ebn = discretize(ebn)
-    ## transfer all possible continuous functional node's model to their discrete functional children
-    trans_ebn = transfer_continuous(disc_ebn)
-    nodes = trans_ebn.nodes
-    ## get 1st layer nodes
-    functional_nodes = filter(x -> isa(x, FunctionalNode), nodes)
-    functional_nodes_to_eval = filter(x -> all(!isa(y, FunctionalNode) for y in x.parents), functional_nodes)
-    ## evaluate
-    res_nodes = _evaluate(functional_nodes_to_eval)
-    ## Ask Jasper a for loop braker
-    for i in range(1, length(res_nodes))
-        nodes = _replace_node(nodes, functional_nodes_to_eval[i], res_nodes[i])
-    end
-    return nodes
-end
-
 function evaluate(ebn::EnhancedBayesianNetwork)
-    ## test reducibility
-    nodes = ebn.nodes
     if _is_reducible(ebn)
-        while !isempty(filter(x -> isa(x, FunctionalNode), nodes))
-            nodes = _evaluate_single_layer(ebn)
-            ebn = EnhancedBayesianNetwork(nodes)
+        ## Discretize ebn
+        disc_ebn = discretize(ebn)
+        ## transfer all possible continuous functional node's model to their discrete functional children
+        trans_ebn = _transfer_continuous(disc_ebn)
+        nodes = trans_ebn.nodes
+        functional_nodes = filter(x -> isa(x, FunctionalNode), nodes)
+        while !isempty(functional_nodes)
+            evaluated_node = evaluate(first(functional_nodes))
+            nodes = _replace_node(nodes, first(functional_nodes), evaluated_node)
+            if isa(evaluated_node, ContinuousChildNode)
+                if !isempty(evaluated_node.discretization.intervals)
+                    ebn = discretize(EnhancedBayesianNetwork(nodes))
+                    nodes = ebn.nodes
+                end
+            end
+            functional_nodes = filter(x -> isa(x, FunctionalNode), nodes)
         end
-        return reduce!(ebn)
+        return EnhancedBayesianNetwork(nodes)
     else
         error("Irreducible network")
     end
 end
-function transfer_continuous(ebn::EnhancedBayesianNetwork)
+
+function _transfer_continuous(ebn::EnhancedBayesianNetwork)
     new_ebn = deepcopy(ebn)
     continuous_functional = filter(x -> isa(x, ContinuousFunctionalNode), new_ebn.nodes)
     continuous_functional_to_transfer = filter(x -> isempty(x.discretization.intervals), continuous_functional)
@@ -74,7 +67,7 @@ function _transfer_single_continuous_functional(ebn::EnhancedBayesianNetwork, pa
     end
     return new_ebn
 end
-\
+
 function _replace_node(nodes::AbstractVector{AbstractNode}, old::FunctionalNode, new::ChildNode)
     if isa(old, DiscreteNode) && isa(new, ContinuousNode)
         error("cannot replace ContinuousNodes with DiscreteNodes or viceversa")
