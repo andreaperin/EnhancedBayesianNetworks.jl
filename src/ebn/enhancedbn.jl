@@ -130,12 +130,3 @@ function markov_envelope(ebn::EnhancedBayesianNetwork)
     end
     return envelope
 end
-
-function _create_ebn_from_envelope(ebn::EnhancedBayesianNetwork, envelope::Vector{<:AbstractNode})
-    nodes = Vector{AbstractNode}()
-    for node in envelope
-        !all(get_parents(ebn, node) .∈ [envelope]) && append!(nodes, get_parents(ebn, node))
-        push!(nodes, node)
-    end
-    EnhancedBayesianNetwork(unique!(nodes))
-end
