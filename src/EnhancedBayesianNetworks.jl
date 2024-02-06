@@ -8,6 +8,7 @@ using GraphRecipes
 using Graphs
 using LinearAlgebra
 using Reexport
+using UncertaintyQuantification: sample
 
 @reexport using Graphs
 @reexport using UncertaintyQuantification
@@ -38,7 +39,6 @@ export Factor
 export FunctionalNode
 export InferenceState
 export RootNode
-export StructuralReliabilityProblemNode
 
 # Constants
 const Evidence = Dict{Symbol,Symbol}

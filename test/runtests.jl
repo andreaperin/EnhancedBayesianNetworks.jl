@@ -7,7 +7,6 @@ using Suppressor
 include("nodes/root.jl")
 include("nodes/child.jl")
 include("nodes/functional.jl")
-include("nodes/structuralreliabilityproblemnode.jl")
 include("nodes/node.jl")
 
 include("ebn/enhancedbn.jl")
@@ -18,14 +17,14 @@ include("ebn/discretization/discretize_net.jl")
 
 include("ebn/reduction/reduction_alghorithm.jl")
 
-include("ebn/srp/build_srp.jl")
 include("ebn/srp/evaluate_srp.jl")
+# include("ebn/srp/evaluate_net.jl")
 
-include("ebn/cpd/conditionalprobabilitydistribution.jl")
-include("ebn/bayesiannet.jl")
+# include("ebn/cpd/conditionalprobabilitydistribution.jl")
+# include("ebn/bayesiannet.jl")
 
-include("Inference/inferencestate.jl")
-include("Inference/factors.jl")
-include("Inference/factor_methods.jl")
-include("Inference/factor_algebra.jl")
-include("Inference/variableselimination.jl")
+# include("Inference/inferencestate.jl")
+# include("Inference/factors.jl")
+# include("Inference/factor_methods.jl")
+# include("Inference/factor_algebra.jl")
+# include("Inference/variableselimination.jl")

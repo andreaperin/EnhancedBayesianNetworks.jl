@@ -16,6 +16,23 @@
         root = ContinuousRootNode(:z1, Normal(), discretization)
 
         @test_logs (:warn, "Maximum intervals value 0.0 <= support upper bound Inf. Upper bound will be used as intervals end.") EnhancedBayesianNetworks._format_interval(root)
+
+        intervals = [[-Inf, -1.0], [-1.0, 0.0], [0.0, 1.0], [1.0, Inf]]
+        σ = 2
+
+        approx = [
+            truncated(Normal(-1.0, 2.0); lower=-Inf, upper=-1.0),
+            Uniform(-1.0, 0.0),
+            Uniform(0.0, 1.0),
+            truncated(Normal(1.0, 2.0); lower=1.0, upper=Inf)
+        ]
+
+        @test approx == EnhancedBayesianNetworks._approximate(intervals, σ)
+
+        dist = Normal()
+        probs = [0.15865525393145702, 0.341344746068543, 0.34134474606854304, 0.15865525393145696]
+
+        @test all(isapprox.(EnhancedBayesianNetworks._discretize(dist, intervals), probs))
     end
 
     @testset "Root node" begin

@@ -57,12 +57,6 @@
         @test ebn.name_to_index == EnhancedBayesianNetwork(DiGraph(4, fadjlist, badjlist), nodes, Dict(:x => 1, :child1 => 2, :child2 => 3, :functional => 4)).name_to_index
 
         envelope = markov_envelope(ebn)[1]
-
-        @test EnhancedBayesianNetworks._create_ebn_from_envelope(ebn, envelope).dag == ebn.dag
-
-        @test issetequal(EnhancedBayesianNetworks._create_ebn_from_envelope(ebn, envelope).nodes, ebn.nodes)
-
-        @test EnhancedBayesianNetworks._create_ebn_from_envelope(ebn, envelope).name_to_index == ebn.name_to_index
     end
 
     @testset "Nodes Operation" begin

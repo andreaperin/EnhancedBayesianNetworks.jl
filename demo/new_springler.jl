@@ -87,7 +87,7 @@ ebn = EnhancedBayesianNetwork(nodes)
 
 # e_ebn2, b2 = EnhancedBayesianNetworks._evaluate_single_layer(e_ebn2)
 
-ooo = evaluate!(ebn)
+ooo = evaluate(ebn)
 # EnhancedBayesianNetworks.plot(ooo)
 # model_nodes=filter(x->x.name ∈ [:WG, :WG3, :dWF], ooo.nodes)
 # rr = evaluate!(oo)

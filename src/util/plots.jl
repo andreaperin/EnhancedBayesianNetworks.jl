@@ -22,8 +22,6 @@ end
 function _marker_color(node::AbstractNode)
     if isa(node, FunctionalNode)
         mc = "lightgreen"
-    elseif isa(node, StructuralReliabilityProblemNode)
-        mc = "lightblue"
     else
         mc = "orange"
     end

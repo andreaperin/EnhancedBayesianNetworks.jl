@@ -80,5 +80,8 @@
         @test issetequal(rbn.nodes, [root2, root1, child1, functional_r])
         @test rbn.name_to_index == Dict(:z => 3, :x => 1, :child1 => 2, :functional => 4)
 
+        @test EnhancedBayesianNetworks._is_reducible(ebn) == true
+
+        ## TODO missing test for "_is_reducible == false" 
     end
 end
