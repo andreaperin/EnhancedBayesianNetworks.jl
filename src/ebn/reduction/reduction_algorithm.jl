@@ -3,9 +3,8 @@ function _is_reducible(net::EnhancedBayesianNetwork)
         reduce!(net)
     catch
         return false
-    else
-        return true
     end
+    return true
 end
 
 function reduce!(net::EnhancedBayesianNetwork)
