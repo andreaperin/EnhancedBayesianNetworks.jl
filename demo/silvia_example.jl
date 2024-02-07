@@ -60,7 +60,7 @@ overtopping_models = Dict(
     [:low] => [overtopping_model1],
     [:high] => [overtopping_model2]
 )
-overtopping_simulations = Dict(
+overtopping_simulation = Dict(
     [:low] => MonteCarlo(400),
     [:high] => MonteCarlo(400)
 )
@@ -73,7 +73,7 @@ parameters_ov_t = Dict(
     :fail_ov_t => [Parameter(-1, :ov_t)]
 )
 
-node_overtopping = DiscreteFunctionalNode(:ov_t, parents_overtopping, overtopping_models, overtopping_performances, overtopping_simulations, parameters_ov_t)
+node_overtopping = DiscreteFunctionalNode(:ov_t, parents_overtopping, overtopping_models, overtopping_performances, overtopping_simulation, parameters_ov_t)
 
 parents_st_dmg = Vector{AbstractNode}([node_overtopping, node_debrisflow])
 st_dmg_model1 = Model(df -> df.ov_t .* df.dbf .+ 91, :dmg)

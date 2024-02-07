@@ -13,7 +13,7 @@ function evaluate(node::ContinuousFunctionalNode)
         parameters = mapreduce(p -> get_parameters(p, evidence), vcat, discrete_parents; init=UQInput[])
         randomvariables = mapreduce(p -> get_randomvariable(p, evidence), vcat, continuous_parents; init=UQInput[])
 
-        df = UncertaintyQuantification.sample([parameters..., randomvariables...], node.simulations)
+        df = UncertaintyQuantification.sample([parameters..., randomvariables...], node.simulation)
         UncertaintyQuantification.evaluate!(node.models, df)
         # ## TODO check why is different from "Model"
         # if isa(srp.models[end], Model)
@@ -48,7 +48,7 @@ function evaluate(node::DiscreteFunctionalNode)
         parameters = mapreduce(p -> get_parameters(p, evidence), vcat, discrete_parents; init=UQInput[])
         randomvariables = mapreduce(p -> get_randomvariable(p, evidence), vcat, continuous_parents; init=UQInput[])
 
-        res = probability_of_failure(node.models, node.performance, [parameters..., randomvariables...], node.simulations)
+        res = probability_of_failure(node.models, node.performance, [parameters..., randomvariables...], node.simulation)
 
         pf[evidence] = f(res[1])
         cov[evidence] = res[2]

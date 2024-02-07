@@ -32,20 +32,20 @@ wetgrass_parents = Vector{AbstractNode}()
 append!(wetgrass_parents, [random, rain_node, sprinkler_node])
 wetgrass_model1 = Model(df -> df.Rnd .^ 2 .* df.rn .+ df.sp, :final_state)
 wetgrass_models = [wetgrass_model1]
-wetgrass_simulations = MonteCarlo(200)
+wetgrass_simulation = MonteCarlo(200)
 wetgrass_performances = df -> df.final_state
 wetgrass_parameters = Dict(:fail_WG => [Parameter(1.0, :wgp)], :safe_WG => [Parameter(1.0, :wgp)])
-wetgrass_node = DiscreteFunctionalNode(wetgrass_name, wetgrass_parents, wetgrass_models, wetgrass_performances, wetgrass_simulations, wetgrass_parameters)
+wetgrass_node = DiscreteFunctionalNode(wetgrass_name, wetgrass_parents, wetgrass_models, wetgrass_performances, wetgrass_simulation, wetgrass_parameters)
 
 wetgrass2_name = :WG2
 wetgrass2_parents = Vector{AbstractNode}()
 append!(wetgrass2_parents, [wetgrass_node, random])
 wetgrass2_model1 = Model(df -> df.wgp .* df.Rnd, :final_state2)
 wetgrass2_models = [wetgrass2_model1]
-wetgrass2_simulations = MonteCarlo(200)
+wetgrass2_simulation = MonteCarlo(200)
 wetgrass2_models = [wetgrass2_model1]
 wetgrass2_discretization = ApproximatedDiscretization([-1.1, 0, 0.11], 2)
-wetgrass2_node = ContinuousFunctionalNode(wetgrass2_name, wetgrass2_parents, wetgrass2_models, wetgrass2_simulations, wetgrass2_discretization)
+wetgrass2_node = ContinuousFunctionalNode(wetgrass2_name, wetgrass2_parents, wetgrass2_models, wetgrass2_simulation, wetgrass2_discretization)
 
 
 wetgrass3_name = :WG3
@@ -53,9 +53,9 @@ wetgrass3_parents = Vector{AbstractNode}()
 append!(wetgrass3_parents, [wetgrass2_node])
 wetgrass3_model1 = Model(df -> df.WG2, :final_state3)
 wetgrass3_models = [wetgrass3_model1]
-wetgrass3_simulations = MonteCarlo(200)
+wetgrass3_simulation = MonteCarlo(200)
 wetgrass3_performances = df -> df.final_state3
-wetgrass3_node = DiscreteFunctionalNode(wetgrass3_name, wetgrass3_parents, wetgrass3_models, wetgrass3_performances, wetgrass3_simulations)
+wetgrass3_node = DiscreteFunctionalNode(wetgrass3_name, wetgrass3_parents, wetgrass3_models, wetgrass3_performances, wetgrass3_simulation)
 
 
 wetfloor_name = :WF
@@ -63,17 +63,17 @@ wetfloor_parents = Vector{AbstractNode}()
 append!(wetfloor_parents, [random, rain_node])
 wetfloor_model1 = Model(df -> df.Rnd .^ 2 .* df.rn, :final_floor)
 wetfloor_models = [wetfloor_model1]
-wetfloor_simulations = MonteCarlo(200)
-wetfloor_node = ContinuousFunctionalNode(wetfloor_name, wetfloor_parents, wetfloor_models, wetfloor_simulations)
+wetfloor_simulation = MonteCarlo(200)
+wetfloor_node = ContinuousFunctionalNode(wetfloor_name, wetfloor_parents, wetfloor_models, wetfloor_simulation)
 
 wetfloor_d_name = :dWF
 wetfloor_d_parents = Vector{AbstractNode}()
 append!(wetfloor_d_parents, [wetfloor_node])
 wetfloor_d_model1 = Model(df -> df.final_floor .+ 1, :final_floor_d)
 wetfloor_d_models = [wetfloor_d_model1]
-wetfloor_d_simulations = MonteCarlo(200)
+wetfloor_d_simulation = MonteCarlo(200)
 wetgfloor_d_performances = df -> df.final_floor_d .- 1
-wetfloor_d_node = DiscreteFunctionalNode(wetfloor_d_name, wetfloor_d_parents, wetfloor_d_models, wetgfloor_d_performances, wetfloor_d_simulations)
+wetfloor_d_node = DiscreteFunctionalNode(wetfloor_d_name, wetfloor_d_parents, wetfloor_d_models, wetgfloor_d_performances, wetfloor_d_simulation)
 
 nodes = [random, cloudy, rain_node, sprinkler_node, wetgrass_node, wetgrass2_node, wetgrass3_node, wetfloor_node, wetfloor_d_node]
 

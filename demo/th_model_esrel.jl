@@ -107,7 +107,7 @@ functional_models = Dict(
     [:no_extremerain, :long, :transient] => models
 )
 
-functional_simulations = Dict(
+functional_simulation = Dict(
     [:extremerain, :short, :steadystate] => MonteCarlo(200),
     [:extremerain, :short, :transient] => MonteCarlo(200),
     [:extremerain, :long, :steadystate] => MonteCarlo(200),
@@ -129,7 +129,7 @@ functional_simulations = Dict(
 #     [:no_extremerain, :long, :transient] => df -> 0.9 .- df.surface_conc
 # )
 
-functional_node = ContinuousFunctionalNode(functional_name, functional_parents, functional_models, functional_simulations)
+functional_node = ContinuousFunctionalNode(functional_name, functional_parents, functional_models, functional_simulation)
 
 nodes = [earthquake, global_warming, porosity_node, kz, kx, disp_long_hz, disp_long_vr, diff_coeff_node, extremerain, timescenario, flowtype, functional_node]
 
