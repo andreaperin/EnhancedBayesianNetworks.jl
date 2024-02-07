@@ -100,7 +100,7 @@ ooo = evaluate(ebn)
 # Plots.savefig("C:\\Users\\Administrator\\Resilio Sync\\PhD\\3_Academic\\Papers_Presentations\\Conferences\\2024_ICVRAM\\ASCE-ICVRAM-ISUMA 2024-Abstract-LaTeX\\Figures\\ebn.png")
 
 
-# rbn = reduce!(ebn)
+# rbn = reduce(ebn)
 # EnhancedBayesianNetworks.plot(rbn, :tree, nodesize, fontsize)
 # Plots.savefig("C:\\Users\\Administrator\\Resilio Sync\\PhD\\3_Academic\\Papers_Presentations\\Conferences\\2024_ICVRAM\\ASCE-ICVRAM-ISUMA 2024-Abstract-LaTeX\\Figures\\ebn.png")
 

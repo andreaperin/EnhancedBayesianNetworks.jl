@@ -63,7 +63,7 @@
 
         @test EnhancedBayesianNetworks._reduce_continuousnode(ebn.dag, ebn.name_to_index[:child2]) == resulting_dag
 
-        rbn = reduce!(ebn)
+        rbn = reduce(ebn)
 
         @test issetequal(get_children(rbn, root1), [child1])
         @test issetequal(get_parents(rbn, child1), [root1])
