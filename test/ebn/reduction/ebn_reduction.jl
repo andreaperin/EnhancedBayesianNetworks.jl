@@ -16,7 +16,7 @@
 
     ebn = EnhancedBayesianNetwork([root1, root2, child1, child2, functional])
 
-    functional_n = DiscreteFunctionalNode(:functional, [child1, root2], [model], performance, simulation)
+    functional_n = DiscreteFunctionalNode(:functional, [root2, child1], [model], performance, simulation)
 
     badjlist = Vector{Vector{Int}}([[], [1], [], [2, 3]])
     fadjlist = Vector{Vector{Int}}([[2], [4], [4], []])
