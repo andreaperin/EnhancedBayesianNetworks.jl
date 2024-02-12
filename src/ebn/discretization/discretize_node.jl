@@ -1,3 +1,30 @@
+function _discretize(nodes::AbstractVector{AbstractNode})
+    continuous_nodes = filter(n -> !isa(n, FunctionalNode), filter(n -> isa(n, ContinuousNode), nodes))
+    evidence_nodes = filter(n -> !isempty(n.discretization.intervals), continuous_nodes)
+    for n in evidence_nodes
+        continuous_node, discretized_node = _discretize(n)
+
+        # remove original continuous nodes
+        index = findfirst(x -> isequal(x, n), nodes)
+        deleteat!(nodes, index)
+
+        # update child nodes
+        for node in nodes
+            if isa(node, RootNode)
+                continue
+            end
+            if n in node.parents
+                ##TODO check if this is general enough
+                node.parents[:] = [filter(x -> !isequal(x, n), node.parents)..., continuous_node]
+            end
+        end
+
+        append!(nodes, [continuous_node, discretized_node])
+    end
+
+    return nodes
+end
+
 function _discretize(node::ContinuousRootNode)
     intervals = _format_interval(node)
 
