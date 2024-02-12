@@ -22,11 +22,11 @@ struct EnhancedBayesianNetwork <: ProbabilisticGraphicalModel
         if !all(bool_vect)
             error("FunctionalNodes can have only FunctionalNode as children")
         end
-        continuous_functianl_nodes = filter(x -> isa(x, ContinuousFunctionalNode), nodes)
-        bool_vect = map(y -> !isempty(filter(x -> y ∈ x.parents, non_root)), continuous_functianl_nodes)
-        if !all(bool_vect)
-            error("Continuous Functional Nodes must have a DiscreteFunctionalNode as child")
-        end
+        # continuous_functianl_nodes = filter(x -> isa(x, ContinuousFunctionalNode), nodes)
+        # bool_vect = map(y -> !isempty(filter(x -> y ∈ x.parents, non_root)), continuous_functianl_nodes)
+        # if !all(bool_vect)
+        #     error("Continuous Functional Nodes must have a DiscreteFunctionalNode as child")
+        # end
         new(dag, nodes, name_to_index)
     end
 end
