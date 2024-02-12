@@ -23,7 +23,7 @@ function _reduce_node(ebn::EnhancedBayesianNetwork, node_to_reduce::AbstractNode
         if node_to_reduce in node.parents
             for n in [node_to_reduce, parents...]
                 index = findfirst(x -> isequal(x, n), node.parents)
-                isnothing(index) ? continue : deleteat!(child.parents, index)
+                isnothing(index) ? continue : deleteat!(node.parents, index)
             end
             append!(node.parents, parents)
         end
