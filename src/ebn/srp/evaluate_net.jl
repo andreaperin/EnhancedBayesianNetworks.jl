@@ -1,87 +1,117 @@
-function evaluate(ebn::EnhancedBayesianNetwork)
-    if _is_reducible(ebn)
-        ## Discretize ebn
-        disc_ebn = discretize(ebn)
-        ## transfer all possible continuous functional node's model to their discrete functional children
-        trans_ebn = _transfer_continuous(disc_ebn)
-        nodes = trans_ebn.nodes
-        functional_nodes = filter(x -> isa(x, FunctionalNode), nodes)
-        while !isempty(functional_nodes)
-            evaluated_node = evaluate(first(functional_nodes))
-            nodes = _replace_node(nodes, first(functional_nodes), evaluated_node)
-            if isa(evaluated_node, ContinuousChildNode)
-                if !isempty(evaluated_node.discretization.intervals)
-                    ebn = discretize(EnhancedBayesianNetwork(nodes))
-                    nodes = ebn.nodes
-                end
-            end
-            functional_nodes = filter(x -> isa(x, FunctionalNode), nodes)
+# function evaluate(ebn::EnhancedBayesianNetwork)
+#     ## Discretize ebn
+#     disc_ebn = discretize(ebn)
+#     ## transfer all possible continuous functional node's model to their discrete functional children
+#     trans_ebn = EnhancedBayesianNetwork(EnhancedBayesianNetworks._transfer_continuous(disc_ebn))
+
+#     continuous_node_to_reduce = filter(j -> !isa(j, FunctionalNode), filter(x -> isa(x, ContinuousNode), trans_ebn.nodes))
+#     indices = [findfirst(x -> x == c, trans_ebn.nodes) for c in continuous_node_to_reduce]
+#     ## reducibility test
+#     if EnhancedBayesianNetworks._is_reducible(trans_ebn.dag, indices)
+#         nodes = trans_ebn.nodes
+#         functional_nodes = filter(x -> isa(x, FunctionalNode), nodes)
+#         for to_eval in functional_nodes
+#             ## functional node evaluation
+#             evaluated_node = evaluate(to_eval)
+#             nodes = _replace_node(nodes, to_eval, evaluated_node)
+#             if isa(evaluated_node, ContinuousChildNode)
+#                 if !isempty(evaluated_node.discretization.intervals)
+#                     nodes = discretize(EnhancedBayesianNetwork(nodes))
+#                 end
+#             end
+#         end
+#         return EnhancedBayesianNetwork(nodes)
+#     else
+#         error("Not A-Cyclic Network")
+#     end
+# end
+
+
+function evaluate(ebn::EnhancedBayesianNetwork, index)
+    ## Discretize ebn
+    disc_ebn = discretize(ebn)
+    ## transfer all possible continuous functional node's model to their discrete functional children
+    trans_ebn = EnhancedBayesianNetwork(EnhancedBayesianNetworks._transfer_continuous(disc_ebn))
+    nodes = trans_ebn.nodes
+    functional_nodes = filter(x -> isa(x, FunctionalNode), nodes)
+    i = index
+    @show(i, functional_nodes[i].name)
+    evaluated_node = evaluate(functional_nodes[i])
+    nodes = EnhancedBayesianNetworks._replace_node(nodes, functional_nodes[i], evaluated_node)
+    if isa(evaluated_node, ContinuousChildNode)
+        if !isempty(evaluated_node.discretization.intervals)
+            ebn = EnhancedBayesianNetworks._discretize(nodes)
+            nodes = ebn.nodes
         end
-        return EnhancedBayesianNetwork(nodes)
-    else
-        error("Irreducible network")
     end
+    # functional_nodes = filter(x -> isa(x, FunctionalNode), nodes)
+
+    return nodes
 end
+
 
 function _transfer_continuous(ebn::EnhancedBayesianNetwork)
-    new_ebn = deepcopy(ebn)
-    continuous_functional = filter(x -> isa(x, ContinuousFunctionalNode), new_ebn.nodes)
-    continuous_functional_to_transfer = filter(x -> isempty(x.discretization.intervals), continuous_functional)
-    while !isempty(continuous_functional_to_transfer)
-        level = ContinuousFunctionalNode[]
-        for i in continuous_functional
-            if !any(isa.(i.parents, ContinuousFunctionalNode))
-                push!(level, i)
+    continuous_functional = filter(x -> isa(x, ContinuousFunctionalNode), ebn.nodes)
+    nodes = ebn.nodes
+    for c in continuous_functional
+        nodes = _transfer_single_continuous_functional(nodes, c)
+    end
+    return nodes
+end
+
+function _transfer_single_continuous_functional(nodes::AbstractVector{AbstractNode}, node::ContinuousFunctionalNode)
+    node_children = filter(x -> node ∈ x.parents, filter(x -> !isa(x, RootNode), nodes))
+    if isempty(node.discretization.intervals) && !isempty(node_children)
+        nodes = setdiff(nodes, [node, node_children...])
+        children = AbstractNode[]
+        for child in node_children
+            for n in [node, node.parents...]
+                index = findfirst(x -> isequal(x, n), child.parents)
+                isnothing(index) ? continue : deleteat!(child.parents, index)
             end
+            append!(child.parents, node.parents)
+            prepend!(child.models, node.models)
+            push!(children, child)
         end
-        new_ebn = _transfer_continuous_functional(new_ebn, level)
-        continuous_functional = filter(x -> isa(x, ContinuousFunctionalNode), new_ebn.nodes)
-        continuous_functional_to_transfer = filter(x -> isempty(x.discretization.intervals), continuous_functional)
-    end
-    return new_ebn
-end
-
-function _transfer_continuous_functional(ebn::EnhancedBayesianNetwork, first_level::Vector{ContinuousFunctionalNode})
-    while !isempty(first_level)
-        ebn = _transfer_single_continuous_functional(ebn, first_level[1])
-        popfirst!(first_level)
-    end
-    return ebn
-end
-
-function _transfer_single_continuous_functional_single_child(parent::ContinuousFunctionalNode, child::FunctionalNode)
-    child.parents = append!(parent.parents, filter(x -> x.name != parent.name, child.parents))
-    child.models = append!(parent.models, child.models)
-    return child
-end
-
-function _transfer_single_continuous_functional(ebn::EnhancedBayesianNetwork, parent::ContinuousFunctionalNode)
-    if isempty(parent.discretization.intervals)
-        new_children = map(x -> _transfer_single_continuous_functional_single_child(parent, x), get_children(ebn, parent))
-        name = push!([i.name for i in new_children], parent.name)
-        new_nodes = filter(x -> x.name ∉ name, ebn.nodes)
-        append!(new_nodes, new_children)
-        new_ebn = EnhancedBayesianNetwork(new_nodes)
+        append!(nodes, children)
+        return nodes
     else
-        new_ebn = ebn
+        return nodes
     end
-    return new_ebn
 end
+
+
+# function _replace_node(nodes::AbstractVector{AbstractNode}, old::FunctionalNode, new::ChildNode)
+#     if isa(old, DiscreteNode) && isa(new, ContinuousNode)
+#         error("cannot replace ContinuousNodes with DiscreteNodes or viceversa")
+#     end
+#     # remove original continuous nodes
+#     nodes = filter(x -> !isequal(x, old), nodes)
+#     for node in nodes
+#         if isa(node, RootNode)
+#             continue
+#         end
+#         if old in node.parents
+#             node.parents[:] = [filter(x -> !isequal(x, old), node.parents)..., new]
+#         end
+#     end
+#     push!(nodes, new)
+#     return nodes
+# end
+
 
 function _replace_node(nodes::AbstractVector{AbstractNode}, old::FunctionalNode, new::ChildNode)
-    if isa(old, DiscreteNode) && isa(new, ContinuousNode)
-        error("cannot replace ContinuousNodes with DiscreteNodes or viceversa")
-    end
-    # remove original continuous nodes
-    nodes = filter(x -> x != old, nodes)
+    index = findfirst(x -> isequal(x, old), nodes)
+    deleteat!(nodes, index)
     for node in nodes
         if isa(node, RootNode)
             continue
-        end
-        if old in node.parents
-            node.parents[:] = [filter(x -> x !== old, node.parents)..., new]
+        else
+            if old ∈ node.parents
+                @show(node.name)
+                # node.parents[:] = [filter(x -> !isequal(x, old), node.parents)..., new]
+            end
         end
     end
-    push!(nodes, new)
-    return nodes
+    insert!(nodes, index, new)
 end
