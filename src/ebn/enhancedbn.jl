@@ -2,7 +2,7 @@
         
         Structure for build the Enhanced Bayesian Network from a list of nodes.
 ```
-struct EnhancedBayesianNetwork <: ProbabilisticGraphicalModel
+@auto_hash_equals struct EnhancedBayesianNetwork <: ProbabilisticGraphicalModel
     dag::DiGraph
     nodes::Vector{<:AbstractNode}
     name_to_index::Dict{Symbol,Int}
