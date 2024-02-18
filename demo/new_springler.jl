@@ -79,9 +79,7 @@ nodes = [random, cloudy, rain_node, sprinkler_node, wetgrass_node, wetgrass2_nod
 
 ebn = EnhancedBayesianNetwork(nodes)
 
-new_nodes = evaluate(ebn, 1)
-isa(nodes[7].parents[1], FunctionalNode)
-
+nebn = EnhancedBayesianNetworks.evaluate(ebn)
 
 
 # oo = EnhancedBayesianNetworks.transfer_continuous(ebn)

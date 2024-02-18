@@ -16,7 +16,7 @@ include("ebn/discretization/discretize_node.jl")
 include("ebn/discretization/discretize_net.jl")
 
 include("ebn/reduction/dag_reduction.jl")
-include("ebn/reduction/ebn_reduction.jl")
+# include("ebn/reduction/ebn_reduction.jl")
 
 # include("ebn/srp/evaluate_srp.jl")
 # include("ebn/srp/evaluate_net.jl")

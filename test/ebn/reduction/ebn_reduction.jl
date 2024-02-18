@@ -22,7 +22,7 @@
     fadjlist = Vector{Vector{Int}}([[2], [4], [4], []])
     resulting_dag = DiGraph(3, fadjlist, badjlist)
 
-    @test issetequal(EnhancedBayesianNetworks._reduce_node(ebn, child2), [root1, root2, child1, functional_n])
+    @test issetequal(EnhancedBayesianNetworks._reduce_node!(ebn, child2), [root1, root2, child1, functional_n])
 
     rbn = reduce(ebn)
     @test rbn.dag == resulting_dag

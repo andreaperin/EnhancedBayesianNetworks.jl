@@ -1,11 +1,25 @@
 function evaluate(ebn::EnhancedBayesianNetwork)
+    while !isempty(filter(x -> isa(x, FunctionalNode), ebn.nodes))
+        ebn = evaluate_first(ebn)
+    end
+    return ebn
+end
+
+function evaluate_first(ebn::EnhancedBayesianNetwork)
     ## Discretize ebn
     disc_ebn = discretize(ebn)
-    ## transfer all possible continuous functional node's model to their discrete functional children
-    nodes = _transfer_continuous(disc_ebn)
-    _evaluate!(nodes)
+    ebn2eval = transfer_continuous(disc_ebn)
+    nodes = deepcopy(ebn2eval.nodes)
+    ## Reducibility check
+    nodes2reduce = filter(x -> isa(x, ContinuousNode) && !isa(x, FunctionalNode), nodes)
+    indices2reduce = map(x -> ebn2eval.name_to_index[x.name], nodes2reduce)
+    if _is_reducible(ebn2eval.dag, indices2reduce)
+        i = first(filter(x -> isa(x, FunctionalNode), nodes))
+        evaluated_i = evaluate(i)
+        nodes = _replace_node!(deepcopy(nodes), i, evaluated_i)
+    end
     _clean_up!(nodes)
-    return EnhancedBayesianNetwork(nodes)
+    ebn = EnhancedBayesianNetwork(nodes)
 end
 
 function _find_children(n, nodes)
@@ -45,16 +59,19 @@ function _evaluate!(nodes::AbstractVector{AbstractNode})
     end
 end
 
-function _transfer_continuous(ebn::EnhancedBayesianNetwork)
-    continuous_functional = filter(x -> isa(x, ContinuousFunctionalNode), ebn.nodes)
-    nodes = ebn.nodes
+function transfer_continuous(ebn::EnhancedBayesianNetwork)
+    return EnhancedBayesianNetwork(_transfer_continuous!(deepcopy(ebn.nodes)))
+end
+
+function _transfer_continuous!(nodes::AbstractVector{AbstractNode})
+    continuous_functional = filter(x -> isa(x, ContinuousFunctionalNode), nodes)
     for c in continuous_functional
-        nodes = _transfer_single_continuous_functional(nodes, c)
+        nodes = _transfer_single_continuous_functional!(nodes, c)
     end
     return nodes
 end
 
-function _transfer_single_continuous_functional(nodes::AbstractVector{AbstractNode}, node::ContinuousFunctionalNode)
+function _transfer_single_continuous_functional!(nodes::AbstractVector{AbstractNode}, node::ContinuousFunctionalNode)
     node_children = filter(x -> node ∈ x.parents, filter(x -> !isa(x, RootNode), nodes))
     if isempty(node.discretization.intervals) && !isempty(node_children)
         nodes = setdiff(nodes, [node, node_children...])
@@ -69,13 +86,11 @@ function _transfer_single_continuous_functional(nodes::AbstractVector{AbstractNo
             push!(children, child)
         end
         append!(nodes, children)
-        return nodes
-    else
-        return nodes
     end
+    return nodes
 end
 
-function _replace_node(nodes::AbstractVector{AbstractNode}, old::FunctionalNode, new::ChildNode)
+function _replace_node!(nodes::AbstractVector{AbstractNode}, old::FunctionalNode, new::ChildNode)
     index = findfirst(x -> isequal(x, old), nodes)
     deleteat!(nodes, index)
     for node in nodes
