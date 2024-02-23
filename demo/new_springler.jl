@@ -81,6 +81,10 @@ ebn = EnhancedBayesianNetwork(nodes)
 
 nebn = EnhancedBayesianNetworks.evaluate(ebn)
 
+bn = BayesianNetwork(nebn)
+
+ϕ = infer(bn, :SP, Evidence(:WG3 => :fail_WG3))
+
 
 # oo = EnhancedBayesianNetworks.transfer_continuous(ebn)
 # e_ebn, b = EnhancedBayesianNetworks._evaluate_single_layer(oo)
