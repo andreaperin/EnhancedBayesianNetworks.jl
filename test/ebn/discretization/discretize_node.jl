@@ -82,4 +82,21 @@
         @test approximated_node.distributions[[Symbol("[1.0, Inf]")]] == truncated(Normal(1, 1.5), 1, Inf)
 
     end
+
+    root = DiscreteRootNode(:x, Dict(:y => 0.2, :n => 0.8))
+    discretization1 = ExactDiscretization([0, Inf])
+    root1 = ContinuousRootNode(:z1, Normal(), discretization1)
+    discretization2 = ApproximatedDiscretization([-Inf, -1, 0, 1, Inf], 1.5)
+    states = Dict(
+        [:y] => Normal(),
+        [:n] => Normal(2, 2)
+    )
+    child = ContinuousChildNode(:β, [root], states, discretization2)
+
+    nodes = [root, root1, child]
+
+    continuous_root, discrete_root = @suppress EnhancedBayesianNetworks._discretize(root1)
+    continuous_child, discrete_child = EnhancedBayesianNetworks._discretize(child)
+
+    @test @suppress issetequal(EnhancedBayesianNetworks._discretize!(nodes), [root, continuous_root, discrete_root, continuous_child, discrete_child])
 end

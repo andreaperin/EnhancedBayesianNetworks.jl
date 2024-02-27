@@ -30,6 +30,3 @@ function verify_functionalnode_parents(parents::Vector{<:AbstractNode})
     end
 end
 
-function Base.isequal(node1::AbstractNode, node2::AbstractNode)
-    typeof(node1) == typeof(node2) && isequal(node1, node2)
-end

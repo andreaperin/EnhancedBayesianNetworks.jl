@@ -65,24 +65,23 @@ export is_equal
 export markov_blanket
 export markov_envelope
 export minimal_increase_in_complexity
-# export reduce
 export reducedim
 export reducedim!
 export reduce_ebn_markov_envelopes
 export reduce_ebn_standard
 export show
+export transfer_continuous
 export update_network!
 
 export pdf
 export cdf
 export logpdf
 
-include("ebn/discretization/discretization.jl")
-include("nodes/nodes.jl")
 include("util/wrap.jl")
+include("nodes/nodes.jl")
 include("ebn/ebn.jl")
 include("util/plots.jl")
-include("util/evidence_verification.jl")
-include("inference/inference.jl")
+# include("util/evidence_verification.jl")
+# include("inference/inference.jl")
 
 end

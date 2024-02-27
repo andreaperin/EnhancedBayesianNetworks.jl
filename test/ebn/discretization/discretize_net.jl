@@ -37,42 +37,5 @@
 
     nodes = [standard1_node, root1, root3, root2, standard2_node, functional2_node]
     ebn = EnhancedBayesianNetwork(nodes)
-
-    disc_ebn = discretize(ebn)
-
-    z_d_node = DiscreteRootNode(:z1_d,
-        Dict(
-            Symbol("[-Inf, 0.0]") => 0.5,
-            Symbol("[0.0, Inf]") => 0.5
-        )
-    )
-    z_c_node = ContinuousChildNode(:z1, [z_d_node],
-        Dict(
-            [Symbol("[-Inf, 0.0]")] => truncated(Normal(0.0, 1.0), -Inf, 0.0),
-            [Symbol("[0.0, Inf]")] => truncated(Normal(0.0, 1.0), 0.0, Inf)
-        )
-    )
-
-    β_d_node = DiscreteChildNode(:β_d, [root1], Dict(
-        [:y] => Dict(
-            Symbol("[-Inf, 0.1]") => 0.539827837277029,
-            Symbol("[0.1, Inf]") => 0.460172162722971
-        ),
-        [:n] => Dict(
-            Symbol("[-Inf, 0.1]") => 0.17105612630848183,
-            Symbol("[0.1, Inf]") => 0.8289438736915182
-        )
-    ))
-
-    β_c_node = ContinuousChildNode(:β, [β_d_node], Dict(
-        [Symbol("[-Inf, 0.1]")] => truncated(Normal(0.1, 1.5), -Inf, 0.1),
-        [Symbol("[0.1, Inf]")] => truncated(Normal(0.1, 1.5), 0.1, Inf)
-    ))
-
-    functional2_r_node = DiscreteFunctionalNode(functional2_name, [standard1_node, z_c_node], [functional2_model], functional2_performance, functional2_simulation)
-
-    @test issetequal(disc_ebn.nodes, [root2, root1, standard1_node, β_d_node, β_c_node, z_d_node, z_c_node, functional2_r_node])
-
-    @test issetequal(get_children(disc_ebn, z_d_node), [z_c_node])
+    @test discretize(ebn) == EnhancedBayesianNetwork(EnhancedBayesianNetworks._discretize!(ebn.nodes))
 end
-

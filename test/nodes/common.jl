@@ -1,4 +1,4 @@
-@testset "General Nodes Operation" begin
+@testset "Common Nodes Operation" begin
     root1 = DiscreteRootNode(:X1, Dict(:y => 0.2, :n => 0.8))
     root2 = DiscreteRootNode(:X2, Dict(:yes => 0.4, :no => 0.6), Dict(:yes => [Parameter(2.2, :X2)], :no => [Parameter(5.5, :X2)]))
     root3 = ContinuousRootNode(:Y1, Normal(), ExactDiscretization([0, 0.2, 1]))
@@ -21,5 +21,4 @@
     @testset "States Combinations" begin
         @test issetequal([[:c1y, :yes], [:c1n, :yes], [:c1y, :no], [:c1n, :no]], state_combinations(functional1_node))
     end
-
 end

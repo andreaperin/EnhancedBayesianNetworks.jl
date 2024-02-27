@@ -59,7 +59,7 @@
         envelope = markov_envelope(ebn)[1]
     end
 
-    @testset "Nodes Operation" begin
+    @testset "Nodes Parental Logic" begin
         root1 = DiscreteRootNode(:x, Dict(:y => 0.5, :n => 0.5))
         root2 = DiscreteRootNode(:z, Dict(:yes => 0.2, :no => 0.8), Dict(:yes => [Parameter(3, :z)], :no => [Parameter(0, :z)]))
 
