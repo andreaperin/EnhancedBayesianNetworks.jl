@@ -35,4 +35,6 @@ coverage/*
 
 old/*
 demo/th_model_esrel_res.jl
+demo/Hydrogen
+demo/NuclearBatteries
 .DS_Store

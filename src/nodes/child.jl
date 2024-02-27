@@ -25,6 +25,7 @@
         discrete_parents_combination = Iterators.product(_get_states.(discrete_parents)...)
         discrete_parents_combination = map(t -> [t...], discrete_parents_combination)
         length(discrete_parents_combination) != length(distributions) && error("In node $name, defined combinations are not equal to the theorical discrete parents combinations: $discrete_parents_combination")
+        parents = convert(Vector{AbstractNode}, parents)
         return new(name, parents, distributions, samples, discretization)
     end
 end
@@ -114,6 +115,7 @@ end
         discrete_parents_combination = Iterators.product(_get_states.(discrete_parents)...)
         discrete_parents_combination = map(t -> [t...], discrete_parents_combination)
         length(discrete_parents_combination) != length(normalized_states) && error("In node $name, defined combinations are not equal to the theorical discrete parents combinations: $discrete_parents_combination")
+        parents = convert(Vector{AbstractNode}, parents)
 
         return new(name, parents, normalized_states, covs, samples, parameters)
     end
