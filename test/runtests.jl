@@ -16,9 +16,9 @@ include("ebn/discretization/discretize_node.jl")
 include("ebn/discretization/discretize_net.jl")
 include("ebn/trasmission/trasmission_node.jl")
 include("ebn/trasmission/trasmission_net.jl")
+include("ebn/evaluate/evaluate_node.jl")
+include("ebn/evaluate/evaluate_net.jl")
 
-# include("ebn/reduction/dag_reduction.jl")
-# include("ebn/reduction/ebn_reduction.jl")
 
 # include("ebn/srp/evaluate_srp.jl")
 # include("ebn/srp/evaluate_net.jl")

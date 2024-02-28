@@ -1,4 +1,4 @@
-function evaluate(node::ContinuousFunctionalNode)
+function _evaluate(node::ContinuousFunctionalNode)
     discrete_parents = filter(x -> isa(x, DiscreteNode), node.parents)
     continuous_parents = filter(x -> isa(x, ContinuousNode), node.parents)
     ancestors = discrete_ancestors(node)
@@ -11,13 +11,6 @@ function evaluate(node::ContinuousFunctionalNode)
         randomvariables = mapreduce(p -> get_randomvariable(p, evidence), vcat, continuous_parents; init=UQInput[])
         df = UncertaintyQuantification.sample([parameters..., randomvariables...], node.simulation)
         UncertaintyQuantification.evaluate!(node.models, df)
-        # ## TODO check why is different from "Model"
-        # if isa(srp.models[end], Model)
-        #     res = df[:, srp.models[end].name]
-        # elseif isa(srp.models[end], ExternalModel)
-        #     res = df[:, srp.models[end].output]
-        # end
-        # pdf = EmpiricalDistribution(res)
         pdf = EmpiricalDistribution(df[:, node.models[end].name])
         distributions[evidence] = pdf
         samples[evidence] = df
@@ -25,7 +18,7 @@ function evaluate(node::ContinuousFunctionalNode)
     return ContinuousChildNode(node.name, ancestors, distributions, samples, node.discretization)
 end
 
-function evaluate(node::DiscreteFunctionalNode)
+function _evaluate(node::DiscreteFunctionalNode)
     discrete_parents = filter(x -> isa(x, DiscreteNode), node.parents)
     continuous_parents = filter(x -> isa(x, ContinuousNode), node.parents)
     ancestors = discrete_ancestors(node)
