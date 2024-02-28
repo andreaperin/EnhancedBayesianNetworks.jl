@@ -19,8 +19,6 @@ function _reduce_dag_single(dag::SimpleDiGraph, index::Int)
     _remove_barren_node(dag, index)
 end
 
-## Reduction logic
-
 function _invert_link(dag_::SimpleDiGraph, parent::Int, child::Int)
     dag = deepcopy(dag_)
     granparents = dag.badjlist[parent]
@@ -41,7 +39,7 @@ function _invert_link_simple(dag_::SimpleDiGraph, parent::Int, child::Int)
 end
 
 function _remove_barren_node(dag::SimpleDiGraph, index::Int)
-    !isempty(dag.fadjlist[index]) && error("Cannot eliminate a non-barren node")
+    !isempty(dag.fadjlist[index]) && error("Cannot eliminate a not-barren node")
 
     [rem_edge!(dag, i, index) for i in deepcopy(dag.badjlist[index])]
     deleteat!(dag.badjlist, index)
