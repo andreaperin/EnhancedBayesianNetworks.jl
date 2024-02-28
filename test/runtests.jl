@@ -11,6 +11,7 @@ include("nodes/functional.jl")
 include("nodes/common.jl")
 
 include("ebn/enhancedbn.jl")
+include("ebn/reduction.jl")
 include("ebn/discretization/discretize_node.jl")
 include("ebn/discretization/discretize_net.jl")
 include("ebn/trasmission/trasmission_node.jl")
