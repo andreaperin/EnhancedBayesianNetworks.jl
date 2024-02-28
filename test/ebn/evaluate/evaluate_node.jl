@@ -1,4 +1,4 @@
-@testset "Evaluation" begin
+@testset "Evaluation Node" begin
     root1 = DiscreteRootNode(:A, Dict(:a1 => 0.5, :a2 => 0.5), Dict(:a1 => [Parameter(1, :A)], :a2 => [Parameter(2, :A)]))
     root2 = ContinuousRootNode(:B, Normal())
     model = Model(df -> df.A .+ df.B, :C)

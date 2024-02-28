@@ -10,28 +10,18 @@ function _evaluate_routine(ebn::EnhancedBayesianNetwork)
     disc_ebn = discretize(ebn)
     ## transfer_continuous
     ebn2eval = transfer_continuous(disc_ebn)
-    nodes = deepcopy(ebn2eval.nodes)
+    nodes = ebn2eval.nodes
     ## Reducibility check
     nodes2reduce = filter(x -> isa(x, ContinuousNode) && !isa(x, FunctionalNode), nodes)
     indices2reduce = map(x -> ebn2eval.name_to_index[x.name], nodes2reduce)
     if _is_reducible(ebn2eval.dag, indices2reduce)
         i = first(filter(x -> isa(x, FunctionalNode), nodes))
-        evaluated_i = evaluate(i)
-        nodes = _replace_node!(deepcopy(nodes), i, evaluated_i)
+        evaluated_i = _evaluate(i)
+        nodes = _replace_node!(nodes, i, evaluated_i)
     end
     ## Removing barren nodes
     _clean_up!(nodes)
     ebn = EnhancedBayesianNetwork(nodes)
-end
-
-function _clean_up!(nodes::AbstractVector{AbstractNode})
-    nodes2clean = filter(x -> isa(x, ContinuousNode) && !isa(x, FunctionalNode), nodes)
-    is_withoutchild = map(x -> _find_children(x, nodes) == 0, nodes2clean)
-    nodes2clean = nodes2clean[is_withoutchild]
-    for i in nodes2clean
-        index = findfirst(x -> x == i, nodes)
-        deleteat!(nodes, index)
-    end
 end
 
 function _replace_node!(nodes::AbstractVector{AbstractNode}, old::FunctionalNode, new::ChildNode)
@@ -50,7 +40,17 @@ function _replace_node!(nodes::AbstractVector{AbstractNode}, old::FunctionalNode
     insert!(nodes, index, new)
 end
 
-function _find_children(n, nodes)
+function _clean_up!(nodes::AbstractVector{AbstractNode})
+    nodes2clean = filter(x -> isa(x, ContinuousNode) && !isa(x, FunctionalNode), nodes)
+    is_withoutchild = map(x -> _count_children(x, nodes) == 0, nodes2clean)
+    nodes2clean = nodes2clean[is_withoutchild]
+    for i in nodes2clean
+        index = findfirst(x -> x == i, nodes)
+        deleteat!(nodes, index)
+    end
+end
+
+function _count_children(n, nodes)
     counter = 0
     for x in nodes
         if isa(x, RootNode)
