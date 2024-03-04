@@ -32,7 +32,6 @@ function _replace_node!(nodes::AbstractVector{AbstractNode}, old::FunctionalNode
             continue
         else
             if old ∈ node.parents
-                @show(node.name)
                 node.parents[:] = [filter(x -> x != old, node.parents)..., new]
             end
         end
