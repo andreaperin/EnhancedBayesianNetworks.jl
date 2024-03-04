@@ -1,3 +1,4 @@
+include("cpd/conditionalprobabilitydistribution.jl")
 include("inferencestate.jl")
 include("factors.jl")
 include("factor_methods.jl")

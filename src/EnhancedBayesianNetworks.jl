@@ -79,6 +79,6 @@ export logpdf
 
 include("nodes/nodes.jl")
 include("ebn/ebn.jl")
-# include("inference/inference.jl")
+include("inference/inference.jl")
 
 end

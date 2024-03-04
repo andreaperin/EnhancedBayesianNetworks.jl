@@ -6,5 +6,3 @@ struct ConditionalProbabilityDistribution
     states::Vector{Symbol}
     distributions::Dict{Vector{Symbol},Dict{Symbol,Float64}}
 end
-
-##TODO this folder should belog to "Infrence" and not "ebn"
