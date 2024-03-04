@@ -4,8 +4,9 @@ abstract type ContinuousNode <: AbstractNode end
 
 const AbstractSimulation = Union{AbstractMonteCarlo,LineSampling,SubSetSimulation}
 
-abstract type AbstractDiscretization end
+include("../util/wrap.jl")
 
+abstract type AbstractDiscretization end
 
 """ ExactDiscretization
 

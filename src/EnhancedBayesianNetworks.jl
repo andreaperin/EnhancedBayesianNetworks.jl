@@ -77,11 +77,8 @@ export pdf
 export cdf
 export logpdf
 
-include("util/wrap.jl")
 include("nodes/nodes.jl")
 include("ebn/ebn.jl")
-include("util/plots.jl")
-# include("util/evidence_verification.jl")
 # include("inference/inference.jl")
 
 end
