@@ -36,7 +36,7 @@
         functional = DiscreteFunctionalNode(:f1, [root2, root3], functional_model, functional_performance, functional_simulation)
 
         ebn = EnhancedBayesianNetwork([root2, root3, functional])
-        e_ebn = evaluate!(ebn)
+        e_ebn = evaluate(ebn)
         bn = BayesianNetwork(e_ebn)
 
         dag = SimpleDiGraph{Int64}(1, [[2], Int64[]], [Int64[], [1]])

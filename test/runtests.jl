@@ -18,16 +18,11 @@ include("ebn/trasmission/trasmission_node.jl")
 include("ebn/trasmission/trasmission_net.jl")
 include("ebn/evaluate/evaluate_node.jl")
 include("ebn/evaluate/evaluate_net.jl")
+include("ebn/bayesnet.jl")
 
-
-# include("ebn/srp/evaluate_srp.jl")
-# include("ebn/srp/evaluate_net.jl")
-
-# include("ebn/cpd/conditionalprobabilitydistribution.jl")
-# include("ebn/bayesiannet.jl")
-
-# include("Inference/inferencestate.jl")
-# include("Inference/factors.jl")
-# include("Inference/factor_methods.jl")
-# include("Inference/factor_algebra.jl")
-# include("Inference/variableselimination.jl")
+include("inference/cpd/conditionalprobabilitydistribution.jl")
+include("inference/inferencestate.jl")
+include("inference/factors.jl")
+include("inference/factor_methods.jl")
+include("inference/factor_algebra.jl")
+include("inference/variableselimination.jl")
