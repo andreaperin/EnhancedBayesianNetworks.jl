@@ -37,4 +37,5 @@ old/*
 demo/th_model_esrel_res.jl
 demo/Hydrogen
 demo/NuclearBatteries
+demo/HC_ebn.jl
 .DS_Store
