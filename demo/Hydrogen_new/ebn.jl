@@ -1,4 +1,5 @@
 using EnhancedBayesianNetworks
+# using JDL2
 if Sys.isapple()
     include("/Users/andreaperin_macos/Documents/Code/Hydrogen_project/JuliaHyram/wrapper.jl")
 elseif Sys.iswindows()
@@ -122,3 +123,6 @@ nodes = [node_leak, node_detector, node_release, node_ignition, node_time, node_
 ebn = EnhancedBayesianNetwork(nodes)
 
 eebn = EnhancedBayesianNetworks.evaluate(ebn)
+
+# path = pwd() * "/demo/Hydrogen_new/ebn/"
+# save_object(path * "ebn" * string(hyram_simulations.n) * string(typeof(hyram_simulations)) * ".jld2", eebn)
