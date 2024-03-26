@@ -24,12 +24,12 @@ end
 
 @auto_hash_equals struct DiscreteRootNode <: DiscreteNode
     name::Symbol
-    states::Dict{Symbol,<:Number}
+    states::Dict{Symbol,<:Real}
     parameters::Dict{Symbol,Vector{Parameter}}
 
-    function DiscreteRootNode(name::Symbol, states::Dict{Symbol,<:Number}, parameters::Dict{Symbol,Vector{Parameter}})
+    function DiscreteRootNode(name::Symbol, states::Dict{Symbol,<:Real}, parameters::Dict{Symbol,Vector{Parameter}})
         verify_probabilities(states)
-        normalized_states = Dict{Symbol,Number}()
+        normalized_states = Dict{Symbol,Real}()
         normalized_prob = normalize(collect(values(states)), 1)
         normalized_states = Dict(zip(collect(keys(states)), normalized_prob))
         verify_parameters(normalized_states, parameters)
@@ -37,7 +37,7 @@ end
     end
 end
 
-DiscreteRootNode(name::Symbol, states::Dict{Symbol,<:Number}) = DiscreteRootNode(name, states, Dict{Symbol,Vector{Parameter}}())
+DiscreteRootNode(name::Symbol, states::Dict{Symbol,<:Real}) = DiscreteRootNode(name, states, Dict{Symbol,Vector{Parameter}}())
 
 _get_states(node::DiscreteRootNode) = collect(keys(node.states))
 
