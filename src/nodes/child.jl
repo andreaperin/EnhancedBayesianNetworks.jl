@@ -82,7 +82,7 @@ end
 @auto_hash_equals struct DiscreteChildNode <: DiscreteNode
     name::Symbol
     parents::Vector{<:AbstractNode}
-    states::Dict{Vector{Symbol},Dict{Symbol,Real}}
+    states::Dict{Vector{Symbol},Dict{Symbol,Any}}
     covs::Dict{Vector{Symbol},Real}
     samples::Dict{Vector{Symbol},DataFrame}
     parameters::Dict{Symbol,Vector{Parameter}}
@@ -96,38 +96,47 @@ end
         parameters::Dict{Symbol,Vector{Parameter}}
     )
         try
-            convert(Dict{Vector{Symbol},Dict{Symbol,Real}}, states)
+            states = convert(Dict{Vector{Symbol},Dict{Symbol,Real}}, states)
         catch
-            error("node $name must have real valued states probailities")
+            try
+                states = convert(Dict{Vector{Symbol},Dict{Symbol,Vector{Real}}}, states)
+            catch
+                error("node $name must have real valued states probailities")
+            end
         end
+
         try
             convert(Dict{Vector{Symbol},Real}, covs)
         catch
             error("node $name must have real valued covs")
         end
 
-        normalized_states = Dict{Vector{Symbol},Dict{Symbol,Real}}()
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
-        for (key, val) in states
-            verify_probabilities(val)
-            normalized_prob = normalize(collect(values(val)), 1)
-            normalized_states[key] = Dict(zip(collect(keys(val)), normalized_prob))
-            verify_parameters(val, parameters)
-            length(discrete_parents) != length(key) && error("In node $name, defined parents states differ from number of its discrete parents")
-            any([k ∉ _get_states(discrete_parents[i]) for (i, k) in enumerate(key)]) && error("In node $name, defined parents states are not coherent with its discrete parents states")
+
+        if isa(states, Dict{Vector{Symbol},Dict{Symbol,Real}})
+            normalized_states = Dict{Vector{Symbol},Dict{Symbol,Real}}()
+            for (key, val) in states
+                verify_probabilities(val)
+                normalized_prob = normalize(collect(values(val)), 1)
+                normalized_states[key] = Dict(zip(collect(keys(val)), normalized_prob))
+                verify_parameters(val, parameters)
+                length(discrete_parents) != length(key) && error("In node $name, defined parents states differ from number of its discrete parents")
+                any([k ∉ _get_states(discrete_parents[i]) for (i, k) in enumerate(key)]) && error("In node $name, defined parents states are not coherent with its discrete parents states")
+            end
+            states = normalized_states
         end
 
-        node_states = [keys(s) for s in values(normalized_states)]
+        node_states = [keys(s) for s in values(states)]
         if length(reduce(intersect, node_states)) != length(reduce(union, node_states))
             error("node $name: non-coherent definition of nodes states")
         end
 
         discrete_parents_combination = Iterators.product(_get_states.(discrete_parents)...)
         discrete_parents_combination = map(t -> [t...], discrete_parents_combination)
-        length(discrete_parents_combination) != length(normalized_states) && error("In node $name, defined combinations are not equal to the theorical discrete parents combinations: $discrete_parents_combination")
+        length(discrete_parents_combination) != length(states) && error("In node $name, defined combinations are not equal to the theorical discrete parents combinations: $discrete_parents_combination")
         parents = convert(Vector{AbstractNode}, parents)
 
-        return new(name, parents, normalized_states, covs, samples, parameters)
+        return new(name, parents, states, covs, samples, parameters)
     end
 end
 

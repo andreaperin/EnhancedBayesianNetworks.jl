@@ -81,7 +81,7 @@
             [:yes] => Dict(:yes => 0.3, :no => 0.9),
             [:no] => Dict(:yes => 0.2, :no => 0.8)
         )
-        @test_throws ErrorException("defined states probabilities Dict(:yes => 0.3, :no => 0.9) are wrong") DiscreteChildNode(name, [root1], states)
+        @test_throws ErrorException("defined states probabilities Dict{Symbol, Real}(:yes => 0.3, :no => 0.9) are wrong") DiscreteChildNode(name, [root1], states)
 
         states = Dict(
             [:yes] => Dict(:yes => 0.4999, :no => 0.4999),
@@ -151,3 +151,4 @@
         @test get_parameters(node, evidence) == [Parameter(1.1, :g)]
     end
 end
+## TODO add test for the try - catch  
