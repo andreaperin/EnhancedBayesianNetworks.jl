@@ -1,20 +1,30 @@
+const AbstractContinuousInput = Union{UnivariateDistribution,Tuple{Real,Real}}
 @auto_hash_equals struct ContinuousRootNode <: ContinuousNode
     name::Symbol
-    distribution::UnivariateDistribution
+    distribution::AbstractContinuousInput
     discretization::ExactDiscretization # discretization just as increasing values?
 end
 
-ContinuousRootNode(name::Symbol, distribution::UnivariateDistribution) = ContinuousRootNode(name, distribution, ExactDiscretization())
+ContinuousRootNode(name::Symbol, distribution::AbstractContinuousInput) = ContinuousRootNode(name, distribution, ExactDiscretization())
 
 function get_randomvariable(node::ContinuousRootNode, ::Vector{Symbol})
-    RandomVariable(node.distribution, node.name)
+    if isa(node.distribution, UnivariateDistribution)
+        return RandomVariable(node.distribution, node.name)
+    elseif isa(node.distribution, Tuple{Real,Real})
+        return Interval(node.distribution[1], node.distribution[2], node.name)
+    end
 end
 
 get_randomvariable(node::ContinuousRootNode) = get_randomvariable(node, Vector{Symbol}())
 
 function _get_node_distribution_bounds(node::ContinuousRootNode)
-    lower_bound = support(node.distribution).lb
-    upper_bound = support(node.distribution).ub
+    if isa(node.distribution, UnivariateDistribution)
+        lower_bound = support(node.distribution).lb
+        upper_bound = support(node.distribution).ub
+    elseif isa(node.distribution, Tuple{Real,Real})
+        lower_bound = node.distribution[1]
+        upper_bound = node.distribution[2]
+    end
     return lower_bound, upper_bound
 end
 
