@@ -83,18 +83,28 @@ end
     name::Symbol
     parents::Vector{<:AbstractNode}
     states::Dict{Vector{Symbol},Dict{Symbol,Real}}
-    covs::Dict{Vector{Symbol},Number}
+    covs::Dict{Vector{Symbol},Real}
     samples::Dict{Vector{Symbol},DataFrame}
     parameters::Dict{Symbol,Vector{Parameter}}
 
     function DiscreteChildNode(
         name::Symbol,
         parents::Vector{<:AbstractNode},
-        states::Dict{Vector{Symbol},Dict{Symbol,T}},
-        covs::Dict{Vector{Symbol},Number},
+        states::Dict,
+        covs::Dict,
         samples::Dict{Vector{Symbol},DataFrame},
         parameters::Dict{Symbol,Vector{Parameter}}
-    ) where {T<:Real}
+    )
+        try
+            convert(Dict{Vector{Symbol},Dict{Symbol,Real}}, states)
+        catch
+            error("node $name must have real valued states probailities")
+        end
+        try
+            convert(Dict{Vector{Symbol},Real}, covs)
+        catch
+            error("node $name must have real valued covs")
+        end
 
         normalized_states = Dict{Vector{Symbol},Dict{Symbol,Real}}()
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
@@ -124,11 +134,10 @@ end
 function DiscreteChildNode(
     name::Symbol,
     parents::Vector{<:AbstractNode},
-    states::Dict{Vector{Symbol},Dict{Symbol,T}},
-    covs::Dict{Vector{Symbol},Number},
+    states::Dict,
+    covs::Dict,
     samples::Dict{Vector{Symbol},DataFrame}
-) where {T<:Real}
-
+)
     parameters = Dict{Symbol,Vector{Parameter}}()
     DiscreteChildNode(name, parents, states, covs, samples, parameters)
 end
@@ -136,10 +145,9 @@ end
 function DiscreteChildNode(
     name::Symbol,
     parents::Vector{<:AbstractNode},
-    states::Dict{Vector{Symbol},Dict{Symbol,T}}
-) where {T<:Real}
-
-    covs = Dict{Vector{Symbol},Number}()
+    states::Dict
+)
+    covs = Dict{Vector{Symbol},Real}()
     samples = Dict{Vector{Symbol},DataFrame}()
     parameters = Dict{Symbol,Vector{Parameter}}()
     DiscreteChildNode(name, parents, states, covs, samples, parameters)
@@ -148,11 +156,11 @@ end
 function DiscreteChildNode(
     name::Symbol,
     parents::Vector{<:AbstractNode},
-    states::Dict{Vector{Symbol},Dict{Symbol,T}},
+    states::Dict,
     parameters::Dict{Symbol,Vector{Parameter}}
-) where {T<:Real}
+)
 
-    covs = Dict{Vector{Symbol},Number}()
+    covs = Dict{Vector{Symbol},Real}()
     samples = Dict{Vector{Symbol},DataFrame}()
     DiscreteChildNode(name, parents, states, covs, samples, parameters)
 end
