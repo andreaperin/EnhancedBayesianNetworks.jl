@@ -1,4 +1,3 @@
-const AbstractContinuousInput = Union{UnivariateDistribution,Tuple{Real,Real}}
 @auto_hash_equals struct ContinuousRootNode <: ContinuousNode
     name::Symbol
     distribution::AbstractContinuousInput

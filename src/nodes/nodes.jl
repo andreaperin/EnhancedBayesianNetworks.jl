@@ -2,6 +2,8 @@ abstract type AbstractNode end
 abstract type DiscreteNode <: AbstractNode end
 abstract type ContinuousNode <: AbstractNode end
 
+const AbstractContinuousInput = Union{UnivariateDistribution,Tuple{Real,Real}}
+
 const AbstractSimulation = Union{AbstractMonteCarlo,LineSampling,SubSetSimulation}
 
 include("../util/wrap.jl")
