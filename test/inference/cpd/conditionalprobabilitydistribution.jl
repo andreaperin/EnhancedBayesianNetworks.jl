@@ -7,20 +7,20 @@
     )
     parental_ncategories = [2, 2]
     states = [:a1, :a2]
-    distributions = Dict(
+    distribution = Dict(
         [:b1, :c1] => Dict(:a1 => 0.5, :a2 => 0.5),
         [:b1, :c2] => Dict(:a1 => 0.5, :a2 => 0.5),
         [:b2, :c1] => Dict(:a1 => 0.5, :a2 => 0.5),
         [:b2, :c2] => Dict(:a1 => 0.5, :a2 => 0.5)
     )
 
-    cpd = ConditionalProbabilityDistribution(target, parents, parents_states_mapping_dict, parental_ncategories, states, distributions)
+    cpd = ConditionalProbabilityDistribution(target, parents, parents_states_mapping_dict, parental_ncategories, states, distribution)
 
     @test cpd.target == target
     @test cpd.parents == parents
     @test cpd.parents_states_mapping_dict == parents_states_mapping_dict
     @test cpd.parental_ncategories == parental_ncategories
     @test cpd.states == states
-    @test cpd.distributions == distributions
+    @test cpd.distribution == distribution
 
 end

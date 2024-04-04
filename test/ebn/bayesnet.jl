@@ -61,8 +61,8 @@
         cpd_s = get_cpd(bn, :S)
         cpd_t = get_cpd(bn, :T)
 
-        @test cpd_s.distributions == Dict(Symbol[] => Dict(:noS => 0.5, :yesS => 0.5))
-        @test cpd_t.distributions == Dict([:yesV] => Dict(:noT => 0.95, :yesT => 0.05),
+        @test cpd_s.distribution == Dict(Symbol[] => Dict(:noS => 0.5, :yesS => 0.5))
+        @test cpd_t.distribution == Dict([:yesV] => Dict(:noT => 0.95, :yesT => 0.05),
             [:noV] => Dict(:noT => 0.99, :yesT => 0.01))
 
         @test isempty(cpd_s.parental_ncategories)

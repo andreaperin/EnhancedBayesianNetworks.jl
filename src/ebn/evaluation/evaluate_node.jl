@@ -4,7 +4,7 @@ function _evaluate(node::ContinuousFunctionalNode)
     ancestors = discrete_ancestors(node)
     ancestors_combination = vec(collect(Iterators.product(_get_states.(ancestors)...)))
     ancestors_combination = map(x -> [x...], ancestors_combination)
-    distributions = Dict{Vector{Symbol},UnivariateDistribution}()
+    distribution = Dict{Vector{Symbol},UnivariateDistribution}()
     samples = Dict{Vector{Symbol},DataFrame}()
     for evidence in ancestors_combination
         parameters = mapreduce(p -> get_parameters(p, evidence), vcat, discrete_parents; init=UQInput[])
@@ -12,10 +12,10 @@ function _evaluate(node::ContinuousFunctionalNode)
         df = UncertaintyQuantification.sample([parameters..., randomvariables...], node.simulation)
         UncertaintyQuantification.evaluate!(node.models, df)
         pdf = EmpiricalDistribution(df[:, node.models[end].name])
-        distributions[evidence] = pdf
+        distribution[evidence] = pdf
         samples[evidence] = df
     end
-    return ContinuousChildNode(node.name, ancestors, distributions, samples, node.discretization)
+    return ContinuousChildNode(node.name, ancestors, distribution, samples, node.discretization)
 end
 
 function _evaluate(node::DiscreteFunctionalNode)

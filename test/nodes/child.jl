@@ -6,45 +6,45 @@
         root4 = DiscreteRootNode(:k, Dict(:a => 0.5, :b => 0.5))
         name = :child
 
-        distributions = Dict(
+        distribution = Dict(
             [:yes, :yes] => Normal(),
             [:no] => Normal(1, 1)
         )
-        @test_throws ErrorException("In node child, defined parents states differ from number of its discrete parents") ContinuousChildNode(name, [root1], distributions)
+        @test_throws ErrorException("In node child, defined parents states differ from number of its discrete parents") ContinuousChildNode(name, [root1], distribution)
 
-        distributions = Dict(
+        distribution = Dict(
             [:yes] => Normal(),
             [:no] => Normal(1, 1)
         )
-        @test_throws ErrorException("ContinuousChildNode child cannot have continuous parents! Use ContinuousFunctionalNode instead") ContinuousChildNode(name, [root1, root3], distributions)
+        @test_throws ErrorException("ContinuousChildNode child cannot have continuous parents! Use ContinuousFunctionalNode instead") ContinuousChildNode(name, [root1, root3], distribution)
 
         parents = [root1, root2]
-        distributions = Dict(
+        distribution = Dict(
             [:yes, :y] => Normal(),
             [:no, :y] => Normal(1, 1),
             [:yes, :n] => Normal(2, 1)
         )
-        @test_throws ErrorException("In node child, defined combinations are not equal to the theorical discrete parents combinations: [[:yes, :n] [:yes, :y]; [:no, :n] [:no, :y]]") ContinuousChildNode(name, parents, distributions)
+        @test_throws ErrorException("In node child, defined combinations are not equal to the theorical discrete parents combinations: [[:yes, :n] [:yes, :y]; [:no, :n] [:no, :y]]") ContinuousChildNode(name, parents, distribution)
 
-        distributions = Dict(
+        distribution = Dict(
             [:yes, :maybe] => Normal(),
             [:no, :y] => Normal(1, 1),
             [:yes, :n] => Normal(2, 1),
             [:no, :n] => Normal(3, 1)
         )
-        @test_throws ErrorException("In node child, defined parents states are not coherent with its discrete parents states") ContinuousChildNode(name, parents, distributions)
+        @test_throws ErrorException("In node child, defined parents states are not coherent with its discrete parents states") ContinuousChildNode(name, parents, distribution)
 
-        distributions = Dict(
+        distribution = Dict(
             [:yes, :y] => Normal(),
             [:no, :y] => Normal(1, 1),
             [:yes, :n] => Normal(2, 1),
             [:no, :n] => Normal(3, 1)
         )
-        node = ContinuousChildNode(name, [root1, root2], distributions)
+        node = ContinuousChildNode(name, [root1, root2], distribution)
 
         @test node.name == name
         @test issetequal(node.parents, [root1, root2])
-        @test node.distributions == distributions
+        @test node.distribution == distribution
         @test isequal(node.discretization, ApproximatedDiscretization())
         @test node.samples == Dict{Vector{Symbol},DataFrame}()
 

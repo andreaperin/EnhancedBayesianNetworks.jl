@@ -3,78 +3,95 @@
 @auto_hash_equals struct ContinuousChildNode <: ContinuousNode
     name::Symbol
     parents::Vector{<:AbstractNode}
-    distributions::Dict{Vector{Symbol},UnivariateDistribution}
+    distribution::Dict{Vector{Symbol},<:AbstractContinuousInput}
     samples::Dict{Vector{Symbol},DataFrame}
     discretization::ApproximatedDiscretization
 
     function ContinuousChildNode(
         name::Symbol,
         parents::Vector{<:AbstractNode},
-        distributions::Dict{Vector{Symbol},D},
+        distribution::Dict{Vector{Symbol},<:AbstractContinuousInput},
         samples::Dict{Vector{Symbol},DataFrame},
         discretization::ApproximatedDiscretization
-    ) where {D<:UnivariateDistribution}
+    )
 
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
         !issetequal(discrete_parents, parents) && error("ContinuousChildNode $name cannot have continuous parents! Use ContinuousFunctionalNode instead")
-        for key in keys(distributions)
+        for key in keys(distribution)
             length(discrete_parents) != length(key) && error("In node $name, defined parents states differ from number of its discrete parents")
             any([k ∉ _get_states(discrete_parents[i]) for (i, k) in enumerate(key)]) && error("In node $name, defined parents states are not coherent with its discrete parents states")
         end
 
         discrete_parents_combination = Iterators.product(_get_states.(discrete_parents)...)
         discrete_parents_combination = map(t -> [t...], discrete_parents_combination)
-        length(discrete_parents_combination) != length(distributions) && error("In node $name, defined combinations are not equal to the theorical discrete parents combinations: $discrete_parents_combination")
+        length(discrete_parents_combination) != length(distribution) && error("In node $name, defined combinations are not equal to the theorical discrete parents combinations: $discrete_parents_combination")
         parents = convert(Vector{AbstractNode}, parents)
-        return new(name, parents, distributions, samples, discretization)
+        return new(name, parents, distribution, samples, discretization)
     end
 end
 
 function ContinuousChildNode(
     name::Symbol,
     parents::Vector{<:AbstractNode},
-    distributions::Dict{Vector{Symbol},D}
-) where {D<:UnivariateDistribution}
+    distribution::Dict{Vector{Symbol},<:AbstractContinuousInput}
+)
 
     samples = Dict{Vector{Symbol},DataFrame}()
     discretization = ApproximatedDiscretization()
-    ContinuousChildNode(name, parents, distributions, samples, discretization)
+    ContinuousChildNode(name, parents, distribution, samples, discretization)
 end
 
 function ContinuousChildNode(
     name::Symbol,
     parents::Vector{<:AbstractNode},
-    distributions::Dict{Vector{Symbol},D},
+    distribution::Dict{Vector{Symbol},<:AbstractContinuousInput},
     samples::Dict{Vector{Symbol},DataFrame}
-) where {D<:UnivariateDistribution}
+)
 
     discretization = ApproximatedDiscretization()
-    ContinuousChildNode(name, parents, distributions, samples, discretization)
+    ContinuousChildNode(name, parents, distribution, samples, discretization)
 end
 
 function ContinuousChildNode(
     name::Symbol,
     parents::Vector{<:AbstractNode},
-    distributions::Dict{Vector{Symbol},D},
+    distribution::Dict{Vector{Symbol},<:AbstractContinuousInput},
     discretization::ApproximatedDiscretization
-) where {D<:UnivariateDistribution}
+)
 
     samples = Dict{Vector{Symbol},DataFrame}()
-    ContinuousChildNode(name, parents, distributions, samples, discretization)
+    ContinuousChildNode(name, parents, distribution, samples, discretization)
 end
 
 function get_randomvariable(node::ContinuousChildNode, evidence::Vector{Symbol})
-    node_keys = keys(node.distributions) |> collect
+    node_keys = keys(node.distribution) |> collect
     name = node.name
-    all(.![issubset(i, evidence) for i in keys(node.distributions)]) && error("evidence $evidence does not contain all the parents of the ContinuousChildNode $name")
+    all(.![issubset(i, evidence) for i in keys(node.distribution)]) && error("evidence $evidence does not contain all the parents of the ContinuousChildNode $name")
     key = node_keys[findfirst([issubset(i, evidence) for i in node_keys])]
-    return RandomVariable(node.distributions[key], node.name)
+
+    if isa(node.distribution[key], UnivariateDistribution)
+        return RandomVariable(node.distribution[key], node.name)
+    elseif isa(node.distribution[key], Tuple{Real,Real})
+        return Interval(node.distribution[key][1], node.distribution[key][2], node.name)
+    end
 end
 
 function _get_node_distribution_bounds(node::ContinuousChildNode)
-    lower_bound = minimum(support(i).lb for i in values(node.distributions))
-    upper_bound = maximum(support(i).ub for i in values(node.distributions))
-    return lower_bound, upper_bound
+    function f(x)
+        if isa(x, UnivariateDistribution)
+            lower_bound = support(x).lb
+            upper_bound = support(x).ub
+        elseif isa(x, Tuple{Real,Real})
+            lower_bound = x[1]
+            upper_bound = x[2]
+        end
+        return [lower_bound, upper_bound]
+    end
+    distribution_values = values(node.distribution) |> collect
+    bounds = mapreduce(x -> f(x), hcat, distribution_values)
+    lb = minimum(bounds[1, :])
+    ub = maximum(bounds[2, :])
+    return lb, ub
 end
 
 ``` DiscreteChildNode

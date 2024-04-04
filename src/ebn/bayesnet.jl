@@ -28,14 +28,14 @@ function get_cpd(bn::BayesianNetwork, i::Int)
     st = _get_states(bn.nodes[i])
     isa(n, RootNode) ? parents = Vector{Symbol}() : parents = [x.name for x in n.parents]
     isa(n, RootNode) ? parental_ncategories = Vector{Int}() : parental_ncategories = map(s -> length(_get_states(s)), n.parents)
-    isa(n, RootNode) ? distributions = Dict(Vector{Symbol}() => n.states) : distributions = n.states
+    isa(n, RootNode) ? distribution = Dict(Vector{Symbol}() => n.states) : distribution = n.states
     parents_nodes = [bn.nodes[bn.name_to_index[s]] for s in parents]
     mapping_dict = Dict{Symbol,Dict{Symbol,Int}}()
     for node in parents_nodes
         mapping_dict[node.name] = Dict(s => i for (i, s) in enumerate(_get_states(node)))
     end
 
-    ConditionalProbabilityDistribution(target, parents, mapping_dict, parental_ncategories, st, distributions)
+    ConditionalProbabilityDistribution(target, parents, mapping_dict, parental_ncategories, st, distribution)
 end
 
 get_cpd(bn::BayesianNetwork, name::Symbol) = get_cpd(bn, bn.name_to_index[name])

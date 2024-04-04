@@ -37,7 +37,7 @@ function factorize_cpd(cpd::ConditionalProbabilityDistribution)
     indices = sort(vcat(Iterators.product(map(x -> 1:x, cpd.parental_ncategories)...)...), by=last) |> collect
     f_m = (i, v) -> [k for (k, h) in cpd.parents_states_mapping_dict[cpd.parents[i]] if h == v]
     indices_new = map(ind -> vcat([f_m(i, v) for (i, v) in enumerate(ind)]...), indices)
-    p[:] = vcat([collect(values(cpd.distributions[i])) for i in indices_new]...)
+    p[:] = vcat([collect(values(cpd.distribution[i])) for i in indices_new]...)
 
     states_mapping = deepcopy(cpd.parents_states_mapping_dict)
     states_mapping[cpd.target] = Dict(s => i for (i, s) in enumerate(cpd.states))

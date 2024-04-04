@@ -30,8 +30,8 @@
         states_child1 = Dict([:yes] => Dict(:a => 0.5, :b => 0.5), [:no] => Dict(:a => 0.5, :b => 0.5))
         child1 = DiscreteChildNode(:child1, [root1], states_child1, Dict(:a => [Parameter(3, :child1)], :b => [Parameter(0, :child1)]))
 
-        distributions_child2 = Dict([:a] => Normal(), [:b] => Normal(2, 2))
-        child2 = ContinuousChildNode(:child2, [child1], distributions_child2)
+        distribution_child2 = Dict([:a] => Normal(), [:b] => Normal(2, 2))
+        child2 = ContinuousChildNode(:child2, [child1], distribution_child2)
 
         model = Model(df -> sqrt.(df.child1 .^ 2 + df.child2 .^ 2), :value1)
         df -> 1 .- 2 .* df.v
@@ -66,8 +66,8 @@
         states_child1 = Dict([:y] => Dict(:a => 0.5, :b => 0.5), [:n] => Dict(:a => 0.5, :b => 0.5))
         child1 = DiscreteChildNode(:child1, [root1], states_child1, Dict(:a => [Parameter(3, :child1)], :b => [Parameter(0, :child1)]))
 
-        distributions_child2 = Dict([:a] => Normal(), [:b] => Normal(2, 2))
-        child2 = ContinuousChildNode(:child2, [child1], distributions_child2)
+        distribution_child2 = Dict([:a] => Normal(), [:b] => Normal(2, 2))
+        child2 = ContinuousChildNode(:child2, [child1], distribution_child2)
 
         model = Model(df -> sqrt.(df.child1 .^ 2 + df.child2 .- df.z .^ 2), :value1)
         models = [model]

@@ -43,8 +43,8 @@
 
         @test discretized_root.name == :z1_d
 
-        @test continuous_node.distributions[[Symbol("[-Inf, 0.0]")]] == truncated(Normal(), -Inf, 0.0)
-        @test continuous_node.distributions[[Symbol("[0.0, Inf]")]] == truncated(Normal(), 0.0, Inf)
+        @test continuous_node.distribution[[Symbol("[-Inf, 0.0]")]] == truncated(Normal(), -Inf, 0.0)
+        @test continuous_node.distribution[[Symbol("[0.0, Inf]")]] == truncated(Normal(), 0.0, Inf)
 
         @test discretized_root.states[Symbol("[-Inf, 0.0]")] == 0.5
         @test discretized_root.states[Symbol("[0.0, Inf]")] == 0.5
@@ -55,8 +55,8 @@
 
         @test discretized_root.name == :z1_d
 
-        @test continuous_node.distributions[[Symbol("[-Inf, 0.0]")]] == truncated(Normal(), -Inf, 0.0)
-        @test continuous_node.distributions[[Symbol("[0.0, Inf]")]] == truncated(Normal(), 0.0, Inf)
+        @test continuous_node.distribution[[Symbol("[-Inf, 0.0]")]] == truncated(Normal(), -Inf, 0.0)
+        @test continuous_node.distribution[[Symbol("[0.0, Inf]")]] == truncated(Normal(), 0.0, Inf)
 
         @test discretized_root.states[Symbol("[-Inf, 0.0]")] == 0.5
         @test discretized_root.states[Symbol("[0.0, Inf]")] == 0.5
@@ -76,10 +76,10 @@
 
         approximated_node, discretized_child = @suppress EnhancedBayesianNetworks._discretize(child)
 
-        @test approximated_node.distributions[[Symbol("[-Inf, -1.0]")]] == truncated(Normal(-1, 1.5), -Inf, -1)
-        @test approximated_node.distributions[[Symbol("[-1.0, 0.0]")]] == Uniform(-1, 0)
-        @test approximated_node.distributions[[Symbol("[0.0, 1.0]")]] == Uniform(0, 1.0)
-        @test approximated_node.distributions[[Symbol("[1.0, Inf]")]] == truncated(Normal(1, 1.5), 1, Inf)
+        @test approximated_node.distribution[[Symbol("[-Inf, -1.0]")]] == truncated(Normal(-1, 1.5), -Inf, -1)
+        @test approximated_node.distribution[[Symbol("[-1.0, 0.0]")]] == Uniform(-1, 0)
+        @test approximated_node.distribution[[Symbol("[0.0, 1.0]")]] == Uniform(0, 1.0)
+        @test approximated_node.distribution[[Symbol("[1.0, Inf]")]] == truncated(Normal(1, 1.5), 1, Inf)
 
     end
 

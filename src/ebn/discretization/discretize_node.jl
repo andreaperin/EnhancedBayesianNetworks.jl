@@ -27,23 +27,23 @@ function _discretize(node::ContinuousRootNode)
     states = Dict(states_symbols .=> _discretize(node.distribution, intervals))
     discrete_node = DiscreteRootNode(Symbol(string(node.name) * "_d"), states)
     ## Adding continuous node as parents of children of the discretized node
-    distributions_symbols = [[i] for i in states_symbols]
-    distributions = Dict(distributions_symbols .=> _truncate.(node.distribution, intervals))
-    continuous_node = ContinuousChildNode(node.name, [discrete_node], distributions)
+    distribution_symbols = [[i] for i in states_symbols]
+    distribution = Dict(distribution_symbols .=> _truncate.(node.distribution, intervals))
+    continuous_node = ContinuousChildNode(node.name, [discrete_node], distribution)
     return continuous_node, discrete_node
 end
 
 ## Single Node Discrete
 function _discretize(node::ContinuousChildNode)
     intervals = _format_interval(node)
-    k = keys(node.distributions)
-    dists = values(node.distributions)
+    k = keys(node.distribution)
+    dists = values(node.distribution)
     states = [(key, Dict(Symbol.(intervals) .=> _discretize(dist, intervals))) for (key, dist) in zip(k, dists)]
     states = Dict(states)
     discrete_node = DiscreteChildNode(Symbol(string(node.name) * "_d"), node.parents, states)
     distribution_symbols = [[Symbol(i)] for i in intervals]
-    distributions = Dict(distribution_symbols .=> _approximate(intervals, node.discretization.sigma))
-    continuous_node = ContinuousChildNode(node.name, [discrete_node], distributions)
+    distribution = Dict(distribution_symbols .=> _approximate(intervals, node.discretization.sigma))
+    continuous_node = ContinuousChildNode(node.name, [discrete_node], distribution)
     return continuous_node, discrete_node
 end
 

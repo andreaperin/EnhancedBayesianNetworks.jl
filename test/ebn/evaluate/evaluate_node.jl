@@ -11,8 +11,8 @@
         a = EnhancedBayesianNetworks._evaluate(cont_functional)
 
         @test a.name == :C
-        @test isa(a.distributions[[:a1]], EmpiricalDistribution)
-        @test isa(a.distributions[[:a2]], EmpiricalDistribution)
+        @test isa(a.distribution[[:a1]], EmpiricalDistribution)
+        @test isa(a.distribution[[:a2]], EmpiricalDistribution)
         @test issetequal(a.parents, [root1])
         @test a.discretization == cont_functional.discretization
         @test isa(a.samples[[:a1]], DataFrame)
