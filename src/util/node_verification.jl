@@ -16,12 +16,14 @@ function verify_probabilities(states::Dict{Symbol,Vector{<:Real}})
     flatten_probabilities_values = collect(Iterators.flatten(Iterators.flatten(probabilities_values)))
     any(flatten_probabilities_values .< 0.0) && error("Probabilites must be nonnegative")
     any(flatten_probabilities_values .> 1.0) && error("Probabilites must be less or equal to 1.0")
-    ## TODO add check from credal network theory
 end
 
+function verify_interval_probabilities(states::Dict{Symbol,AbstractVector{Real}})
+    sum(first.(values(states))) > 1 && error("sum of intervals lower bounds is bigger than 1 in $states")
+    sum(last.(values(states))) < 1 && error("sum of intervals upper bounds is smaller than 1 in $states")
+end
 
-
-function verify_parameters(states::Dict{Symbol,<:Real}, parameters::Dict{Symbol,Vector{Parameter}})
+function verify_parameters(states::Dict, parameters::Dict{Symbol,Vector{Parameter}})
     if !isempty(parameters)
         keys(states) != keys(parameters) && error("parameters must be coherent with states")
     end

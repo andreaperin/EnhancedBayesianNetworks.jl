@@ -31,18 +31,38 @@ function _truncate(dist::UnivariateDistribution, i::AbstractVector)
     return truncated(dist, i[1], i[2])
 end
 
+function _is_imprecise(node::ContinuousRootNode)
+    !isa(node.distribution, UnivariateDistribution)
+end
+
 @auto_hash_equals struct DiscreteRootNode <: DiscreteNode
     name::Symbol
-    states::Dict{Symbol,<:Real}
+    states::Dict{Symbol,AbstractDiscreteProbability}
     parameters::Dict{Symbol,Vector{Parameter}}
 
-    function DiscreteRootNode(name::Symbol, states::Dict{Symbol,<:Real}, parameters::Dict{Symbol,Vector{Parameter}})
-        verify_probabilities(states)
-        normalized_states = Dict{Symbol,Real}()
-        normalized_prob = normalize(collect(values(states)), 1)
-        normalized_states = Dict(zip(collect(keys(states)), normalized_prob))
-        verify_parameters(normalized_states, parameters)
-        return new(name, normalized_states, parameters)
+    function DiscreteRootNode(name::Symbol, states::Dict, parameters::Dict{Symbol,Vector{Parameter}})
+        if all(isa.(values(states), Real))
+            verify_probabilities(states)
+            normalized_states = Dict{Symbol,Real}()
+            normalized_prob = normalize(collect(values(states)), 1)
+            normalized_states = Dict(zip(collect(keys(states)), normalized_prob))
+            verify_parameters(normalized_states, parameters)
+            return new(name, normalized_states, parameters)
+
+        else
+            if any(isa.(values(states), Real))
+                error("node $name has mixed interval and single value states probabilities!")
+            else
+                try
+                    states = convert(Dict{Symbol,AbstractVector{Real}}, states)
+                catch
+                    error("node $name must have real valued states probabilities")
+                end
+                verify_interval_probabilities(states)
+                verify_parameters(states, parameters)
+                return new(name, states, parameters)
+            end
+        end
     end
 end
 
@@ -58,6 +78,8 @@ function get_parameters(node::DiscreteRootNode, evidence::Vector{Symbol})
     return node.parameters[e[1]]
 end
 
-
+function _is_imprecise(node::DiscreteRootNode)
+    any(isa.(values(node.states), Vector{Real}))
+end
 
 const global RootNode = Union{DiscreteRootNode,ContinuousRootNode}

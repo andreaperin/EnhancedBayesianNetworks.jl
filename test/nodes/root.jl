@@ -13,6 +13,7 @@
 
         @test get_randomvariable(node1) == RandomVariable(node1.distribution, node1.name)
         @test EnhancedBayesianNetworks._get_node_distribution_bounds(node1) == (-Inf, Inf)
+        @test EnhancedBayesianNetworks._is_imprecise(node1) == false
 
         @testset "Imprecise Root - Interval" begin
             node1 = ContinuousRootNode(:x1, (0.1, 0.3))
@@ -21,6 +22,7 @@
             @test isequal(node1.discretization, ExactDiscretization())
             @test get_randomvariable(node1) == Interval(0.1, 0.3, :x1)
             @test EnhancedBayesianNetworks._get_node_distribution_bounds(node1) == (0.1, 0.3)
+            @test EnhancedBayesianNetworks._is_imprecise(node1)
         end
     end
 
@@ -54,5 +56,13 @@
         @test_throws ErrorException("node x has an empty parameters vector") get_parameters(node2, [:y, :yes])
 
         @test get_parameters(node1, [:yes]) == [Parameter(2, :d)]
+
+        # @testset "Imprecise Root - Interval" begin
+        #     name = :x
+        #     parameters = Dict(:yes => [Parameter(2, :d)], :no => [Parameter(0, :d)])
+        #     states = Dict(:yes => [0.5, 0.6], :no => [0.7, 0.9])
+        #     node1 = DiscreteRootNode(name, states, parameters)
+
+        # end
     end
 end
