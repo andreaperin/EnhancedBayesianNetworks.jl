@@ -56,6 +56,8 @@
         @test_throws ErrorException("node x has an empty parameters vector") get_parameters(node2, [:y, :yes])
 
         @test get_parameters(node1, [:yes]) == [Parameter(2, :d)]
+        @test EnhancedBayesianNetworks._is_imprecise(node2) == false
+
 
         @testset "Imprecise Root - Interval" begin
             name = :x
@@ -78,6 +80,15 @@
 
             states = Dict(:yes => [0.1, 0.15], :no => "a")
             @test_throws ErrorException("node x must have real valued states probabilities") DiscreteRootNode(name, states, parameters)
+
+            states = Dict(:yes => [0.1, 0.3], :no => [0.7, 0.9])
+            imp_disc = DiscreteRootNode(name, states, parameters)
+            @test imp_disc.name == :x
+            @test imp_disc.parameters == parameters
+            @test imp_disc.states == states
+            @test EnhancedBayesianNetworks._is_imprecise(imp_disc)
+            @test get_parameters(imp_disc, [:yes]) == [Parameter(2, :d)]
+
         end
     end
 end
