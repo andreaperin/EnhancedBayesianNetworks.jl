@@ -56,6 +56,8 @@
         evidence = [:yes]
         @test get_randomvariable(node, evidence) == RandomVariable(Normal(), node.name)
         @test EnhancedBayesianNetworks._get_node_distribution_bounds(node) == (-Inf, Inf)
+        @test EnhancedBayesianNetworks._is_imprecise(node) == false
+
         @testset "Imprecise Child - Interval" begin
             states = Dict(
                 [:yes] => (0.1, 0.3),
@@ -70,6 +72,7 @@
 
             @test get_randomvariable(child, [:yes]) == Interval(0.1, 0.3, :child)
             @test EnhancedBayesianNetworks._get_node_distribution_bounds(child) == (0.1, 0.7)
+            @test EnhancedBayesianNetworks._is_imprecise(child)
         end
     end
 
@@ -98,7 +101,6 @@
         samples = Dict{Vector{Symbol},DataFrame}()
 
         @test_throws ErrorException("node child must have real valued covs") DiscreteChildNode(name, [root1], states, covs, samples)
-
 
         states = Dict(
             [:yes] => Dict(:yes => -0.1, :no => 0.9),
@@ -183,5 +185,29 @@
 
         evidence = [:a, :yes]
         @test get_parameters(node, evidence) == [Parameter(1.1, :g)]
+        @test EnhancedBayesianNetworks._is_imprecise(node) == false
+        @testset "Imprecise Child - Interval" begin
+
+            states = Dict(
+                [:yes, :yes] => Dict(:a => [0.2, 0.3], :b => [0.7, 0.8]),
+                [:no, :yes] => Dict(:a => [0.2, 0.3], :b => [0.7, 0.8]),
+                [:yes, :no] => Dict(:a => [0.2, 0.3], :b => [0.7, 0.8]),
+                [:no, :no] => Dict(:a => [0.2, 0.3], :b => [0.7, 0.8])
+            )
+            parameters = Dict(:a => [Parameter(1, :a1)], :b => [Parameter(2, :a1)])
+            child = DiscreteChildNode(name, parents, states, parameters)
+
+            @test child.name == name
+            @test issetequal(child.parents, [root1, root2])
+            @test child.states == states
+            @test child.parameters == parameters
+            @test child.samples == Dict{Vector{Symbol},DataFrame}()
+            @test child.covs == Dict{Vector{Symbol},Real}()
+
+            @test EnhancedBayesianNetworks.get_parameters(child, [:a]) == [Parameter(1, :a1)]
+            @test EnhancedBayesianNetworks._get_states(child) == [:a, :b]
+            @test EnhancedBayesianNetworks._is_imprecise(child)
+        end
+
     end
 end

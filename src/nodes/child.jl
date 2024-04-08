@@ -94,6 +94,10 @@ function _get_node_distribution_bounds(node::ContinuousChildNode)
     return lb, ub
 end
 
+function _is_imprecise(node::ContinuousChildNode)
+    any(.!isa.(values(node.distribution), UnivariateDistribution))
+end
+
 ``` DiscreteChildNode
 ```
 @auto_hash_equals struct DiscreteChildNode <: DiscreteNode
@@ -199,6 +203,12 @@ function get_parameters(node::DiscreteChildNode, evidence::Vector{Symbol})
     e = filter(e -> haskey(node.parameters, e), evidence)
     isempty(e) && error("evidence $evidence does not contain $name")
     return node.parameters[e[1]]
+end
+
+function _is_imprecise(node::DiscreteChildNode)
+    probability_values = values(node.states) |> collect
+    probability_values = vcat(collect.(values.(probability_values))...)
+    any(isa.(probability_values, Vector{Real}))
 end
 
 const global ChildNode = Union{DiscreteChildNode,ContinuousChildNode}
