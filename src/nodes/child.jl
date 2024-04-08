@@ -99,7 +99,7 @@ end
 @auto_hash_equals struct DiscreteChildNode <: DiscreteNode
     name::Symbol
     parents::Vector{<:AbstractNode}
-    states::Dict{Vector{Symbol},Dict{Symbol,Any}}
+    states::Dict{Vector{Symbol},Dict{Symbol,AbstractFailureProbability}}
     covs::Dict{Vector{Symbol},Real}
     samples::Dict{Vector{Symbol},DataFrame}
     parameters::Dict{Symbol,Vector{Parameter}}
