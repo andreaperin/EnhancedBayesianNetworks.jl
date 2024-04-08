@@ -55,8 +55,22 @@
 
         evidence = [:yes]
         @test get_randomvariable(node, evidence) == RandomVariable(Normal(), node.name)
+        @test EnhancedBayesianNetworks._get_node_distribution_bounds(node) == (-Inf, Inf)
+        @testset "Imprecise Child - Interval" begin
+            states = Dict(
+                [:yes] => (0.1, 0.3),
+                [:no] => (0.6, 0.7)
+            )
+            child = ContinuousChildNode(:child, [root1], states)
+            @test child.name == name
+            @test issetequal(child.parents, [root1])
+            @test child.distribution == states
+            @test isequal(child.discretization, ApproximatedDiscretization())
+            @test child.samples == Dict{Vector{Symbol},DataFrame}()
 
-        @test isequal(node, ContinuousChildNode(:child, [root1], Dict([:yes] => Normal(), [:no] => Normal(2, 2))))
+            @test get_randomvariable(child, [:yes]) == Interval(0.1, 0.3, :child)
+            @test EnhancedBayesianNetworks._get_node_distribution_bounds(child) == (0.1, 0.7)
+        end
     end
 
     @testset "DiscreteChildNode" begin
@@ -66,9 +80,31 @@
         name = :child
 
         states = Dict(
+            [:yes] => Dict(:yes => "a", :no => 0.9),
+            [:no] => Dict(:yes => 0.2, :no => 0.8)
+        )
+
+        @test_throws ErrorException("node child must have real valued states probailities") DiscreteChildNode(name, [root1], states)
+
+        states = Dict(
+            [:yes] => Dict(:yes => 0.1, :no => 0.9),
+            [:no] => Dict(:yes => 0.2, :no => 0.8)
+        )
+        covs = Dict(
+            [:yes] => "a",
+            [:no] => 0.1
+        )
+
+        samples = Dict{Vector{Symbol},DataFrame}()
+
+        @test_throws ErrorException("node child must have real valued covs") DiscreteChildNode(name, [root1], states, covs, samples)
+
+
+        states = Dict(
             [:yes] => Dict(:yes => -0.1, :no => 0.9),
             [:no] => Dict(:yes => 0.2, :no => 0.8)
         )
+
         @test_throws ErrorException("Probabilites must be nonnegative") DiscreteChildNode(name, [root1], states)
 
         states = Dict(
@@ -137,8 +173,6 @@
         @test node.samples == Dict{Symbol,Vector{Parameter}}()
 
         @test EnhancedBayesianNetworks._get_states(node) == [:a, :b]
-
-        @test isequal(node, DiscreteChildNode(name, parents, states))
 
         node = DiscreteChildNode(name, parents, states, Dict(:a => [Parameter(1.1, :g)], :b => [Parameter(1.2, :g)]))
         evidence = [:yes]
