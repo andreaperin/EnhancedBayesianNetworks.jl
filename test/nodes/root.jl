@@ -57,12 +57,27 @@
 
         @test get_parameters(node1, [:yes]) == [Parameter(2, :d)]
 
-        # @testset "Imprecise Root - Interval" begin
-        #     name = :x
-        #     parameters = Dict(:yes => [Parameter(2, :d)], :no => [Parameter(0, :d)])
-        #     states = Dict(:yes => [0.5, 0.6], :no => [0.7, 0.9])
-        #     node1 = DiscreteRootNode(name, states, parameters)
+        @testset "Imprecise Root - Interval" begin
+            name = :x
+            parameters = Dict(:yes => [Parameter(2, :d)], :no => [Parameter(0, :d)])
 
-        # end
+            states = Dict(:yes => [0.1, 0.15], :no => 0.8)
+            @test_throws ErrorException("node x has mixed interval and single value states probabilities!") DiscreteRootNode(name, states, parameters)
+
+            states = Dict(:yes => [-0.5, 0.6], :no => [0.7, 0.9])
+            @test_throws ErrorException("Probabilites must be nonnegative") DiscreteRootNode(name, states, parameters)
+
+            states = Dict(:yes => [1.5, 0.6], :no => [0.7, 0.9])
+            @test_throws ErrorException("Probabilites must be less or equal to 1.0") DiscreteRootNode(name, states, parameters)
+
+            states = Dict(:yes => [0.5, 0.6], :no => [0.7, 0.9])
+            @test_throws ErrorException("sum of intervals lower bounds is bigger than 1 in Dict{Symbol, AbstractVector{Real}}(:yes => [0.5, 0.6], :no => [0.7, 0.9])") DiscreteRootNode(name, states, parameters)
+
+            states = Dict(:yes => [0.1, 0.15], :no => [0.7, 0.8])
+            @test_throws ErrorException("sum of intervals upper bounds is smaller than 1 in Dict{Symbol, AbstractVector{Real}}(:yes => [0.1, 0.15], :no => [0.7, 0.8])") DiscreteRootNode(name, states, parameters)
+
+            states = Dict(:yes => [0.1, 0.15], :no => "a")
+            @test_throws ErrorException("node x must have real valued states probabilities") DiscreteRootNode(name, states, parameters)
+        end
     end
 end
