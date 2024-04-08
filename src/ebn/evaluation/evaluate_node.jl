@@ -49,5 +49,3 @@ function _evaluate(node::DiscreteFunctionalNode)
     end
     return DiscreteChildNode(node.name, ancestors, pf, cov, samples, node.parameters)
 end
-
-## TODO test new evaluate with if / elseif / elseif

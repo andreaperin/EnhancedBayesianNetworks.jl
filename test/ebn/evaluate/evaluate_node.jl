@@ -8,35 +8,56 @@
     @testset "Continuous Node" begin
         cont_functional = ContinuousFunctionalNode(:C, [root1, root2], [model], sim)
 
-        a = EnhancedBayesianNetworks._evaluate(cont_functional)
+        evaluated = EnhancedBayesianNetworks._evaluate(cont_functional)
 
-        @test a.name == :C
-        @test isa(a.distribution[[:a1]], EmpiricalDistribution)
-        @test isa(a.distribution[[:a2]], EmpiricalDistribution)
-        @test issetequal(a.parents, [root1])
-        @test a.discretization == cont_functional.discretization
-        @test isa(a.samples[[:a1]], DataFrame)
-        @test size(a.samples[[:a1]]) == (sim.n, 3)
-        @test isa(a.samples[[:a2]], DataFrame)
-        @test size(a.samples[[:a2]]) == (sim.n, 3)
+        @test evaluated.name == :C
+        @test isa(evaluated.distribution[[:a1]], EmpiricalDistribution)
+        @test isa(evaluated.distribution[[:a2]], EmpiricalDistribution)
+        @test issetequal(evaluated.parents, [root1])
+        @test evaluated.discretization == cont_functional.discretization
+        @test isa(evaluated.samples[[:a1]], DataFrame)
+        @test size(evaluated.samples[[:a1]]) == (sim.n, 3)
+        @test isa(evaluated.samples[[:a2]], DataFrame)
+        @test size(evaluated.samples[[:a2]]) == (sim.n, 3)
     end
 
     @testset "Discrete Node" begin
         disc_functional = DiscreteFunctionalNode(:C, [root1, root2], [model], performance, sim)
 
-        a = EnhancedBayesianNetworks._evaluate(disc_functional)
+        evaluated = EnhancedBayesianNetworks._evaluate(disc_functional)
 
-        @test a.name == :C
-        @test isapprox(a.states[[:a1]][:safe_C], 0.84, atol=0.02)
-        @test isapprox(a.states[[:a1]][:fail_C], 0.16, atol=0.02)
-        @test isapprox(a.states[[:a2]][:safe_C], 0.5, atol=0.02)
-        @test isapprox(a.states[[:a2]][:fail_C], 0.5, atol=0.02)
-        @test issetequal(a.parents, [root1])
-        @test a.parameters == disc_functional.parameters
-        @test isa(a.samples[[:a1]], DataFrame)
-        @test size(a.samples[[:a1]]) == (sim.n, 3)
-        @test isa(a.samples[[:a2]], DataFrame)
-        @test size(a.samples[[:a2]]) == (sim.n, 3)
+        @test evaluated.name == :C
+        @test isapprox(evaluated.states[[:a1]][:safe_C], 0.84, atol=0.02)
+        @test isapprox(evaluated.states[[:a1]][:fail_C], 0.16, atol=0.02)
+        @test isapprox(evaluated.states[[:a2]][:safe_C], 0.5, atol=0.02)
+        @test isapprox(evaluated.states[[:a2]][:fail_C], 0.5, atol=0.02)
+        @test issetequal(evaluated.parents, [root1])
+        @test evaluated.parameters == disc_functional.parameters
+        @test isa(evaluated.samples[[:a1]], DataFrame)
+        @test size(evaluated.samples[[:a1]]) == (sim.n, 3)
+        @test isa(evaluated.samples[[:a2]], DataFrame)
+        @test size(evaluated.samples[[:a2]]) == (sim.n, 3)
 
+        root3 = ContinuousRootNode(:P, (0, 10))
+        model = Model(df -> df.A .+ df.B .+ df.P, :C)
+        disc_functional = DiscreteFunctionalNode(:C, [root1, root2, root3], [model], performance, sim)
+
+        evaluated = EnhancedBayesianNetworks._evaluate(disc_functional)
+        @test evaluated.name == :C
+
+        @test isapprox(evaluated.states[[:a1]][:safe_C][1], 0.0, atol=0.02)
+        @test isapprox(evaluated.states[[:a1]][:safe_C][2], 0.84183, atol=0.02)
+        @test isapprox(evaluated.states[[:a1]][:fail_C][1], 0.15817, atol=0.02)
+        @test isapprox(evaluated.states[[:a1]][:fail_C][2], 1.0, atol=0.02)
+
+        @test isapprox(evaluated.states[[:a2]][:safe_C][1], 0.0, atol=0.02)
+        @test isapprox(evaluated.states[[:a2]][:safe_C][2], 0.50046, atol=0.02)
+        @test isapprox(evaluated.states[[:a2]][:fail_C][1], 0.49954, atol=0.02)
+        @test isapprox(evaluated.states[[:a2]][:fail_C][2], 1.0, atol=0.02)
+
+        @test issetequal(evaluated.parents, [root1])
+        @test evaluated.parameters == disc_functional.parameters
+        @test isa(evaluated.samples[[:a1]], DataFrame)
+        @test isa(evaluated.samples[[:a2]], DataFrame)
     end
 end
