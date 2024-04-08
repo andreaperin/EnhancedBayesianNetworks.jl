@@ -4,7 +4,7 @@ abstract type ContinuousNode <: AbstractNode end
 
 const AbstractContinuousInput = Union{UnivariateDistribution,Tuple{Real,Real}}
 
-const AbstractFailureProbability = Union{Real,Vector{Real}}
+const AbstractDiscreteProbability = Union{Real,AbstractVector{Real}}
 
 const AbstractSimulation = Union{AbstractMonteCarlo,LineSampling,SubSetSimulation}
 
