@@ -1,5 +1,4 @@
 include("../util/evidence_verification.jl")
-include("cpd/conditionalprobabilitydistribution.jl")
 include("inferencestate.jl")
 include("factors.jl")
 include("factor_methods.jl")
