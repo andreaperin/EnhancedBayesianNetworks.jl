@@ -66,7 +66,7 @@ end
     end
 end
 
-DiscreteRootNode(name::Symbol, states::Dict{Symbol,<:Real}) = DiscreteRootNode(name, states, Dict{Symbol,Vector{Parameter}}())
+DiscreteRootNode(name::Symbol, states::Dict) = DiscreteRootNode(name, states, Dict{Symbol,Vector{Parameter}}())
 
 _get_states(node::DiscreteRootNode) = collect(keys(node.states))
 
