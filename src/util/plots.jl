@@ -5,7 +5,7 @@ List of available methods:
 
 ```
 
-function plot(bn::Union{BayesianNetwork,EnhancedBayesianNetwork}, layout=:spring, nodesize=0.1, fontsize=13)
+function plot(bn::Union{BayesianNetwork,EnhancedBayesianNetwork,CredalNetwork}, layout=:spring, nodesize=0.1, fontsize=13)
     graphplot(
         bn.dag,
         names=[i.name for i in bn.nodes],
