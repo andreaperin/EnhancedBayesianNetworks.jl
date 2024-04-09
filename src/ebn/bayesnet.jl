@@ -1,4 +1,4 @@
-mutable struct BayesianNetwork <: ProbabilisticGraphicalModel
+struct BayesianNetwork <: ProbabilisticGraphicalModel
     dag::SimpleDiGraph
     nodes::Vector{<:DiscreteNode}
     name_to_index::Dict{Symbol,Int}
@@ -6,10 +6,14 @@ mutable struct BayesianNetwork <: ProbabilisticGraphicalModel
     function BayesianNetwork(dag::DiGraph, nodes::Vector{AbstractNode}, name_to_index::Dict{Symbol,Int})
         if any([isa(x, FunctionalNode) for x in nodes])
             error("Network needs to be evaluated first")
-        elseif any([!isa(x, DiscreteNode) for x in nodes])
-            error("Bayesian Network allows discrete node only!")
         else
-            nodes = Vector{DiscreteNode}(nodes)
+            if any([!isa(x, DiscreteNode) for x in nodes])
+                error("Bayesian Network allows discrete node only!")
+            elseif any(_is_imprecise.(nodes))
+                error("For Imprecise Discrete Nodes use CrealNetwork structure!")
+            else
+                nodes = Vector{DiscreteNode}(nodes)
+            end
         end
         new(dag, nodes, name_to_index)
     end
