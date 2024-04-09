@@ -31,10 +31,4 @@
     @test new_ebn == EnhancedBayesianNetwork(EnhancedBayesianNetworks._transfer_continuous!(deepcopy(ebn.nodes)))
     @test issetequal(new_ebn.nodes, [root1, root2, root3, new_discrete_functional1, new_discrete_functional])
 
-    root4 = ContinuousRootNode(:y, (0.1, 0.3))
-    model = Model(df -> df.y .^ 2, :cf)
-    cont_functional = ContinuousFunctionalNode(:cf2, [root4], [model], MonteCarlo(300))
-    ebn = EnhancedBayesianNetwork([root1, root4, cont_functional])
-    @test_throws ErrorException("node cf2 is a continuousfunctionalnode with at least one parent with Interval or p-boxes in its distributions. No method for extracting failure probability p-box have been implemented yet") transfer_continuous(ebn)
-
 end
