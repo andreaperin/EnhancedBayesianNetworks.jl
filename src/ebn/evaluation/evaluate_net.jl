@@ -3,7 +3,11 @@ function evaluate(ebn::EnhancedBayesianNetwork)
         ebn = _evaluate_routine(ebn)
     end
     if isempty(filter(x -> isa(x, ContinuousNode), ebn.nodes))
-        return BayesianNetwork(ebn.nodes)
+        if all(.!_is_imprecise.(ebn.nodes))
+            return BayesianNetwork(ebn.nodes)
+        else
+            return CredalNetwork(ebn.nodes)
+        end
     else
         return ebn
     end

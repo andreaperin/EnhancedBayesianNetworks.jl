@@ -73,5 +73,19 @@
         @test evaluated_ebn.dag == DiGraph(4, fadjlist, badjlist)
         @test evaluated_ebn.name_to_index == name_to_index
         @test typeof(evaluated_ebn.nodes[4]) == DiscreteChildNode
+
+        interval = (1.10, 1.30)
+        root1 = DiscreteRootNode(:A, Dict(:a1 => 0.5, :a2 => 0.5), Dict(:a1 => [Parameter(1, :A)], :a2 => [Parameter(2, :A)]))
+        root2 = ContinuousRootNode(:B, interval)
+        root3 = ContinuousRootNode(:P, Uniform(-10, 10))
+        model = Model(df -> df.A .+ df.B .+ df.P, :C)
+        sim = MonteCarlo(100_000)
+        performance = df -> 2 .- df.C
+        disc_functional = DiscreteFunctionalNode(:C, [root1, root2, root3], [model], performance, sim)
+
+        nodes = [root1, root2, root3, disc_functional]
+        ebn = EnhancedBayesianNetwork(nodes)
+        credal = evaluate(ebn)
+        @test typeof(credal) == CredalNetwork
     end
 end

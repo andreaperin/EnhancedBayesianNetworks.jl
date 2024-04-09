@@ -31,6 +31,7 @@ export ConditionalProbabilityDistribution
 export ContinuousFunctionalNode
 export ContinuousRootNode
 export ContinuousChildNode
+export CredalNetwork
 export DiscreteFunctionalNode
 export DiscreteRootNode
 export DiscreteChildNode

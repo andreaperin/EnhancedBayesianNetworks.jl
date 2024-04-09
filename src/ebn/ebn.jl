@@ -3,6 +3,7 @@ abstract type ProbabilisticGraphicalModel end
 include("cpd/conditionalprobabilitydistribution.jl")
 include("enhancedbn.jl")
 include("bayesnet.jl")
+include("credalnet.jl")
 
 include("discretization/discretize_node.jl")
 include("discretization/discretize_net.jl")
