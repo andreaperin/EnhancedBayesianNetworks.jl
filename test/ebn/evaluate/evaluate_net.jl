@@ -65,10 +65,10 @@
 
         evaluated_ebn = evaluate(ebn)
 
-        fadjlist = Vector{Vector{Int}}([[3, 4], [3], [4], []])
-        badjlist = Vector{Vector{Int}}([[], [], [1, 2], [1, 3]])
+        fadjlist = Vector{Vector{Int}}([[3], [3, 4], [4], []])
+        badjlist = Vector{Vector{Int}}([[], [], [1, 2], [2, 3]])
 
-        name_to_index = Dict(:fd => 4, :fd1 => 3, :z => 1, :x => 2)
+        name_to_index = Dict(:fd => 4, :fd1 => 3, :z => 2, :x => 1)
 
         @test evaluated_ebn.dag == DiGraph(4, fadjlist, badjlist)
         @test evaluated_ebn.name_to_index == name_to_index

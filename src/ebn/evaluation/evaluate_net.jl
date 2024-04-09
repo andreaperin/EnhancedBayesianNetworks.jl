@@ -2,7 +2,11 @@ function evaluate(ebn::EnhancedBayesianNetwork)
     while !isempty(filter(x -> isa(x, FunctionalNode), ebn.nodes))
         ebn = _evaluate_routine(ebn)
     end
-    return ebn
+    if isempty(filter(x -> isa(x, ContinuousNode), ebn.nodes))
+        return BayesianNetwork(ebn.nodes)
+    else
+        return ebn
+    end
 end
 
 function _evaluate_routine(ebn::EnhancedBayesianNetwork)

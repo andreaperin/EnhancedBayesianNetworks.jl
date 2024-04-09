@@ -36,14 +36,12 @@
         functional = DiscreteFunctionalNode(:f1, [root2, root3], functional_model, functional_performance, functional_simulation)
 
         ebn = EnhancedBayesianNetwork([root2, root3, functional])
-        e_ebn = evaluate(ebn)
-        bn = BayesianNetwork(e_ebn)
+        bn = evaluate(ebn)
 
         dag = SimpleDiGraph{Int64}(1, [[2], Int64[]], [Int64[], [1]])
 
         @test bn.dag == dag
         @test bn.name_to_index == Dict(:f1 => 2, :y => 1)
-        @test issetequal(bn.nodes, e_ebn.nodes)
     end
 
     @testset "Additional CPDs" begin

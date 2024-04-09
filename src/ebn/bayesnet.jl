@@ -20,8 +20,6 @@ function BayesianNetwork(nodes::Vector{<:AbstractNode})
     BayesianNetwork(ordered_dag, ordered_nodes, ordered_name_to_index)
 end
 
-BayesianNetwork(rbn::EnhancedBayesianNetwork) = BayesianNetwork(rbn.nodes)
-
 function get_cpd(bn::BayesianNetwork, i::Int)
     n = bn.nodes[i]
     target = n.name
