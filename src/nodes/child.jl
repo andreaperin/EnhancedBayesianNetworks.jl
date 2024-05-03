@@ -63,7 +63,7 @@ function ContinuousChildNode(
     ContinuousChildNode(name, parents, distribution, samples, discretization)
 end
 
-function get_randomvariable(node::ContinuousChildNode, evidence::Vector{Symbol})
+function get_continuous_input(node::ContinuousChildNode, evidence::Vector{Symbol})
     node_keys = keys(node.distribution) |> collect
     name = node.name
     all(.![issubset(i, evidence) for i in keys(node.distribution)]) && error("evidence $evidence does not contain all the parents of the ContinuousChildNode $name")

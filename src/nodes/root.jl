@@ -6,7 +6,7 @@ end
 
 ContinuousRootNode(name::Symbol, distribution::AbstractContinuousInput) = ContinuousRootNode(name, distribution, ExactDiscretization())
 
-function get_randomvariable(node::ContinuousRootNode, ::Vector{Symbol})
+function get_continuous_input(node::ContinuousRootNode, ::Vector{Symbol})
     if isa(node.distribution, UnivariateDistribution)
         return RandomVariable(node.distribution, node.name)
     elseif isa(node.distribution, Tuple{Real,Real})
@@ -14,7 +14,7 @@ function get_randomvariable(node::ContinuousRootNode, ::Vector{Symbol})
     end
 end
 
-get_randomvariable(node::ContinuousRootNode) = get_randomvariable(node, Vector{Symbol}())
+get_continuous_input(node::ContinuousRootNode) = get_continuous_input(node, Vector{Symbol}())
 
 function _get_node_distribution_bounds(node::ContinuousRootNode)
     if isa(node.distribution, UnivariateDistribution)

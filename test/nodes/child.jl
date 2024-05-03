@@ -51,10 +51,10 @@
         node = ContinuousChildNode(:child, [root1], Dict([:yes] => Normal(), [:no] => Normal(2, 2)))
 
         evidence = [:a]
-        @test_throws ErrorException("evidence [:a] does not contain all the parents of the ContinuousChildNode child") get_randomvariable(node, evidence)
+        @test_throws ErrorException("evidence [:a] does not contain all the parents of the ContinuousChildNode child") get_continuous_input(node, evidence)
 
         evidence = [:yes]
-        @test get_randomvariable(node, evidence) == RandomVariable(Normal(), node.name)
+        @test get_continuous_input(node, evidence) == RandomVariable(Normal(), node.name)
         @test EnhancedBayesianNetworks._get_node_distribution_bounds(node) == (-Inf, Inf)
         @test EnhancedBayesianNetworks._is_imprecise(node) == false
 
@@ -70,7 +70,7 @@
             @test isequal(child.discretization, ApproximatedDiscretization())
             @test child.samples == Dict{Vector{Symbol},DataFrame}()
 
-            @test get_randomvariable(child, [:yes]) == Interval(0.1, 0.3, :child)
+            @test get_continuous_input(child, [:yes]) == Interval(0.1, 0.3, :child)
             @test EnhancedBayesianNetworks._get_node_distribution_bounds(child) == (0.1, 0.7)
             @test EnhancedBayesianNetworks._is_imprecise(child)
         end

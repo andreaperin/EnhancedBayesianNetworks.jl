@@ -11,7 +11,7 @@
         @test node2.distribution == Normal()
         @test isequal(node2.discretization, ExactDiscretization([-1, 0, 1]))
 
-        @test get_randomvariable(node1) == RandomVariable(node1.distribution, node1.name)
+        @test get_continuous_input(node1) == RandomVariable(node1.distribution, node1.name)
         @test EnhancedBayesianNetworks._get_node_distribution_bounds(node1) == (-Inf, Inf)
         @test EnhancedBayesianNetworks._is_imprecise(node1) == false
 
@@ -20,7 +20,7 @@
             @test node1.name == :x1
             @test node1.distribution == (0.1, 0.3)
             @test isequal(node1.discretization, ExactDiscretization())
-            @test get_randomvariable(node1) == Interval(0.1, 0.3, :x1)
+            @test get_continuous_input(node1) == Interval(0.1, 0.3, :x1)
             @test EnhancedBayesianNetworks._get_node_distribution_bounds(node1) == (0.1, 0.3)
             @test EnhancedBayesianNetworks._is_imprecise(node1)
         end
