@@ -21,9 +21,38 @@ end
 
 function _marker_color(node::AbstractNode)
     if isa(node, FunctionalNode)
-        mc = "lightgreen"
-    else
-        mc = "orange"
+        mc = "lightblue"
+
+    elseif isa(node, RootNode)
+        if isa(node, ContinuousNode)
+            if isa(node.distribution, UnivariateDistribution)
+                mc = "orange"
+            else
+                mc = "red"
+            end
+
+        elseif isa(node, DiscreteNode)
+            if isa(collect(values(node.states))[1], Real)
+                mc = "lightgreen"
+            else
+                mc = "green"
+            end
+        end
+
+    elseif isa(node, ChildNode)
+        if isa(node, ContinuousNode)
+            if isa(collect(values(node.distribution))[1], UnivariateDistribution)
+                mc = "orange"
+            else
+                mc = "red"
+            end
+        elseif isa(node, DiscreteNode)
+            if isa(collect(values(collect(values(node.states))[1]))[1], Real)
+                mc = "lightgreen"
+            else
+                mc = "green"
+            end
+        end
     end
     return mc
 end
