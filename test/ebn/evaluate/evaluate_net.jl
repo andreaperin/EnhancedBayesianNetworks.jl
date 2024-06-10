@@ -88,4 +88,27 @@
         credal = evaluate(ebn)
         @test typeof(credal) == CredalNetwork
     end
+
+    @testset "No Ancestors case" begin
+        root2 = ContinuousRootNode(:B, Normal())
+        model = Model(df -> df.B .+ 1, :C)
+        sim = MonteCarlo(100_000)
+        performance = df -> 2 .- df.C
+        cont_functional = ContinuousFunctionalNode(:C, [root2], [model], sim)
+
+        ebn = EnhancedBayesianNetwork([root2, cont_functional])
+
+        eebn = evaluate(ebn)
+
+        @test length(eebn.nodes) == 1
+        @test typeof.(eebn.nodes) == [ContinuousRootNode]
+
+        disc_functional = DiscreteFunctionalNode(:C, [root2], [model], performance, sim)
+        ebn = EnhancedBayesianNetwork([root2, disc_functional])
+
+        eebn = evaluate(ebn)
+
+        @test length(eebn.nodes) == 1
+        @test typeof.(eebn.nodes) == [DiscreteRootNode]
+    end
 end

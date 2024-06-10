@@ -1,10 +1,13 @@
 @auto_hash_equals struct ContinuousRootNode <: ContinuousNode
     name::Symbol
     distribution::AbstractContinuousInput
+    samples::DataFrame
     discretization::ExactDiscretization # discretization just as increasing values?
 end
 
-ContinuousRootNode(name::Symbol, distribution::AbstractContinuousInput) = ContinuousRootNode(name, distribution, ExactDiscretization())
+ContinuousRootNode(name::Symbol, distribution::AbstractContinuousInput, discretetization::ExactDiscretization) = ContinuousRootNode(name, distribution, DataFrame(), discretetization)
+
+ContinuousRootNode(name::Symbol, distribution::AbstractContinuousInput) = ContinuousRootNode(name, distribution, DataFrame(), ExactDiscretization())
 
 function get_continuous_input(node::ContinuousRootNode, ::Vector{Symbol})
     if isa(node.distribution, UnivariateDistribution)
@@ -39,16 +42,17 @@ end
 @auto_hash_equals struct DiscreteRootNode <: DiscreteNode
     name::Symbol
     states::Dict{Symbol,AbstractDiscreteProbability}
+    samples::DataFrame
     parameters::Dict{Symbol,Vector{Parameter}}
 
-    function DiscreteRootNode(name::Symbol, states::Dict, parameters::Dict{Symbol,Vector{Parameter}})
+    function DiscreteRootNode(name::Symbol, states::Dict, samples::DataFrame, parameters::Dict{Symbol,Vector{Parameter}})
         if all(isa.(values(states), Real))
             verify_probabilities(states)
             normalized_states = Dict{Symbol,Real}()
             normalized_prob = normalize(collect(values(states)), 1)
             normalized_states = Dict(zip(collect(keys(states)), normalized_prob))
             verify_parameters(normalized_states, parameters)
-            return new(name, normalized_states, parameters)
+            return new(name, normalized_states, samples, parameters)
 
         else
             if any(isa.(values(states), Real))
@@ -61,11 +65,13 @@ end
                 end
                 verify_interval_probabilities(states)
                 verify_parameters(states, parameters)
-                return new(name, states, parameters)
+                return new(name, states, samples, parameters)
             end
         end
     end
 end
+
+DiscreteRootNode(name::Symbol, states::Dict, parameters::Dict{Symbol,Vector{Parameter}}) = DiscreteRootNode(name, states, DataFrame(), parameters)
 
 DiscreteRootNode(name::Symbol, states::Dict) = DiscreteRootNode(name, states, Dict{Symbol,Vector{Parameter}}())
 
