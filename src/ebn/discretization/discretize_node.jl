@@ -68,12 +68,22 @@ function _format_interval(node::Union{ContinuousChildNode,ContinuousRootNode})
     min = node.discretization.intervals[1]
     max = node.discretization.intervals[end]
     lower_bound, upper_bound = _get_node_distribution_bounds(node)
-    if minimum(min) != lower_bound
-        @warn "Minimum intervals value $min >= support lower bound $lower_bound. Lower bound will be used as intervals start."
+    if minimum(min) > lower_bound
+        @warn "Minimum intervals value $min > support lower bound $lower_bound. Lower bound will be used as intervals start."
         insert!(intervals, 1, lower_bound)
     end
-    if maximum(max) != upper_bound
-        @warn "Maximum intervals value $max <= support upper bound $upper_bound. Upper bound will be used as intervals end."
+    if minimum(min) < lower_bound
+        @warn "Minimum intervals value $min < support lower bound $lower_bound. Lower bound will be used as intervals start."
+        deleteat!(intervals, intervals .<= lower_bound)
+        insert!(intervals, 1, lower_bound)
+    end
+    if maximum(max) < upper_bound
+        @warn "Maximum intervals value $max < support upper bound $upper_bound. Upper bound will be used as intervals end."
+        push!(intervals, upper_bound)
+    end
+    if maximum(max) > upper_bound
+        @warn "Maximum intervals value $max > support upper bound $upper_bound. Upper bound will be used as intervals end."
+        deleteat!(intervals, intervals .>= upper_bound)
         push!(intervals, upper_bound)
     end
     return [[intervals[i], intervals[i+1]] for i in 1:length(intervals)-1]

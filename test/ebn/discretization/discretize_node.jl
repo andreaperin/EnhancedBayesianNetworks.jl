@@ -1,21 +1,31 @@
 @testset "Node Discretization" begin
 
     @testset "Format Intervals" begin
-        discretization = ExactDiscretization([-Inf, 0, Inf])
-        root = ContinuousRootNode(:z1, Normal(), discretization)
+        discretization = ExactDiscretization([-10, 0, 10])
+        root = ContinuousRootNode(:z1, truncated(Normal(0, 1); lower=-10, upper=10), discretization)
 
         formatted_intervals = EnhancedBayesianNetworks._format_interval(root)
-        @test formatted_intervals == [[-Inf, 0.0], [0.0, Inf]]
+        @test formatted_intervals == [[-10, 0.0], [0.0, 10]]
 
-        discretization = ExactDiscretization([0, Inf])
-        root = ContinuousRootNode(:z1, Normal(), discretization)
+        discretization = ExactDiscretization([-9, 10])
+        root = ContinuousRootNode(:z1, truncated(Normal(0, 1); lower=-10, upper=10), discretization)
 
-        @test_logs (:warn, "Minimum intervals value 0.0 >= support lower bound -Inf. Lower bound will be used as intervals start.") EnhancedBayesianNetworks._format_interval(root)
+        @test_logs (:warn, "Minimum intervals value -9 > support lower bound -10.0. Lower bound will be used as intervals start.") EnhancedBayesianNetworks._format_interval(root)
 
-        discretization = ExactDiscretization([-Inf, 0.0])
-        root = ContinuousRootNode(:z1, Normal(), discretization)
+        discretization = ExactDiscretization([-11, 10])
+        root = ContinuousRootNode(:z1, truncated(Normal(0, 1); lower=-10, upper=10), discretization)
 
-        @test_logs (:warn, "Maximum intervals value 0.0 <= support upper bound Inf. Upper bound will be used as intervals end.") EnhancedBayesianNetworks._format_interval(root)
+        @test_logs (:warn, "Minimum intervals value -11 < support lower bound -10.0. Lower bound will be used as intervals start.") EnhancedBayesianNetworks._format_interval(root)
+
+        discretization = ExactDiscretization([-10, 9])
+        root = ContinuousRootNode(:z1, truncated(Normal(0, 1); lower=-10, upper=10), discretization)
+
+        @test_logs (:warn, "Maximum intervals value 9 < support upper bound 10.0. Upper bound will be used as intervals end.") EnhancedBayesianNetworks._format_interval(root)
+
+        discretization = ExactDiscretization([-10, 11])
+        root = ContinuousRootNode(:z1, truncated(Normal(0, 1); lower=-10, upper=10), discretization)
+
+        @test_logs (:warn, "Maximum intervals value 11 > support upper bound 10.0. Upper bound will be used as intervals end.") EnhancedBayesianNetworks._format_interval(root)
 
         intervals = [[-Inf, -1.0], [-1.0, 0.0], [0.0, 1.0], [1.0, Inf]]
         σ = 2

@@ -1,10 +1,7 @@
-function _is_reducible(dag_::SimpleDiGraph, indices::AbstractVector{Int})
+function _is_reducible(dag_::SimpleDiGraph, index::Int)
     dag = deepcopy(dag_)
-    ordered_indices = map(x -> length(dag.badjlist[x]), indices) |> sortperm
     try
-        for i in ordered_indices
-            dag = _reduce_dag_single(dag, indices[i])
-        end
+        dag = _reduce_dag_single(dag, index)
     catch
         return false
     end

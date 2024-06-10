@@ -48,7 +48,8 @@
         badjlist = Vector{Vector{Int}}([[], [1], [1, 2], [2, 3]])
         fadjlist = Vector{Vector{Int}}([[2, 3], [3, 4], [4], []])
         dag = DiGraph(4, fadjlist, badjlist)
-        @test EnhancedBayesianNetworks._is_reducible(dag, [3]) == true
-        @test EnhancedBayesianNetworks._is_reducible(dag, [3, 4]) == false
+        @test EnhancedBayesianNetworks._is_reducible(dag, 3) == true
+        dag = EnhancedBayesianNetworks._reduce_dag_single(dag, 3)
+        @test EnhancedBayesianNetworks._is_reducible(dag, 4) == false
     end
 end
