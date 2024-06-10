@@ -21,6 +21,7 @@
             @test node1.distribution == (0.1, 0.3)
             @test isequal(node1.discretization, ExactDiscretization())
             @test get_continuous_input(node1) == Interval(0.1, 0.3, :x1)
+            @test get_continuous_input(node1, Any[]) == Interval(0.1, 0.3, :x1)
             @test EnhancedBayesianNetworks._get_node_distribution_bounds(node1) == (0.1, 0.3)
             @test EnhancedBayesianNetworks._is_imprecise(node1)
         end

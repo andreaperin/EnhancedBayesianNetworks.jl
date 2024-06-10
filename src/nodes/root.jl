@@ -15,6 +15,7 @@ function get_continuous_input(node::ContinuousRootNode, ::Vector{Symbol})
 end
 
 get_continuous_input(node::ContinuousRootNode) = get_continuous_input(node, Vector{Symbol}())
+get_continuous_input(node::ContinuousRootNode, ::Vector{Any}) = get_continuous_input(node)
 
 function _get_node_distribution_bounds(node::ContinuousRootNode)
     if isa(node.distribution, UnivariateDistribution)
