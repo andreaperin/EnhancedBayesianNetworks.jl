@@ -1,15 +1,18 @@
 @testset "Evaluation Node" begin
     root1 = DiscreteRootNode(:A, Dict(:a1 => 0.5, :a2 => 0.5), Dict(:a1 => [Parameter(1, :A)], :a2 => [Parameter(2, :A)]))
     root2 = ContinuousRootNode(:B, Normal())
-    model = Model(df -> df.A .+ df.B, :C)
-    sim = MonteCarlo(100_000)
-    performance = df -> 2 .- df.C
+
 
     @testset "Continuous Node" begin
+
+        model = Model(df -> df.A .+ df.B, :C)
+        sim = MonteCarlo(100_000)
+        performance = df -> 2 .- df.C
         cont_functional = ContinuousFunctionalNode(:C, [root1, root2], [model], sim)
 
         evaluated = EnhancedBayesianNetworks._evaluate(cont_functional)
 
+        @test isa(evaluated, ContinuousChildNode)
         @test evaluated.name == :C
         @test isa(evaluated.distribution[[:a1]], EmpiricalDistribution)
         @test isa(evaluated.distribution[[:a2]], EmpiricalDistribution)
@@ -20,6 +23,18 @@
         @test isa(evaluated.samples[[:a2]], DataFrame)
         @test size(evaluated.samples[[:a2]]) == (sim.n, 3)
 
+        model = Model(df -> df.B .+ 1, :C)
+        sim = MonteCarlo(100_000)
+        performance = df -> 2 .- df.C
+        cont_functional = ContinuousFunctionalNode(:C, [root2], [model], sim)
+
+        evaluated = EnhancedBayesianNetworks._evaluate(cont_functional)
+
+        @test isa(evaluated, ContinuousRootNode)
+        @test evaluated.name == :C
+        @test isa(evaluated.distribution, EmpiricalDistribution)
+        @test isa(evaluated.distribution, EmpiricalDistribution)
+        @test evaluated.discretization == ExactDiscretization(cont_functional.discretization.intervals)
         @testset "Imprecise Parents" begin
             # ### ROOT
             r1 = DiscreteRootNode(:A, Dict(:a1 => 0.5, :a2 => 0.5), Dict(:a1 => [Parameter(1, :A)], :a2 => [Parameter(2, :A)]))
@@ -31,9 +46,13 @@
 
             @test_throws ErrorException("node C is a continuousfunctionalnode with at least one parent with Interval or p-boxes in its distributions. No method for extracting failure probability p-box have been implemented yet") EnhancedBayesianNetworks._evaluate(cf)
         end
+
     end
 
     @testset "Discrete Node" begin
+        model = Model(df -> df.A .+ df.B, :C)
+        sim = MonteCarlo(100_000)
+        performance = df -> 2 .- df.C
         disc_functional = DiscreteFunctionalNode(:C, [root1, root2], [model], performance, sim)
 
         evaluated = EnhancedBayesianNetworks._evaluate(disc_functional)
@@ -71,6 +90,19 @@
         @test evaluated.parameters == disc_functional.parameters
         @test isa(evaluated.samples[[:a1]], DataFrame)
         @test isa(evaluated.samples[[:a2]], DataFrame)
+
+        model = Model(df -> df.B .+ 1, :C)
+        sim = MonteCarlo(100_000)
+        performance = df -> 2 .- df.C
+        disc_functional = DiscreteFunctionalNode(:C, [root2], [model], performance, sim)
+
+        evaluated = EnhancedBayesianNetworks._evaluate(disc_functional)
+
+        @test isa(evaluated, DiscreteRootNode)
+        @test evaluated.name == :C
+        @test isapprox(evaluated.states[:safe_C], 0.84; atol=0.1)
+        @test isapprox(evaluated.states[:fail_C], 0.15; atol=0.1)
+        @test evaluated.parameters == disc_functional.parameters
         @testset "Imprecise Parents" begin
             # ### ROOT
             interval = (1.10, 1.30)

@@ -18,7 +18,11 @@ function _evaluate(node::ContinuousFunctionalNode)
             distribution[evidence] = pdf
             samples[evidence] = df
         end
-        return ContinuousChildNode(node.name, ancestors, distribution, samples, node.discretization)
+        if isempty(ancestors)
+            return ContinuousRootNode(node.name, distribution[[]], ExactDiscretization(node.discretization.intervals))
+        else
+            return ContinuousChildNode(node.name, ancestors, distribution, samples, node.discretization)
+        end
     end
 end
 
@@ -51,5 +55,9 @@ function _evaluate(node::DiscreteFunctionalNode)
             samples[evidence] = DataFrame()
         end
     end
-    return DiscreteChildNode(node.name, ancestors, pf, cov, samples, node.parameters)
+    if isempty(ancestors)
+        return DiscreteRootNode(node.name, pf[[]], node.parameters)
+    else
+        return DiscreteChildNode(node.name, ancestors, pf, cov, samples, node.parameters)
+    end
 end
