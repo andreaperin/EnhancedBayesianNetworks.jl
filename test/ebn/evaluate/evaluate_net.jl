@@ -79,7 +79,7 @@
         root2 = ContinuousRootNode(:B, interval)
         root3 = ContinuousRootNode(:P, Uniform(-10, 10))
         model = Model(df -> df.A .+ df.B .+ df.P, :C)
-        sim = MonteCarlo(100_000)
+        sim = DoubleLoop(MonteCarlo(100_000))
         performance = df -> 2 .- df.C
         disc_functional = DiscreteFunctionalNode(:C, [root1, root2, root3], [model], performance, sim)
 
