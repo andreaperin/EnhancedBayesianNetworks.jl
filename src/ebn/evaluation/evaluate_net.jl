@@ -63,7 +63,7 @@ function _clean_up!(nodes::AbstractVector{AbstractNode})
     else
         for i in nodes2clean
             index = findfirst(x -> x == i, nodes)
-            if isempty(i.samples)
+            if isempty(i.additional_info)
                 deleteat!(nodes, index)
             end
         end
