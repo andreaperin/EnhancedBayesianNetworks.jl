@@ -16,10 +16,10 @@
         @test isa(evaluated.distribution[[:a2]], EmpiricalDistribution)
         @test issetequal(evaluated.parents, [root1])
         @test evaluated.discretization == cont_functional.discretization
-        @test isa(evaluated.samples[[:a1]], DataFrame)
-        @test size(evaluated.samples[[:a1]]) == (sim.n, 3)
-        @test isa(evaluated.samples[[:a2]], DataFrame)
-        @test size(evaluated.samples[[:a2]]) == (sim.n, 3)
+        @test isa(evaluated.additional_info[[:a1]], Dict{Symbol,DataFrame})
+        @test size(evaluated.additional_info[[:a1]][:samples]) == (sim.n, 3)
+        @test isa(evaluated.additional_info[[:a2]], Dict{Symbol,DataFrame})
+        @test size(evaluated.additional_info[[:a2]][:samples]) == (sim.n, 3)
 
         model = Model(df -> df.B .+ 1, :C)
         sim = MonteCarlo(100_000)
@@ -62,10 +62,13 @@
         @test isapprox(evaluated.states[[:a2]][:fail_C], 0.5, atol=0.02)
         @test issetequal(evaluated.parents, [root1])
         @test evaluated.parameters == disc_functional.parameters
-        @test isa(evaluated.samples[[:a1]], DataFrame)
-        @test size(evaluated.samples[[:a1]]) == (sim.n, 3)
-        @test isa(evaluated.samples[[:a2]], DataFrame)
-        @test size(evaluated.samples[[:a2]]) == (sim.n, 3)
+        @test isa(evaluated.additional_info[[:a1]], Dict{Symbol,Any})
+        @test size(evaluated.additional_info[[:a1]][:samples]) == (sim.n, 3)
+        @test isa(evaluated.additional_info[[:a1]][:cov], Real)
+        @test isa(evaluated.additional_info[[:a2]], Dict{Symbol,Any})
+        @test size(evaluated.additional_info[[:a2]][:samples]) == (sim.n, 3)
+        @test isa(evaluated.additional_info[[:a1]][:cov], Real)
+
 
         model = Model(df -> df.B .+ 1, :C)
         sim = MonteCarlo(100_000)
@@ -109,9 +112,9 @@
 
             @test evaluated.name == :C
             @test issetequal(evaluated.parents, [root1])
-            @test evaluated.covs == Dict([:a2] => 0, [:a1] => 0)
+            @test isempty(evaluated.additional_info[[:a1]])
+            @test isempty(evaluated.additional_info[[:a2]])
             @test evaluated.parameters == disc_functional.parameters
-            @test evaluated.samples == Dict([:a1] => DataFrame(), [:a2] => DataFrame())
             @test isapprox(evaluated.states[[:a1]][:safe_C][1], 0.482, atol=0.2)
             @test isapprox(evaluated.states[[:a1]][:safe_C][2], 0.496, atol=0.2)
             @test isapprox(evaluated.states[[:a2]][:safe_C][1], 0.436, atol=0.2)
@@ -130,9 +133,11 @@
 
             @test evaluated.name == :C
             @test issetequal(evaluated.parents, [root1])
-            @test evaluated.covs == Dict([:a2] => 0, [:a1] => 0)
             @test evaluated.parameters == disc_functional.parameters
-            @test evaluated.samples == Dict([:a1] => DataFrame(), [:a2] => DataFrame())
+            @test isa(evaluated.additional_info[[:a1]][:lb], Tuple{Float64,DataFrame})
+            @test isa(evaluated.additional_info[[:a1]][:ub], Tuple{Float64,DataFrame})
+            @test isa(evaluated.additional_info[[:a2]][:lb], Tuple{Float64,DataFrame})
+            @test isa(evaluated.additional_info[[:a2]][:ub], Tuple{Float64,DataFrame})
             @test isapprox(evaluated.states[[:a1]][:safe_C][1], 0.482, atol=0.2)
             @test isapprox(evaluated.states[[:a1]][:safe_C][2], 0.496, atol=0.2)
             @test isapprox(evaluated.states[[:a2]][:safe_C][1], 0.436, atol=0.2)
@@ -161,9 +166,7 @@
 
             @test evaluated.name == :F1
             @test issetequal(evaluated.parents, [root1, root3])
-            @test evaluated.covs == Dict([:d1, :a2] => 0, [:d1, :a1] => 0, [:d2, :a2] => 0, [:d2, :a1] => 0)
             @test evaluated.parameters == disc_functional.parameters
-            @test evaluated.samples == Dict([:d1, :a2] => DataFrame(), [:d1, :a1] => DataFrame(), [:d2, :a2] => DataFrame(), [:d2, :a1] => DataFrame())
 
             @test isapprox(evaluated.states[[:d1, :a1]][:safe_F1][1], 0.755, atol=0.2)
             @test isapprox(evaluated.states[[:d1, :a1]][:safe_F1][2], 0.818, atol=0.2)

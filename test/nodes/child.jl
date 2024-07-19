@@ -46,8 +46,7 @@
         @test issetequal(node.parents, [root1, root2])
         @test node.distribution == distribution
         @test isequal(node.discretization, ApproximatedDiscretization())
-        @test node.samples == Dict{Vector{Symbol},DataFrame}()
-
+        @test node.additional_info == Dict{Vector{Symbol},Dict}()
         node = ContinuousChildNode(:child, [root1], Dict([:yes] => Normal(), [:no] => Normal(2, 2)))
 
         evidence = [:a]
@@ -68,7 +67,7 @@
             @test issetequal(child.parents, [root1])
             @test child.distribution == states
             @test isequal(child.discretization, ApproximatedDiscretization())
-            @test child.samples == Dict{Vector{Symbol},DataFrame}()
+            @test child.additional_info == Dict{Vector{Symbol},Dict}()
 
             @test get_continuous_input(child, [:yes]) == Interval(0.1, 0.3, :child)
             @test EnhancedBayesianNetworks._get_node_distribution_bounds(child) == (0.1, 0.7)
@@ -97,11 +96,7 @@
             [:yes] => "a",
             [:no] => 0.1
         )
-
-        samples = Dict{Vector{Symbol},DataFrame}()
-
-        @test_throws ErrorException("node child must have real valued covs") DiscreteChildNode(name, [root1], states, covs, samples)
-
+        additional_info = Dict{Vector{Symbol},Dict}()
         states = Dict(
             [:yes] => Dict(:yes => -0.1, :no => 0.9),
             [:no] => Dict(:yes => 0.2, :no => 0.8)
@@ -171,8 +166,7 @@
         @test issetequal(node.parents, parents)
         @test node.states == states
         @test node.parameters == Dict{Symbol,Vector{Parameter}}()
-        @test node.covs == Dict{Vector{Symbol},Number}()
-        @test node.samples == Dict{Symbol,Vector{Parameter}}()
+        @test node.additional_info == Dict{Vector{Symbol},Dict}()
 
         @test EnhancedBayesianNetworks._get_states(node) == [:a, :b]
 
@@ -201,8 +195,7 @@
             @test issetequal(child.parents, [root1, root2])
             @test child.states == states
             @test child.parameters == parameters
-            @test child.samples == Dict{Vector{Symbol},DataFrame}()
-            @test child.covs == Dict{Vector{Symbol},Real}()
+            @test node.additional_info == Dict{Vector{Symbol},Dict}()
 
             @test EnhancedBayesianNetworks.get_parameters(child, [:a]) == [Parameter(1, :a1)]
             @test EnhancedBayesianNetworks._get_states(child) == [:a, :b]

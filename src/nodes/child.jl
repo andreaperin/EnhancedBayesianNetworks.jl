@@ -4,14 +4,14 @@
     name::Symbol
     parents::Vector{<:AbstractNode}
     distribution::Dict{Vector{Symbol},<:AbstractContinuousInput}
-    samples::Dict{Vector{Symbol},DataFrame}
+    additional_info::Dict{Vector{Symbol},Dict}
     discretization::ApproximatedDiscretization
 
     function ContinuousChildNode(
         name::Symbol,
         parents::Vector{<:AbstractNode},
         distribution::Dict{Vector{Symbol},<:AbstractContinuousInput},
-        samples::Dict{Vector{Symbol},DataFrame},
+        additional_info::Dict{Vector{Symbol},Dict},
         discretization::ApproximatedDiscretization
     )
 
@@ -26,7 +26,7 @@
         discrete_parents_combination = map(t -> [t...], discrete_parents_combination)
         length(discrete_parents_combination) != length(distribution) && error("In node $name, defined combinations are not equal to the theorical discrete parents combinations: $discrete_parents_combination")
         parents = convert(Vector{AbstractNode}, parents)
-        return new(name, parents, distribution, samples, discretization)
+        return new(name, parents, distribution, additional_info, discretization)
     end
 end
 
@@ -36,20 +36,20 @@ function ContinuousChildNode(
     distribution::Dict{Vector{Symbol},<:AbstractContinuousInput}
 )
 
-    samples = Dict{Vector{Symbol},DataFrame}()
+    additional_info = Dict{Vector{Symbol},Dict}()
     discretization = ApproximatedDiscretization()
-    ContinuousChildNode(name, parents, distribution, samples, discretization)
+    ContinuousChildNode(name, parents, distribution, additional_info, discretization)
 end
 
 function ContinuousChildNode(
     name::Symbol,
     parents::Vector{<:AbstractNode},
     distribution::Dict{Vector{Symbol},<:AbstractContinuousInput},
-    samples::Dict{Vector{Symbol},DataFrame}
+    additional_info::Dict{Vector{Symbol},Dict}
 )
 
     discretization = ApproximatedDiscretization()
-    ContinuousChildNode(name, parents, distribution, samples, discretization)
+    ContinuousChildNode(name, parents, distribution, additional_info, discretization)
 end
 
 function ContinuousChildNode(
@@ -59,8 +59,8 @@ function ContinuousChildNode(
     discretization::ApproximatedDiscretization
 )
 
-    samples = Dict{Vector{Symbol},DataFrame}()
-    ContinuousChildNode(name, parents, distribution, samples, discretization)
+    additional_info = Dict{Vector{Symbol},Dict}()
+    ContinuousChildNode(name, parents, distribution, additional_info, discretization)
 end
 
 function get_continuous_input(node::ContinuousChildNode, evidence::Vector{Symbol})
@@ -104,16 +104,14 @@ end
     name::Symbol
     parents::Vector{<:AbstractNode}
     states::Dict{Vector{Symbol},Dict{Symbol,AbstractDiscreteProbability}}
-    covs::Dict{Vector{Symbol},Real}
-    samples::Dict{Vector{Symbol},DataFrame}
+    additional_info::Dict{Vector{Symbol},Dict}
     parameters::Dict{Symbol,Vector{Parameter}}
 
     function DiscreteChildNode(
         name::Symbol,
         parents::Vector{<:AbstractNode},
         states::Dict,
-        covs::Dict,
-        samples::Dict{Vector{Symbol},DataFrame},
+        additional_info::Dict{Vector{Symbol},Dict},
         parameters::Dict{Symbol,Vector{Parameter}}
     )
         try
@@ -124,12 +122,6 @@ end
             catch
                 error("node $name must have real valued states probailities")
             end
-        end
-
-        try
-            convert(Dict{Vector{Symbol},Real}, covs)
-        catch
-            error("node $name must have real valued covs")
         end
 
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
@@ -157,7 +149,7 @@ end
         length(discrete_parents_combination) != length(states) && error("In node $name, defined combinations are not equal to the theorical discrete parents combinations: $discrete_parents_combination")
         parents = convert(Vector{AbstractNode}, parents)
 
-        return new(name, parents, states, covs, samples, parameters)
+        return new(name, parents, states, additional_info, parameters)
     end
 end
 
@@ -165,11 +157,10 @@ function DiscreteChildNode(
     name::Symbol,
     parents::Vector{<:AbstractNode},
     states::Dict,
-    covs::Dict,
-    samples::Dict{Vector{Symbol},DataFrame}
+    additional_info::Dict{Vector{Symbol},Dict}
 )
     parameters = Dict{Symbol,Vector{Parameter}}()
-    DiscreteChildNode(name, parents, states, covs, samples, parameters)
+    DiscreteChildNode(name, parents, states, additional_info, parameters)
 end
 
 function DiscreteChildNode(
@@ -177,10 +168,9 @@ function DiscreteChildNode(
     parents::Vector{<:AbstractNode},
     states::Dict
 )
-    covs = Dict{Vector{Symbol},Real}()
-    samples = Dict{Vector{Symbol},DataFrame}()
+    additional_info = Dict{Vector{Symbol},Dict}()
     parameters = Dict{Symbol,Vector{Parameter}}()
-    DiscreteChildNode(name, parents, states, covs, samples, parameters)
+    DiscreteChildNode(name, parents, states, additional_info, parameters)
 end
 
 function DiscreteChildNode(
@@ -190,9 +180,8 @@ function DiscreteChildNode(
     parameters::Dict{Symbol,Vector{Parameter}}
 )
 
-    covs = Dict{Vector{Symbol},Real}()
-    samples = Dict{Vector{Symbol},DataFrame}()
-    DiscreteChildNode(name, parents, states, covs, samples, parameters)
+    additional_info = Dict{Vector{Symbol},Dict}()
+    DiscreteChildNode(name, parents, states, additional_info, parameters)
 end
 
 _get_states(node::DiscreteChildNode) = keys(first(values(node.states))) |> collect
