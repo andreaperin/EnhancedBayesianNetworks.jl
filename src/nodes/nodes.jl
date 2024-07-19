@@ -6,8 +6,6 @@ const AbstractContinuousInput = Union{UnivariateDistribution,Tuple{Real,Real}}
 
 const AbstractDiscreteProbability = Union{Real,AbstractVector{Real}}
 
-const AbstractSimulation = Union{AbstractMonteCarlo,LineSampling,SubSetSimulation}
-
 include("../util/wrap.jl")
 
 abstract type AbstractDiscretization end

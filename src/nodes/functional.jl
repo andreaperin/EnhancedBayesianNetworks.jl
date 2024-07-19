@@ -34,7 +34,7 @@ end
     parents::Vector{<:AbstractNode}
     models::Vector{<:UQModel}
     performance::Function
-    simulation::Union{AbstractSimulation,DoubleLoop,IntervalMonteCarlo}
+    simulation::Union{AbstractSimulation,DoubleLoop,RandomSlicing}
     parameters::Dict{Symbol,Vector{Parameter}}
 
     function DiscreteFunctionalNode(
@@ -42,7 +42,7 @@ end
         parents::Vector{<:AbstractNode},
         models::Vector{<:UQModel},
         performance::Function,
-        simulation::Union{AbstractSimulation,DoubleLoop,IntervalMonteCarlo},
+        simulation::Union{AbstractSimulation,DoubleLoop,RandomSlicing},
         parameters::Dict{Symbol,Vector{Parameter}}
     )
         if isempty(filter(x -> isa(x, FunctionalNode), parents))
@@ -58,7 +58,7 @@ function DiscreteFunctionalNode(
     parents::Vector{<:AbstractNode},
     models::Vector{<:UQModel},
     performance::Function,
-    simulation::Union{AbstractSimulation,DoubleLoop,IntervalMonteCarlo}
+    simulation::Union{AbstractSimulation,DoubleLoop,RandomSlicing}
 )
     parameters = Dict{Symbol,Vector{Parameter}}()
     DiscreteFunctionalNode(name, parents, models, performance, simulation, parameters)

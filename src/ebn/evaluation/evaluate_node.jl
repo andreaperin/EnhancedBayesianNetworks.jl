@@ -41,16 +41,20 @@ function _evaluate(node::DiscreteFunctionalNode)
         parameters = mapreduce(p -> get_parameters(p, evidence), vcat, discrete_parents; init=UQInput[])
         randomvariables = mapreduce(p -> get_continuous_input(p, evidence), vcat, continuous_parents; init=UQInput[])
         res = probability_of_failure(node.models, node.performance, [parameters..., randomvariables...], node.simulation)
-        if isa(res, Tuple{Real,Real,DataFrame})
+        if isa(node.simulation, Union{AbstractMonteCarlo,LineSampling,ImportanceSampling,UncertaintyQuantification.AbstractSubSetSimulation})
             pf[evidence] = f(res[1])
             cov[evidence] = res[2]
             samples[evidence] = res[3]
-        elseif isa(res, Real)
-            pf[evidence] = f(res)
+        elseif isa(node.simulation, DoubleLoop)
+            pf[evidence] = f_interval(res)
             cov[evidence] = 0
             samples[evidence] = DataFrame()
-        elseif isa(res, Interval)
-            pf[evidence] = f_interval(res)
+        elseif isa(node.simulation, RandomSlicing)
+            pf[evidence] = f_interval(res[1])
+            cov[evidence] = 0
+            samples[evidence] = DataFrame()
+        elseif isa(node.simulation, FORM)
+            pf[evidence] = f(res[1])
             cov[evidence] = 0
             samples[evidence] = DataFrame()
         end
