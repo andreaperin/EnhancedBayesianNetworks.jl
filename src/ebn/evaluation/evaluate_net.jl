@@ -33,7 +33,6 @@ function _evaluate_routine(ebn::EnhancedBayesianNetwork)
     ## Removing barren nodes
     _clean_up!(nodes)
     ebn = EnhancedBayesianNetwork(nodes)
-
 end
 
 function _replace_node!(nodes::AbstractVector{AbstractNode}, old::FunctionalNode, new::Union{ChildNode,RootNode})

@@ -88,43 +88,6 @@ function markov_blanket(ebn::EnhancedBayesianNetwork, node::N) where {N<:Abstrac
     return unique(setdiff(blanket, [node]))
 end
 
-# function markov_envelope(ebn::EnhancedBayesianNetwork)
-#     continuous_nodes = filter(x -> isa(x, ContinuousNode), ebn.nodes)
-#     groups = []
-#     for node in continuous_nodes
-#         new_continuous_nodes = filter(x -> isa(x, ContinuousNode), markov_blanket(ebn, node)) |> collect
-#         isempty(new_continuous_nodes) ? group = [node] : group = vcat(node, new_continuous_nodes)
-#         while !isempty(new_continuous_nodes)
-#             blanket_i = filter(x -> isa(x, ContinuousNode), markov_blanket(ebn, new_continuous_nodes[1]))
-#             popfirst!(new_continuous_nodes)
-#             new_continuous_nodes_i = setdiff(blanket_i, new_continuous_nodes) |> collect
-#             vcat(new_continuous_nodes, new_continuous_nodes_i)
-#             vcat(group, collect(setdiff(blanket_i, group)))
-#         end
-#         push!(groups, group)
-#     end
-#     envelope = []
-#     groups = unique(Set.(groups))
-#     longest_set = groups[findmax(length.(groups))[2]]
-#     for x in groups
-#         if all(x .∈ [longest_set]) && x != longest_set
-#             deleteat!(groups, findall(i -> i == x, groups))
-#         end
-#     end
-#     for group in groups
-#         group = group |> collect
-#         all_blankets = markov_blanket.(repeat([ebn], length(group)), group)
-#         single_envelope = unique(vcat(unique(Iterators.flatten(all_blankets)), group))
-#         push!(envelope, single_envelope)
-#     end
-#     nodes_in_envelope = collect(Iterators.flatten(envelope))
-#     ebn_discrete_node = filter(x -> isa(x, DiscreteNode), ebn.nodes)
-#     missing_nodes = setdiff(ebn_discrete_node, nodes_in_envelope)
-#     for single_envelope in envelope
-#         append!(single_envelope, missing_nodes)
-#     end
-#     return envelope
-# end
 function markov_envelope(ebn)
     Xm_groups = map(x -> _markov_envelope_continuous_nodes_group(ebn, x), filter(x -> isa(x, ContinuousNode), ebn.nodes))
     markov_envelopes = unique.(mapreduce.(x -> push!(markov_blanket(ebn, x), x), vcat, Xm_groups))
