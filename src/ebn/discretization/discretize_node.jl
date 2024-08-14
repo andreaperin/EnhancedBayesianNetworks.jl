@@ -52,13 +52,16 @@ function _discretize(dist::UnivariateDistribution, intervals::Vector)
     return cdf.(dist, getindex.(intervals, 2)) .- cdf.(dist, getindex.(intervals, 1))
 end
 
-function _approximate(intervals::Vector, σ::Real)
+function _approximate(intervals::Vector, λ::Real)
     dists = map(intervals) do i
         finite = isfinite.(i)
         if all(finite)
             return Uniform(i...)
+        elseif finite[end] == true
+            return - Exponential(λ) - finite[end]
+        elseif finite[1] == true
+            return Exponential(λ) + finite[1]
         end
-        return truncated(Normal(i[finite][1], σ), i...)
     end
     return dists
 end

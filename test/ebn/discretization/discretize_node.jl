@@ -28,16 +28,18 @@
         @test_logs (:warn, "Maximum intervals value 11 > support upper bound 10.0. Upper bound will be used as intervals end.") EnhancedBayesianNetworks._format_interval(root)
 
         intervals = [[-Inf, -1.0], [-1.0, 0.0], [0.0, 1.0], [1.0, Inf]]
-        σ = 2
+        λ = 2
 
+        exp1 = - Exponential(2) - 1
+        exp2 = Exponential(2) +1
         approx = [
-            truncated(Normal(-1.0, 2.0); lower=-Inf, upper=-1.0),
-            Uniform(-1.0, 0.0),
+            exp1,
+            Uniform(-1, 0),
             Uniform(0.0, 1.0),
-            truncated(Normal(1.0, 2.0); lower=1.0, upper=Inf)
+            exp2
         ]
 
-        @test approx == EnhancedBayesianNetworks._approximate(intervals, σ)
+        @test approx == EnhancedBayesianNetworks._approximate(intervals, λ)
 
         dist = Normal()
         probs = [0.15865525393145702, 0.341344746068543, 0.34134474606854304, 0.15865525393145696]
@@ -73,7 +75,8 @@
     end
 
     @testset "Child node" begin
-        discretization = ApproximatedDiscretization([-Inf, -1, 0, 1, Inf], 1.5)
+        λ = 1.5
+        discretization = ApproximatedDiscretization([-Inf, -1, 0, 1, Inf], λ)
 
         root = DiscreteRootNode(:x, Dict(:y => 0.2, :n => 0.8))
 
@@ -84,13 +87,14 @@
 
         child = ContinuousChildNode(:β, [root], states, discretization)
 
-        approximated_node, discretized_child = @suppress EnhancedBayesianNetworks._discretize(child)
+        approximated_node, discretized_child =  EnhancedBayesianNetworks._discretize(child)
 
-        @test approximated_node.distribution[[Symbol("[-Inf, -1.0]")]] == truncated(Normal(-1, 1.5), -Inf, -1)
+        exp1 = -Exponential(λ) - 1
+        exp2 = Exponential(λ) +1
+        @test approximated_node.distribution[[Symbol("[-Inf, -1.0]")]] == exp1
         @test approximated_node.distribution[[Symbol("[-1.0, 0.0]")]] == Uniform(-1, 0)
         @test approximated_node.distribution[[Symbol("[0.0, 1.0]")]] == Uniform(0, 1.0)
-        @test approximated_node.distribution[[Symbol("[1.0, Inf]")]] == truncated(Normal(1, 1.5), 1, Inf)
-
+        @test approximated_node.distribution[[Symbol("[1.0, Inf]")]] == exp2
     end
 
     root = DiscreteRootNode(:x, Dict(:y => 0.2, :n => 0.8))
