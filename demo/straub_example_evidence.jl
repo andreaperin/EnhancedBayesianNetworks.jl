@@ -37,8 +37,8 @@ model3 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r3)
 model4 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r4)
 model5 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r5)
 
-discretization1 = ApproximatedDiscretization(collect(range(50, 250, 10)), 1)
-discretization2 = ApproximatedDiscretization(collect(range(50.01, 250.01, 10)), 1)
+discretization1 = ApproximatedDiscretization(collect(range(50, 250, 21)), 1)
+discretization2 = ApproximatedDiscretization(collect(range(50.01, 250.01, 21)), 1)
 
 R1 = ContinuousFunctionalNode(:R1, parents, [model1], MonteCarlo(n))
 R2 = ContinuousFunctionalNode(:R2, parents, [model2], MonteCarlo(n))
@@ -62,35 +62,69 @@ frame = DiscreteFunctionalNode(:E, [R1, R2, R3, R4, R5, V, H], [model], performa
 
 nodes = [Uᵣ, V, H, R1, R2, R3, R4, R5, frame]
 ebn = EnhancedBayesianNetwork(nodes)
-
 eebn = EnhancedBayesianNetworks.evaluate(ebn)
+
+plt1 = EnhancedBayesianNetworks.plot(eebn, :spring, 0.08, 13)
+savefig(plt1, "/Users/andreaperin_macos/Documents/PhD/3_Academic/Papers_Presentations/Papers/elsarticle-template/imgs/fig7_example_straub_evidence.png")
 
 eebn.nodes[end].states
 
 evidence1 = Dict(
-    :R5_d => Symbol([94.45444444444445, 116.67666666666666]),
-    :R4_d => Symbol([63.72984058368004, 72.22222222222223])
+    :R4_d => Symbol([61.87668651799769, 70.0]),
+    :R5_d => Symbol([100.01, 110.01])
 )
 
 ϕ1 = infer(eebn, :E, evidence1)
 
+
 evidence2 = Dict(
-    :R5_d => Symbol([94.45444444444445, 116.67666666666666]),
-    :R4_d => Symbol([138.88888888888889, 161.11111111111111])
+    :R4_d => Symbol([140.0, 150.0]),
+    :R5_d => Symbol([90.01, 100.01])
 )
 
 ϕ2 = infer(eebn, :E, evidence2)
 
 evidence3 = Dict(
-    :R5_d => Symbol([183.34333333333333, 205.56555555555556]),
-    :R4_d => Symbol([138.88888888888889, 161.11111111111111])
+    :R4_d => Symbol([150.0, 160.0]),
+    :R5_d => Symbol([200.01, 210.01])
 )
 
 ϕ3 = infer(eebn, :E, evidence3)
 
-
-
-
 #### Checking with srps only
 
+### MonteCarlo's Checking
 
+
+Uᵣ = RandomVariable(Normal(), :Uᵣ)
+
+μ_gamma = 60
+cov_gamma = 0.2
+α, θ = distribution_parameters(μ_gamma, μ_gamma * cov_gamma, Gamma)
+V = RandomVariable(Gamma(α, θ), :V)
+
+μ_gumbel = 50
+cov_gumbel = 0.4
+μ_loc, β = distribution_parameters(μ_gumbel, cov_gumbel * μ_gumbel, Gumbel)
+H = RandomVariable(Gumbel(μ_loc, β), :H,)
+
+model1 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r1)
+model2 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r2)
+model3 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r3)
+# model4 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r4)
+# model5 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r5)
+r4 = Parameter(50, :R4)
+r5 = Parameter(100, :R5)
+
+model = Model(df -> frame_model.(df.r1, df.r2, df.r3, df.R4, df.R5, df.V, df.H), :G)
+
+models = [model1, model2, model3, model]
+
+performance = df -> df.G
+
+inputs = [Uᵣ, V, H, r4, r5]
+
+pf = probability_of_failure(models, performance, inputs, MonteCarlo(10^6))
+
+# samples = UncertaintyQuantification.sample(inputs, 2)
+# evaluate!(models, samples)
