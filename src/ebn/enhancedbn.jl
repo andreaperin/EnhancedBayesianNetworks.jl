@@ -1,19 +1,36 @@
-struct EnhancedBayesianNetwork <: ProbabilisticGraphicalModel
+``` EnhancedBayesianNetwork
+        
+        Structure for build the Enhanced Bayesian Network from a list of nodes.
+```
+@auto_hash_equals struct EnhancedBayesianNetwork <: ProbabilisticGraphicalModel
     dag::DiGraph
     nodes::Vector{<:AbstractNode}
     name_to_index::Dict{Symbol,Int}
 
     function EnhancedBayesianNetwork(dag::DiGraph, nodes::Vector{<:AbstractNode}, name_to_index::Dict{Symbol,Int})
         all_states = vcat(_get_states.(filter(x -> !isa(x, DiscreteFunctionalNode) && isa(x, DiscreteNode), nodes))...)
-        unique(all_states) != all_states ? error("nodes state must have different symbols") : new(dag, nodes, name_to_index)
+        if unique([i.name for i in nodes]) != [i.name for i in nodes]
+            error("nodes must have different names")
+        end
+        if unique(all_states) != all_states
+            error("nodes state must have different symbols")
+        end
+        functional_nodes = filter(x -> isa(x, FunctionalNode), nodes)
+        non_root = filter(x -> !isa(x, RootNode), nodes)
+        functional_childrens_vect = map(y -> filter(x -> y ∈ x.parents, non_root), functional_nodes)
+        bool_vect = map(y -> all(map(x -> isa(x, FunctionalNode), y)), functional_childrens_vect)
+        if !all(bool_vect)
+            error("FunctionalNodes can have only FunctionalNode as children")
+        end
+        new(dag, nodes, name_to_index)
     end
 end
 
 function EnhancedBayesianNetwork(nodes::Vector{<:AbstractNode})
     ordered_dag, ordered_nodes, ordered_name_to_index = _topological_ordered_dag(nodes)
-    EnhancedBayesianNetwork(ordered_dag, ordered_nodes, ordered_name_to_index)
+    ebn = EnhancedBayesianNetwork(ordered_dag, ordered_nodes, ordered_name_to_index)
+    return ebn
 end
-
 
 function _build_digraph(nodes::Vector{<:AbstractNode})
     name_to_index = Dict{Symbol,Int}()
@@ -45,18 +62,6 @@ function _topological_ordered_dag(nodes::Vector{<:AbstractNode})
     return ordered_dag, ordered_nodes, ordered_name_to_index
 end
 
-function plot(ebn::EnhancedBayesianNetwork)
-    graphplot(
-        ebn.dag,
-        names=[i.name for i in ebn.nodes],
-        # nodesize=map(x -> isa(x, ContinuousNode) ? Float64(0.2) : Float64(0.1), ebn.nodes),
-        font_size=10,
-        node_shape=map(x -> isa(x, ContinuousNode) ? :circle : :rect, ebn.nodes),
-        markercolor=map(x -> isa(x, DiscreteFunctionalNode) ? "lightgreen" : "orange", ebn.nodes),
-        linecolor=:darkgrey,
-    )
-end
-
 function get_children(ebn::EnhancedBayesianNetwork, node::N) where {N<:AbstractNode}
     i = ebn.name_to_index[node.name]
     [ebn.nodes[j] for j in outneighbors(ebn.dag, i)]
@@ -64,12 +69,12 @@ end
 
 function get_parents(ebn::EnhancedBayesianNetwork, node::N) where {N<:AbstractNode}
     i = ebn.name_to_index[node.name]
-    [ebn.nodes[j] for j in inneighbors(ebn.dag, i)]
+    [ebn.nodes[j] for j in unique(inneighbors(ebn.dag, i))]
 end
 
 function get_neighbors(ebn::EnhancedBayesianNetwork, node::N) where {N<:AbstractNode}
     i = ebn.name_to_index[node.name]
-    [ebn.nodes[j] for j in append!(inneighbors(ebn.dag, i), outneighbors(ebn.dag, i))]
+    [ebn.nodes[j] for j in unique(append!(inneighbors(ebn.dag, i), outneighbors(ebn.dag, i)))]
 end
 
 ## Returns a Set of AbstractNode representing the Markov Blanket for the choosen node
@@ -80,52 +85,33 @@ function markov_blanket(ebn::EnhancedBayesianNetwork, node::N) where {N<:Abstrac
         push!(blanket, child)
     end
     append!(blanket, get_parents(ebn, node))
-    return unique(setdiff(Set(blanket), Set([node])))
+    return unique(setdiff(blanket, [node]))
 end
 
-function markov_envelope(ebn::EnhancedBayesianNetwork)
-    continuous_nodes = filter(x -> isa(x, ContinuousNode), ebn.nodes)
-    groups = []
-    for node in continuous_nodes
-        new_continuous_nodes = filter(x -> isa(x, ContinuousNode), markov_blanket(ebn, node)) |> collect
-        isempty(new_continuous_nodes) ? group = [node] : group = vcat(node, new_continuous_nodes)
-        while !isempty(new_continuous_nodes)
-            blanket_i = filter(x -> isa(x, ContinuousNode), markov_blanket(ebn, new_continuous_nodes[1]))
-            popfirst!(new_continuous_nodes)
-            new_continuous_nodes_i = setdiff(blanket_i, new_continuous_nodes) |> collect
-            vcat(new_continuous_nodes, new_continuous_nodes_i)
-            vcat(group, collect(setdiff(blanket_i, group)))
-        end
-        push!(groups, group)
-    end
-    envelope = []
-    groups = unique(Set.(groups))
-    longest_set = groups[findmax(length.(groups))[2]]
-    for x in groups
-        if all(x .∈ [longest_set]) && x != longest_set
-            deleteat!(groups, findall(i -> i == x, groups))
+function markov_envelope(ebn)
+    Xm_groups = map(x -> _markov_envelope_continuous_nodes_group(ebn, x), filter(x -> isa(x, ContinuousNode), ebn.nodes))
+    markov_envelopes = unique.(mapreduce.(x -> push!(markov_blanket(ebn, x), x), vcat, Xm_groups))
+    # check when a vector is included into another
+    sorted_envelopes = sort(markov_envelopes, by=length)
+    final_envelopes = []
+    for envelope in sorted_envelopes
+        to_compare = filter(x -> x != envelope, sorted_envelopes)
+        if any(map(x -> all(envelope .∈ [x]), to_compare))
+            filter!(x -> x != envelope, sorted_envelopes)
+        else
+            push!(final_envelopes, envelope)
         end
     end
-    for group in groups
-        group = group |> collect
-        all_blankets = markov_blanket.(repeat([ebn], length(group)), group)
-        single_envelope = unique(vcat(unique(Iterators.flatten(all_blankets)), group))
-        push!(envelope, single_envelope)
-    end
-    return envelope
+    return final_envelopes
 end
 
-function _create_ebn_from_envelope(ebn::EnhancedBayesianNetwork, envelope::Vector{<:AbstractNode})
-    nodes = Vector{AbstractNode}()
-    for node in envelope
-        !all(get_parents(ebn, node) .∈ [envelope]) && append!(nodes, get_parents(ebn, node))
-        push!(nodes, node)
+function _markov_envelope_continuous_nodes_group(ebn, node)
+    f = (ebn, nodes) -> unique(vcat(nodes, mapreduce(x -> filter(x -> isa(x, ContinuousNode), markov_blanket(ebn, node)), vcat, nodes)))
+    list = [node]
+    new_list = f(ebn, list)
+    while !issetequal(list, new_list)
+        list = new_list
+        new_list = f(ebn, new_list)
     end
-    EnhancedBayesianNetwork(unique!(nodes))
-end
-
-##TODO test
-function _get_node_given_state(ebn::EnhancedBayesianNetwork, state::Symbol)
-    nodes = filter(x -> !isa(x, DiscreteFunctionalNode) && isa(x, DiscreteNode), ebn.nodes)
-    [node for node in nodes if state ∈ _get_states(node)][1]
+    return new_list
 end
