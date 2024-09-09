@@ -12,9 +12,10 @@ Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 GraphRecipes = "bd48cda9-67a9-57be-86fa-5b3c104eda73"
 Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Polyhedra = "67491407-f73d-577b-9b50-8179a7c68029"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 UncertaintyQuantification = "7183a548-a887-11e9-15ce-a56ab60bad7a"
 
 [compat]
-julia = "1.10"
 UncertaintyQuantification = "0.10"
+julia = "1.10"
