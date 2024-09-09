@@ -89,4 +89,11 @@ function _is_imprecise(node::DiscreteRootNode)
     any(isa.(values(node.states), Vector{Real}))
 end
 
+function _extreme_points(node::DiscreteRootNode)
+    if EnhancedBayesianNetworks._is_imprecise(node)
+        new_states = _extreme_points_states_probabilities(node.states)
+        return map(new_state -> DiscreteRootNode(node.name, new_state, node.additional_info, node.parameters), new_states)
+    end
+end
+
 const global RootNode = Union{DiscreteRootNode,ContinuousRootNode}

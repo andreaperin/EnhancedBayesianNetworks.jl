@@ -200,4 +200,14 @@ function _is_imprecise(node::DiscreteChildNode)
     any(isa.(probability_values, Vector{Real}))
 end
 
+function _extreme_points(node::DiscreteChildNode)
+    if EnhancedBayesianNetworks._is_imprecise(node)
+        new_states = map(states -> _extreme_points_states_probabilities(states), values(node.states))
+        new_states_combination = vec(collect(Iterators.product(new_states...)))
+
+        new_states = map(nsc -> Dict(keys(node.states) .=> nsc), new_states_combination)
+        return map(new_state -> DiscreteChildNode(node.name, node.parents, new_state, node.additional_info, node.parameters), new_states)
+    end
+end
+
 const global ChildNode = Union{DiscreteChildNode,ContinuousChildNode}

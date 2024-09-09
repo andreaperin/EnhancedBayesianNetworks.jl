@@ -183,10 +183,10 @@
         @testset "Imprecise Child - Interval" begin
 
             states = Dict(
-                [:yes, :yes] => Dict(:a => [0.2, 0.3], :b => [0.7, 0.8]),
-                [:no, :yes] => Dict(:a => [0.2, 0.3], :b => [0.7, 0.8]),
-                [:yes, :no] => Dict(:a => [0.2, 0.3], :b => [0.7, 0.8]),
-                [:no, :no] => Dict(:a => [0.2, 0.3], :b => [0.7, 0.8])
+                [:yes, :yes] => Dict(:a => [0.4, 0.5], :b => [0.5, 0.6]),
+                [:no, :yes] => Dict(:a => [0.4, 0.5], :b => [0.5, 0.6]),
+                [:yes, :no] => Dict(:a => [0.4, 0.5], :b => [0.5, 0.6]),
+                [:no, :no] => Dict(:a => [0.4, 0.5], :b => [0.5, 0.6])
             )
             parameters = Dict(:a => [Parameter(1, :a1)], :b => [Parameter(2, :a1)])
             child = DiscreteChildNode(name, parents, states, parameters)
@@ -200,7 +200,34 @@
             @test EnhancedBayesianNetworks.get_parameters(child, [:a]) == [Parameter(1, :a1)]
             @test EnhancedBayesianNetworks._get_states(child) == [:a, :b]
             @test EnhancedBayesianNetworks._is_imprecise(child)
-        end
 
+            child = DiscreteChildNode(name, [root1], Dict(
+                [:yes] => Dict(:y => [0.4, 0.5], :n => [0.5, 0.6]),
+                [:no] => Dict(:y => [0.5, 0.6], :n => [0.4, 0.5])
+            ))
+            extreme_points = EnhancedBayesianNetworks._extreme_points(child)
+
+            n1 = DiscreteChildNode(name, [root1], Dict(
+                [:yes] => Dict(:y => 0.4, :n => 0.6),
+                [:no] => Dict(:y => 0.5, :n => 0.5)
+            ))
+
+            n2 = DiscreteChildNode(name, [root1], Dict(
+                [:yes] => Dict(:y => 0.5, :n => 0.5),
+                [:no] => Dict(:y => 0.5, :n => 0.5)
+            ))
+
+            n3 = DiscreteChildNode(name, [root1], Dict(
+                [:yes] => Dict(:y => 0.5, :n => 0.5),
+                [:no] => Dict(:y => 0.6, :n => 0.4)
+            ))
+
+            n4 = DiscreteChildNode(name, [root1], Dict(
+                [:yes] => Dict(:y => 0.4, :n => 0.6),
+                [:no] => Dict(:y => 0.6, :n => 0.4)
+            ))
+
+            @test issetequal(extreme_points, [n1, n2, n3, n4])
+        end
     end
 end

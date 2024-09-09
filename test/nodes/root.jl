@@ -58,8 +58,6 @@
 
         @test get_parameters(node1, [:yes]) == [Parameter(2, :d)]
         @test EnhancedBayesianNetworks._is_imprecise(node2) == false
-
-
         @testset "Imprecise Root - Interval" begin
             name = :x
             parameters = Dict(:yes => [Parameter(2, :d)], :no => [Parameter(0, :d)])
@@ -90,6 +88,11 @@
             @test EnhancedBayesianNetworks._is_imprecise(imp_disc)
             @test get_parameters(imp_disc, [:yes]) == [Parameter(2, :d)]
 
+            states = Dict(:yes => [0.4, 0.5], :no => [0.5, 0.6])
+            imp_disc = DiscreteRootNode(name, states, parameters)
+            extreme_points = EnhancedBayesianNetworks._extreme_points(imp_disc)
+            @test isequal(extreme_points[1], DiscreteRootNode(name, Dict(:yes => 0.4, :no => 0.6), parameters))
+            @test isequal(extreme_points[2], DiscreteRootNode(name, Dict(:yes => 0.5, :no => 0.5), parameters))
         end
     end
 end
