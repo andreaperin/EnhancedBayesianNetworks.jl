@@ -207,6 +207,8 @@ function _extreme_points(node::DiscreteChildNode)
 
         new_states = map(nsc -> Dict(keys(node.states) .=> nsc), new_states_combination)
         return map(new_state -> DiscreteChildNode(node.name, node.parents, new_state, node.additional_info, node.parameters), new_states)
+    else
+        return [node]
     end
 end
 
