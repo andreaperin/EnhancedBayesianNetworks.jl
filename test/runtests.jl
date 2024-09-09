@@ -19,8 +19,9 @@ include("ebn/trasmission/trasmission_net.jl")
 include("ebn/evaluate/evaluate_node.jl")
 include("ebn/evaluate/evaluate_net.jl")
 include("ebn/bayesnet.jl")
+include("ebn/cpd/conditionalprobabilitydistribution.jl")
 
-include("inference/cpd/conditionalprobabilitydistribution.jl")
+
 include("inference/inferencestate.jl")
 include("inference/factors.jl")
 include("inference/factor_methods.jl")
