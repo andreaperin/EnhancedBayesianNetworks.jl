@@ -8,7 +8,8 @@ using GraphRecipes
 using Graphs
 using LinearAlgebra
 using Reexport
-using UncertaintyQuantification: sample
+using UncertaintyQuantification: sample, Interval
+using Polyhedra: HalfSpace, doubledescription
 
 @reexport using Graphs
 @reexport using UncertaintyQuantification
@@ -38,7 +39,8 @@ export DiscreteChildNode
 export EnhancedBayesianNetwork
 export Factor
 export FunctionalNode
-export InferenceState
+export ImpreciseInferenceState
+export PreciseInferenceState
 export RootNode
 
 # Constants

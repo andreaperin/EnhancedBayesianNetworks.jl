@@ -78,8 +78,6 @@
         @test issetequal(get_parents(ebn, child1), [root1])
         @test issetequal(get_children(ebn, child2), [functional])
         @test issetequal(get_neighbors(ebn, child2), [child1, functional])
-        # @test issetequal(markov_blanket(ebn, child2), [child1, root2, functional])
-        # @test issetequal(markov_envelope(ebn)[1], [child1, root1, root2, functional, child2])
     end
     @testset "Markov Blanket" begin
         x1 = DiscreteRootNode(:x1, Dict(:x1y => 0.5, :x1n => 0.5))

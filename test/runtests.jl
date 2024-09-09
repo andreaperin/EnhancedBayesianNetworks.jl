@@ -19,6 +19,7 @@ include("ebn/trasmission/trasmission_net.jl")
 include("ebn/evaluate/evaluate_node.jl")
 include("ebn/evaluate/evaluate_net.jl")
 include("ebn/bayesnet.jl")
+include("ebn/credalnet.jl")
 include("ebn/cpd/conditionalprobabilitydistribution.jl")
 
 
