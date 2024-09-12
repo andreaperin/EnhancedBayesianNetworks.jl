@@ -24,6 +24,7 @@ docs/site/
 Manifest.toml
 
 # Mine
+.vscode/*
 model_TH_macos/*
 model_TH_win/*
 compiler_macos.sh
