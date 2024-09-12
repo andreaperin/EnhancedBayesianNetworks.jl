@@ -1,4 +1,4 @@
 # EnhancedBayesianNetworks.jl
 
 
-[![pipeline status](https://gitlab.uni-hannover.de/andrea.perin/ebn/badges/main/pipeline.svg)](https://gitlab.uni-hannover.de/andrea.perin/ebn/-/commits/main) [![coverage report](https://gitlab.uni-hannover.de/andrea.perin/ebn/badges/main/coverage.svg)](https://gitlab.uni-hannover.de/andrea.perin/ebn/-/commits/main)
+[![CI](https://github.com/andreaperin/EnhancedBayesianNetworks.jl/actions/workflows/ci.yml/badge.svg)](https://github.com/andreaperin/EnhancedBayesianNetworks.jl/actions/workflows/ci.yml) [[![codecov](https://codecov.io/github/andreaperin/EnhancedBayesianNetworks.jl/graph/badge.svg?token=3DBI5RIEMX)](https://codecov.io/github/andreaperin/EnhancedBayesianNetworks.jl)
