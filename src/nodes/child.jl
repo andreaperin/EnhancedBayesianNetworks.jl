@@ -73,6 +73,8 @@ function get_continuous_input(node::ContinuousChildNode, evidence::Vector{Symbol
         return RandomVariable(node.distribution[key], node.name)
     elseif isa(node.distribution[key], Tuple{Real,Real})
         return Interval(node.distribution[key][1], node.distribution[key][2], node.name)
+    elseif isa(node.distribution[key], UnivariateDistribution)
+        return ProbabilityBox{first(typeof(node.distribution[key]).parameters)}(node.distribution[key].parameters)
     end
 end
 

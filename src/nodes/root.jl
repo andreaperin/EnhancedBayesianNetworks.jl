@@ -14,6 +14,8 @@ function get_continuous_input(node::ContinuousRootNode, ::Vector{Symbol})
         return RandomVariable(node.distribution, node.name)
     elseif isa(node.distribution, Tuple{Real,Real})
         return Interval(node.distribution[1], node.distribution[2], node.name)
+    elseif isa(node.distribution, AbstractProbabilityBox)
+        return ProbabilityBox{first(typeof(node.distribution).parameters)}(node.distribution.parameters, node.name)
     end
 end
 
@@ -27,6 +29,10 @@ function _get_node_distribution_bounds(node::ContinuousRootNode)
     elseif isa(node.distribution, Tuple{Real,Real})
         lower_bound = node.distribution[1]
         upper_bound = node.distribution[2]
+    elseif isa(node.distribution, AbstractProbabilityBox)
+        p_box = ProbabilityBox{first(typeof(node.distribution).parameters)}(node.distribution.parameters, node.name)
+        lower_bound = p_box.lb
+        upper_bound = p_box.ub
     end
     return lower_bound, upper_bound
 end

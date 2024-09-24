@@ -21,6 +21,7 @@ import Base: *, sum, reduce
 export AbstractNode
 export AbstractDiscretization
 export ApproximatedDiscretization
+export AbstractProbabilityBox
 export ContinuousNode
 export DiscreteNode
 export ExactDiscretization
