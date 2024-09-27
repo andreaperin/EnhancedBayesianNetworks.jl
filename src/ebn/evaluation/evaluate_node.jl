@@ -46,11 +46,11 @@ function _evaluate(node::DiscreteFunctionalNode)
             pf[evidence] = f(res[1])
             additional_info[evidence] = Dict(:cov => res[2], :samples => res[3])
         elseif isa(node.simulation, DoubleLoop)
-            !isa(res, Interval) ? res = Interval(res, res, :pf) : nothing
+            !isa(res, Interval) ? res[1] = Interval(res[1], res[1], :pf) : nothing
             pf[evidence] = f_interval(res)
             additional_info[evidence] = Dict()
         elseif isa(node.simulation, RandomSlicing)
-            !isa(res, Interval) ? res = Interval(res, res, :pf) : nothing
+            !isa(res[1], Interval) ? res = Interval(res, res, :pf) : nothing
             pf[evidence] = f_interval(res[1])
             additional_info[evidence] = Dict(:lb => res[2], :ub => res[3])
         elseif isa(node.simulation, FORM)
