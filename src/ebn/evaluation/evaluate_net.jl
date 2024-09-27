@@ -30,6 +30,10 @@ function _evaluate_routine(ebn::EnhancedBayesianNetwork)
         catch e
             if isa(e, AssertionError)
                 error("node $(getproperty(i, :name)) has as imprecise parents only one or more child nodes with a discretization srtucture defined. They are approximated with Uniform and Exponential assumption and they are no more imprecise. A prices simulation technique must be selected")
+            else
+                imprecise_parents = i.parents[_is_imprecise.(i.parents)]
+                names = [i.name for i in imprecise_parents]
+                error("node $(getproperty(i, :name)) has $(getproperty(i, :simulation)) as simulation technique, but have $names as imprecise parent/s. DoubleLoop or RandomSlicing technique must be employeed instead.")
             end
         end
         nodes = _replace_node!(nodes, i, evaluated_i)
