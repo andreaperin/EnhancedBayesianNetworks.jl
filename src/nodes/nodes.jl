@@ -2,11 +2,18 @@ abstract type AbstractNode end
 abstract type DiscreteNode <: AbstractNode end
 abstract type ContinuousNode <: AbstractNode end
 
-struct AbstractProbabilityBox{T<:UnivariateDistribution}
+struct UnamedProbabilityBox{T<:UnivariateDistribution}
     parameters::Vector{Interval}
+    lb::Real
+    ub::Real
 end
 
-const AbstractContinuousInput = Union{UnivariateDistribution,Tuple{Real,Real},AbstractProbabilityBox}
+function UnamedProbabilityBox{T}(p::AbstractVector{<:UQInput}) where {T<:UnivariateDistribution}
+    domain = support(T())
+    return UnamedProbabilityBox{T}(p, domain.lb, domain.ub)
+end
+
+const AbstractContinuousInput = Union{UnivariateDistribution,Tuple{Real,Real},UnamedProbabilityBox}
 
 const AbstractDiscreteProbability = Union{Real,AbstractVector{Real}}
 

@@ -14,8 +14,8 @@ function get_continuous_input(node::ContinuousRootNode, ::Vector{Symbol})
         return RandomVariable(node.distribution, node.name)
     elseif isa(node.distribution, Tuple{Real,Real})
         return Interval(node.distribution[1], node.distribution[2], node.name)
-    elseif isa(node.distribution, AbstractProbabilityBox)
-        return ProbabilityBox{first(typeof(node.distribution).parameters)}(node.distribution.parameters, node.name)
+    elseif isa(node.distribution, UnamedProbabilityBox)
+        return ProbabilityBox{first(typeof(node.distribution).parameters)}(node.distribution.parameters, node.name, node.distribution.lb, node.distribution.ub)
     end
 end
 
@@ -29,16 +29,25 @@ function _get_node_distribution_bounds(node::ContinuousRootNode)
     elseif isa(node.distribution, Tuple{Real,Real})
         lower_bound = node.distribution[1]
         upper_bound = node.distribution[2]
-    elseif isa(node.distribution, AbstractProbabilityBox)
-        p_box = ProbabilityBox{first(typeof(node.distribution).parameters)}(node.distribution.parameters, node.name)
-        lower_bound = p_box.lb
-        upper_bound = p_box.ub
+    elseif isa(node.distribution, UnamedProbabilityBox)
+        dist = first(typeof(node.distribution).parameters)
+        if isa(dist(), Uniform)
+            lower_bound = minimum(map(x -> x.lb, node.distribution.parameters))
+            upper_bound = maximum(map(x -> x.ub, node.distribution.parameters))
+        else
+            lower_bound = support(dist).lb
+            upper_bound = support(dist).ub
+        end
     end
     return lower_bound, upper_bound
 end
 
 function _truncate(dist::UnivariateDistribution, i::AbstractVector)
     return truncated(dist, i[1], i[2])
+end
+
+function _truncate(dist::UnamedProbabilityBox, i::AbstractVector)
+    return UnamedProbabilityBox{first(typeof(dist).parameters)}(dist.parameters, i[1], i[2])
 end
 
 function _is_imprecise(node::ContinuousRootNode)
