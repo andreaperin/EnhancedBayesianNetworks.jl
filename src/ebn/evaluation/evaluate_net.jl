@@ -25,7 +25,6 @@ function _evaluate_routine(ebn::EnhancedBayesianNetwork)
     dag = deepcopy(ebn2eval.dag)
     if all(map(x -> _is_reducible(dag, x), indices2reduce))
         i = first(filter(x -> isa(x, FunctionalNode), nodes))
-        verify_simulation(i)
         evaluated_i = _evaluate(i)
         nodes = _replace_node!(nodes, i, evaluated_i)
     else
@@ -82,14 +81,4 @@ function _count_children(n, nodes)
         end
     end
     return counter
-end
-
-function verify_simulation(node::FunctionalNode)
-    parents = deepcopy(node.parents)
-    child_parents = filter(x -> isa(x, ChildNode), parents)
-    imprecise_child_parents = child_parents[_is_imprecise.(child_parents)]
-    not_truly_imprecise = map(x -> !isempty(x.discretization.intervals), imprecise_child_parents)
-    if !isempty(not_truly_imprecise) && all(not_truly_imprecise) && isa(node.simulation, Union{DoubleLoop,RandomSlicing})
-        error("node $node.name, has imprecise parents that will not be imprecise after discretization. DoubleLoop and RandomSlicing are not allowed simulation.")
-    end
 end
