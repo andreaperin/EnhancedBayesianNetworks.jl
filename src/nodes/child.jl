@@ -14,7 +14,6 @@
         additional_info::Dict{Vector{Symbol},Dict},
         discretization::ApproximatedDiscretization
     )
-
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
         !issetequal(discrete_parents, parents) && error("ContinuousChildNode $name cannot have continuous parents! Use ContinuousFunctionalNode instead")
         for key in keys(distribution)
@@ -58,7 +57,6 @@ function ContinuousChildNode(
     distribution::Dict{Vector{Symbol},<:AbstractContinuousInput},
     discretization::ApproximatedDiscretization
 )
-
     additional_info = Dict{Vector{Symbol},Dict}()
     ContinuousChildNode(name, parents, distribution, additional_info, discretization)
 end
@@ -73,8 +71,8 @@ function get_continuous_input(node::ContinuousChildNode, evidence::Vector{Symbol
         return RandomVariable(node.distribution[key], node.name)
     elseif isa(node.distribution[key], Tuple{Real,Real})
         return Interval(node.distribution[key][1], node.distribution[key][2], node.name)
-    elseif isa(node.distribution[key], UnivariateDistribution)
-        return ProbabilityBox{first(typeof(node.distribution[key]).parameters)}(node.distribution[key].parameters)
+    elseif isa(node.distribution[key], UnamedProbabilityBox)
+        return ProbabilityBox{first(typeof(node.distribution[key]).parameters)}(node.distribution[key].parameters, node.name, node.distribution[key].lb, node.distribution[key].ub)
     end
 end
 
@@ -86,6 +84,9 @@ function _get_node_distribution_bounds(node::ContinuousChildNode)
         elseif isa(x, Tuple{Real,Real})
             lower_bound = x[1]
             upper_bound = x[2]
+        elseif isa(x, UnamedProbabilityBox)
+            lower_bound = minimum(vcat(map(x -> x.lb, x.parameters), x.lb))
+            upper_bound = maximum(vcat(map(x -> x.ub, x.parameters), x.ub))
         end
         return [lower_bound, upper_bound]
     end
