@@ -25,7 +25,13 @@ function _evaluate_routine(ebn::EnhancedBayesianNetwork)
     dag = deepcopy(ebn2eval.dag)
     if all(map(x -> _is_reducible(dag, x), indices2reduce))
         i = first(filter(x -> isa(x, FunctionalNode), nodes))
-        evaluated_i = _evaluate(i)
+        try
+            global evaluated_i = _evaluate(i)
+        catch e
+            if isa(e, AssertionError)
+                error("node $(getproperty(i, :name)) has as imprecise parents only one or more child nodes with a discretization srtucture defined. They are approximated with Uniform and Exponential assumption and they are no more imprecise. A prices simulation technique must be selected")
+            end
+        end
         nodes = _replace_node!(nodes, i, evaluated_i)
     else
         error("irreducible network")
