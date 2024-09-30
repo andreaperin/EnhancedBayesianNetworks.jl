@@ -14,6 +14,9 @@
         additional_info::Dict{Vector{Symbol},Dict},
         discretization::ApproximatedDiscretization
     )
+        functional_parents = filter(x -> isa(x, FunctionalNode), parents)
+        !isempty(functional_parents) && error("node $name has a functional parent, must be defined through ContinuousFunctionalNode struct")
+
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
         !issetequal(discrete_parents, parents) && error("ContinuousChildNode $name cannot have continuous parents! Use ContinuousFunctionalNode instead")
         for key in keys(distribution)
@@ -126,6 +129,9 @@ end
                 error("node $name must have real valued states probailities")
             end
         end
+
+        functional_parents = filter(x -> isa(x, FunctionalNode), parents)
+        !isempty(functional_parents) && error("node $name has a functional parent, must be defined through DiscreteFunctionalNode struct")
 
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
 

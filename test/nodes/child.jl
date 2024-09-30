@@ -3,7 +3,11 @@
         root1 = DiscreteRootNode(:x, Dict(:yes => 0.5, :no => 0.5))
         root2 = DiscreteRootNode(:y, Dict(:y => 0.4, :n => 0.6))
         root3 = ContinuousRootNode(:z, Normal())
-        root4 = DiscreteRootNode(:k, Dict(:a => 0.5, :b => 0.5))
+        root4 = DiscreteRootNode(:k, Dict(:a => 0.5, :b => 0.5), Dict(:a => [Parameter(1, :k)], :b => [Parameter(2, :k)]))
+        model = Model(df -> df.z .+ df.k, :F)
+        performance = df -> 0 .- df.F
+        sim = MonteCarlo(200)
+        functional = DiscreteFunctionalNode(:F, [root3, root4], [model], performance, sim)
         name = :child
 
         distribution = Dict(
@@ -40,6 +44,9 @@
             [:yes, :n] => Normal(2, 1),
             [:no, :n] => Normal(3, 1)
         )
+
+        @test_throws ErrorException("node child has a functional parent, must be defined through ContinuousFunctionalNode struct") ContinuousChildNode(name, [root1, root2, functional], distribution)
+
         node = ContinuousChildNode(name, [root1, root2], distribution)
 
         @test node.name == name
@@ -77,8 +84,12 @@
 
     @testset "DiscreteChildNode" begin
         root1 = DiscreteRootNode(:x, Dict(:yes => 0.5, :no => 0.5))
-        root2 = DiscreteRootNode(:y, Dict(:yes => 0.4, :no => 0.6))
+        root2 = DiscreteRootNode(:y, Dict(:yes => 0.4, :no => 0.6), Dict(:yes => [Parameter(1, :y)], :no => [Parameter(2, :y)]))
         root3 = ContinuousRootNode(:z, Normal())
+        model = Model(df -> df.z .+ df.y, :F)
+        performance = df -> 0 .- df.F
+        sim = MonteCarlo(200)
+        functional = DiscreteFunctionalNode(:F, [root3, root2], [model], performance, sim)
         name = :child
 
         states = Dict(
@@ -159,6 +170,8 @@
             [:yes, :no] => Dict(:a => 0.2, :b => 0.8),
             [:no, :no] => Dict(:a => 0.2, :b => 0.8)
         )
+
+        @test_throws ErrorException("node child has a functional parent, must be defined through DiscreteFunctionalNode struct") DiscreteChildNode(name, [root1, root2, functional], states)
 
         node = DiscreteChildNode(name, parents, states)
 
