@@ -127,6 +127,41 @@
         @test approximated_node.distribution[[Symbol("[-1.0, 0.0]")]] == Uniform(-1, 0)
         @test approximated_node.distribution[[Symbol("[0.0, 1.0]")]] == Uniform(0, 1.0)
         @test approximated_node.distribution[[Symbol("[1.0, Inf]")]] == exp2
+
+        @test isapprox(discretized_child.states[[:y]][Symbol("[-Inf, -1.0]")], 0.158655; atol=0.01)
+        @test isapprox(discretized_child.states[[:y]][Symbol("[0.0, 1.0]")], 0.341345; atol=0.01)
+        @test isapprox(discretized_child.states[[:y]][Symbol("[1.0, Inf]")], 0.158655; atol=0.01)
+        @test isapprox(discretized_child.states[[:y]][Symbol("[-1.0, 0.0]")], 0.341345; atol=0.01)
+
+        @test isapprox(discretized_child.states[[:n]][Symbol("[-Inf, -1.0]")], 0.0668072; atol=0.01)
+        @test isapprox(discretized_child.states[[:n]][Symbol("[0.0, 1.0]")], 0.149882; atol=0.01)
+        @test isapprox(discretized_child.states[[:n]][Symbol("[1.0, Inf]")], 0.691462; atol=0.01)
+        @test isapprox(discretized_child.states[[:n]][Symbol("[-1.0, 0.0]")], 0.0918481; atol=0.01)
+
+        states = Dict(
+            [:y] => UnamedProbabilityBox{Normal}([Interval(-0.5, 0.5, :μ), Interval(1, 2, :σ)]),
+            [:n] => UnamedProbabilityBox{Normal}([Interval(1, 2, :μ), Interval(1, 2, :σ)])
+        )
+
+        child = ContinuousChildNode(:β, [root], states, discretization)
+
+        approximated_node, discretized_child = EnhancedBayesianNetworks._discretize(child)
+
+        @test approximated_node.distribution[[Symbol("[-Inf, -1.0]")]] == exp1
+        @test approximated_node.distribution[[Symbol("[-1.0, 0.0]")]] == Uniform(-1, 0)
+        @test approximated_node.distribution[[Symbol("[0.0, 1.0]")]] == Uniform(0, 1.0)
+        @test approximated_node.distribution[[Symbol("[1.0, Inf]")]] == exp2
+
+        @test isapprox(discretized_child.states[[:y]][Symbol("[-Inf, -1.0]")], [0.0668072, 0.401294]; atol=0.01)
+        @test isapprox(discretized_child.states[[:y]][Symbol("[0.0, 1.0]")], [0.24173, 0.290169]; atol=0.01)
+        @test isapprox(discretized_child.states[[:y]][Symbol("[1.0, Inf]")], [0.0668072, 0.401294]; atol=0.01)
+        @test isapprox(discretized_child.states[[:y]][Symbol("[-1.0, 0.0]")], [0.24173, 0.290169]; atol=0.01)
+
+        @test isapprox(discretized_child.states[[:n]][Symbol("[-Inf, -1.0]")], [0.0013499, 0.158655]; atol=0.01)
+        @test isapprox(discretized_child.states[[:n]][Symbol("[0.0, 1.0]")], [0.135905, 0.191462]; atol=0.01)
+        @test isapprox(discretized_child.states[[:n]][Symbol("[1.0, Inf]")], [0.5, 0.841345]; atol=0.01)
+        @test isapprox(discretized_child.states[[:n]][Symbol("[-1.0, 0.0]")], [0.0214002, 0.149882]; atol=0.01)
+
     end
 
     root = DiscreteRootNode(:x, Dict(:y => 0.2, :n => 0.8))
