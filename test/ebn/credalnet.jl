@@ -23,18 +23,25 @@
 
     @test_throws ErrorException("When all nodes are precise use BayesNetwork structure") CredalNetwork([F, B, L, D, H])
 
-    F = DiscreteRootNode(:F, Dict(:Ft => [0.4, 0.5], :Ff => [0.5, 0.6]))
+    H = DiscreteChildNode(:H, [D], Dict(
+            [:Dt] => Dict(:Ht => 0.6, :Hf => 0.4),
+            [:Df] => Dict(:Ht => 0.3, :Hf => 0.7)
+        ), Dict(:Ht => [Parameter(1, :H)], :Hf => [Parameter(0, :H)]))
 
-    H = ContinuousChildNode(:H, [D], Dict(
-        [:Dt] => Normal(1, 1),
-        [:Df] => Normal()
-    ))
+    I = ContinuousRootNode(:I, Normal())
 
-    @test_throws ErrorException("Credal Network allows discrete node only!") CredalNetwork([F, B, L, D, H])
+    @test_throws ErrorException("Credal Network allows discrete node only!") CredalNetwork([F, B, L, D, H, I])
+
+    model = Model(df -> df.H .+ df.I, :out)
+    performance = df -> 1 .- df.out
+    sim = MonteCarlo(200)
+    N = DiscreteFunctionalNode(:N, [I, H], [model], performance, sim)
+
+    @test_throws ErrorException("Network needs to be evaluated first") CredalNetwork([F, B, L, D, H, I, N])
 
     H = DiscreteChildNode(:H, [D], Dict(
-        [:Dt] => Dict(:Ht => 0.6, :Hf => 0.4),
-        [:Df] => Dict(:Ht => 0.3, :Hf => 0.7)
+        [:Dt] => Dict(:Ht => [0.6, 0.8], :Hf => [0.2, 0.4]),
+        [:Df] => Dict(:Ht => [0.2, 0.3], :Hf => [0.7, 0.8])
     ))
 
     cn = CredalNetwork([F, B, L, D, H])
