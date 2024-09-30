@@ -50,6 +50,10 @@ function _truncate(dist::UnamedProbabilityBox, i::AbstractVector)
     return UnamedProbabilityBox{first(typeof(dist).parameters)}(dist.parameters, i[1], i[2])
 end
 
+function _truncate(dist::Tuple{T,T}, i::AbstractVector) where {T<:Real}
+    return (i[1], i[2])
+end
+
 function _is_imprecise(node::ContinuousRootNode)
     !isa(node.distribution, UnivariateDistribution)
 end
