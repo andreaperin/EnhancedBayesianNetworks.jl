@@ -59,6 +59,10 @@ function _discretize(dist::UnamedProbabilityBox, intervals::Vector)
     map((r, l) -> [minimum([r.lb - l.lb, r.ub - l.ub]), maximum([r.lb - l.lb, r.ub - l.ub])], right_bounds, left_bounds)
 end
 
+function _discretize(dist::Tuple{T,T}, intervals::Vector) where {T<:Real}
+    repeat([[0, 1]], length(intervals))
+end
+
 function _approximate(intervals::Vector, λ::Real)
     dists = map(intervals) do i
         finite = isfinite.(i)
