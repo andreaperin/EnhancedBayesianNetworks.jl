@@ -90,6 +90,20 @@
             [Symbol("[0.0, 1.0]")] => UnamedProbabilityBox{Normal}(Interval[Interval(-0.5, 0.5, :μ), Interval(1, 2, :σ)], 0.0, 1.0)
         )
         @test continuous_node.distribution == dict
+
+        discretization = ExactDiscretization([-1, 0, 1])
+        root = ContinuousRootNode(:z1, (-1, 1), discretization)
+
+        continuous_node, discretized_root = @suppress EnhancedBayesianNetworks._discretize(root)
+
+        @test (isapprox(discretized_root.states[Symbol("[-1.0, 0.0]")], [0, 1]; atol=0.001))
+        @test (isapprox(discretized_root.states[Symbol("[0.0, 1.0]")], [0, 1]; atol=0.001))
+
+        dict = Dict(
+            [Symbol("[-1.0, 0.0]")] => (-1, 0),
+            [Symbol("[0.0, 1.0]")] => (0, 1)
+        )
+        @test continuous_node.distribution == dict
     end
 
     @testset "Child node" begin
