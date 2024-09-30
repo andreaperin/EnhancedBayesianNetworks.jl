@@ -111,4 +111,30 @@
         @test length(eebn.nodes) == 1
         @test typeof.(eebn.nodes) == [DiscreteRootNode]
     end
+
+    @testset "Imprecise Node with discretization" begin
+        root1 = DiscreteRootNode(:A, Dict(:y => 0.5, :n => 0.5))
+        root2 = ContinuousChildNode(:B, [root1], Dict(
+                [:y] => UnamedProbabilityBox{Normal}([Interval(-0.5, 0.5, :μ), Interval(1, 2, :σ)]),
+                [:n] => UnamedProbabilityBox{Normal}([Interval(1, 2, :μ), Interval(1, 2, :σ)])
+            ), ApproximatedDiscretization([-1, 0, 1], 2)
+        )
+        model = Model(df -> df.B .+ 1, :C)
+        sim = DoubleLoop(MonteCarlo(100_000))
+        performance = df -> 2 .- df.C
+        disc_functional = DiscreteFunctionalNode(:C, [root2], [model], performance, sim)
+        ebn = EnhancedBayesianNetwork([root1, root2, disc_functional])
+
+        @test_throws ErrorException("node C has as imprecise parents only one or more child nodes with a discretization srtucture defined. They are approximated with Uniform and Exponential assumption and they are no more imprecise. A prices simulation technique must be selected") eebn = @suppress evaluate(ebn)
+
+        root2 = ContinuousRootNode(:B, (-1, 1))
+        model = Model(df -> df.B .+ 1, :C)
+        sim = MonteCarlo(100_000)
+        performance = df -> 2 .- df.C
+
+        disc_functional = DiscreteFunctionalNode(:C, [root2], [model], performance, sim)
+        ebn = EnhancedBayesianNetwork([root2, disc_functional])
+
+        @test_throws ErrorException("node C has MonteCarlo(100000) as simulation technique, but have [:B] as imprecise parent/s. DoubleLoop or RandomSlicing technique must be employeed instead.") eebn = @suppress evaluate(ebn)
+    end
 end
