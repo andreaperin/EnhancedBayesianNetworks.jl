@@ -162,6 +162,22 @@
         @test isapprox(discretized_child.states[[:n]][Symbol("[1.0, Inf]")], [0.5, 0.841345]; atol=0.01)
         @test isapprox(discretized_child.states[[:n]][Symbol("[-1.0, 0.0]")], [0.0214002, 0.149882]; atol=0.01)
 
+        states = Dict(
+            [:y] => (-1, 0),
+            [:n] => (0, 1)
+        )
+
+        child = ContinuousChildNode(:β, [root], states, discretization)
+
+        approximated_node, discretized_child = @suppress EnhancedBayesianNetworks._discretize(child)
+
+        @test approximated_node.distribution[[Symbol("[-1.0, 0.0]")]] == Uniform(-1, 0)
+        @test approximated_node.distribution[[Symbol("[0.0, 1.0]")]] == Uniform(0, 1)
+
+        @test discretized_child.states[[:y]][Symbol("[0.0, 1.0]")] == [0, 1]
+        @test discretized_child.states[[:y]][Symbol("[-1.0, 0.0]")] == [0, 1]
+        @test discretized_child.states[[:n]][Symbol("[0.0, 1.0]")] == [0, 1]
+        @test discretized_child.states[[:n]][Symbol("[-1.0, 0.0]")] == [0, 1]
     end
 
     root = DiscreteRootNode(:x, Dict(:y => 0.2, :n => 0.8))
