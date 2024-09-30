@@ -24,6 +24,27 @@
         new = EnhancedBayesianNetworks._evaluate(functional1)
         EnhancedBayesianNetworks._replace_node!(_nodes, functional1, new)
         @test issetequal(_nodes, [root1, root2, root3, new])
+
+        root4 = ContinuousRootNode(:a, Normal())
+        root5 = ContinuousRootNode(:b, Normal())
+        root6 = ContinuousRootNode(:c, Normal())
+
+        model2 = Model(df -> df.a .^ 2 .- 0.7 .+ df.b .- df.c, :c2)
+        functional2 = ContinuousFunctionalNode(:cf1, [root4, root5, root6], [model2], MonteCarlo(300))
+        _nodes = [root4, root5, root6, functional2]
+        ebn = EnhancedBayesianNetwork(_nodes)
+        disc_ebn = discretize(ebn)
+        ebn2eval = transfer_continuous(disc_ebn)
+        nodes = ebn2eval.nodes
+        nodes2reduce = filter(x -> isa(x, ContinuousNode) && !isa(x, FunctionalNode), nodes)
+        indices2reduce = map(x -> ebn2eval.name_to_index[x.name], nodes2reduce)
+        dag = deepcopy(ebn2eval.dag)
+        i = first(filter(x -> isa(x, FunctionalNode), nodes))
+        evaluated_i = EnhancedBayesianNetworks._evaluate(i)
+        nodes = EnhancedBayesianNetworks._replace_node!(nodes, i, evaluated_i)
+
+        EnhancedBayesianNetworks._clean_up!(nodes)
+        @test evaluated_i == nodes[1]
     end
 
     @testset "Main Functions" begin
