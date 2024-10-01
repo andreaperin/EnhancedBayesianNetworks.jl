@@ -33,12 +33,3 @@ function _ensure_query_nodes_in_bn_and_not_in_evidence(query::Vector{Symbol}, no
 
     return _ensure_query_nodes_in_bn_and_not_in_evidence(query[2:end], nodes, evidence)
 end
-
-function Base.show(io::IO, inf::PreciseInferenceState)
-    println(io, "Query: $(inf.query)")
-    println(io, "Evidence:")
-    for (k, v) in inf.evidence
-        println(io, "  $k => $v")
-    end
-end
-
