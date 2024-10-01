@@ -11,8 +11,6 @@ Base.length(ϕ::Factor) = length(ϕ.potential)
 
 _reddim(op, ϕ::Factor, inds::Tuple, ::Nothing) =
     dropdims(reduce(op, ϕ.potential, dims=inds), dims=inds)
-_reddim(op, ϕ::Factor, inds::Tuple, v0) =
-    dropdims(reducedim(op, ϕ.potential, inds, v0), dims=inds)
 
 function reducedim(op, ϕ::Factor, dims::Union{Symbol,Vector{Symbol}}, v0=nothing)
     dims = wrap(dims)
