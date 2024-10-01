@@ -197,4 +197,89 @@
         @test issetequal(envelopes[1], [Y6, Y5, X4])
         @test issetequal(envelopes[2], [X1, X2, X3, Y1, Y2, Y3, Y4, Y5])
     end
+
+    @testset "Straub-Example" begin
+        using .MathConstants: γ
+
+        Uᵣ = ContinuousRootNode(:Uᵣ, Normal())
+        μ_gamma = 60
+        cov_gamma = 0.2
+        α, θ = distribution_parameters(μ_gamma, μ_gamma * cov_gamma, Gamma)
+        V = ContinuousRootNode(:V, Gamma(α, θ))
+
+        μ_gumbel = 50
+        cov_gumbel = 0.4
+        μ_loc, β = distribution_parameters(μ_gumbel, cov_gumbel * μ_gumbel, Gumbel)
+        H = ContinuousRootNode(:H, Gumbel(μ_loc, β))
+
+        function plastic_moment_capacities(uᵣ)
+            ρ = 0.5477
+            μ = 150
+            cov = 0.2
+
+            λ, ζ = distribution_parameters(μ, μ * cov, LogNormal)
+
+            normal_μ = λ + ρ * ζ * uᵣ
+            normal_std = sqrt((1 - ρ^2) * ζ^2)
+            exp(rand(Normal(normal_μ, normal_std)))
+        end
+
+        parents = [Uᵣ]
+        model1 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r1)
+        model2 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r2)
+        model3 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r3)
+        model4 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r4)
+        model5 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r5)
+
+        R1 = ContinuousFunctionalNode(:R1, parents, [model1], MonteCarlo(10^6))
+        R2 = ContinuousFunctionalNode(:R2, parents, [model2], MonteCarlo(10^6))
+        R3 = ContinuousFunctionalNode(:R3, parents, [model3], MonteCarlo(10^6))
+        R4 = ContinuousFunctionalNode(:R4, parents, [model4], MonteCarlo(10^6))
+        R5 = ContinuousFunctionalNode(:R5, parents, [model5], MonteCarlo(10^6))
+
+
+        function frame_model(r1, r2, r3, r4, r5, v, h)
+            g1 = r1 + r2 + r4 + r5 - 5 * h
+            g2 = r2 + 2 * r3 + r4 - 5 * v
+            g3 = r1 + 2 * r3 + 2 * r4 + r5 - 5 * h - 5 * v
+            return minimum([g1, g2, g3])
+        end
+
+        model = Model(df -> frame_model.(df.r1, df.r2, df.r3, df.r4, df.r5, df.V, df.H), :G)
+        performance = df -> df.G
+        simulation = MonteCarlo(10^6)
+        frame = DiscreteFunctionalNode(:E, [R1, R2, R3, R4, R5, V, H], [model], performance, simulation)
+
+
+        nodes = [Uᵣ, V, H, R1, R2, R3, R4, R5, frame]
+        ebn = EnhancedBayesianNetwork(nodes)
+
+        eebn = EnhancedBayesianNetworks.evaluate(ebn)
+
+        @test isapprox(eebn.nodes[end].states[:safe_E], 0.973871; atol=0.01)
+        @test isapprox(eebn.nodes[end].states[:fail_E], 0.026129; atol=0.01)
+
+        n = 1000
+        discretization1 = ApproximatedDiscretization(collect(range(50, 250, 21)), 1)
+        discretization2 = ApproximatedDiscretization(collect(range(50.01, 250.01, 21)), 1)
+        R4 = ContinuousFunctionalNode(:R4, parents, [model4], MonteCarlo(n), discretization1)
+        R5 = ContinuousFunctionalNode(:R5, parents, [model5], MonteCarlo(n), discretization2)
+
+        model = Model(df -> frame_model.(df.r1, df.r2, df.r3, df.R4, df.R5, df.V, df.H), :G)
+        performance = df -> df.G
+        simulation = MonteCarlo(1000)
+        frame = DiscreteFunctionalNode(:E, [R1, R2, R3, R4, R5, V, H], [model], performance, simulation)
+
+        nodes = [Uᵣ, V, H, R1, R2, R3, R4, R5, frame]
+        ebn = EnhancedBayesianNetwork(nodes)
+        eebn = EnhancedBayesianNetworks.evaluate(ebn)
+
+        evidence2 = Dict(
+            :R4_d => Symbol([140.0, 150.0]),
+            :R5_d => Symbol([90.01, 100.01])
+        )
+        ϕ2 = infer(eebn, :E, evidence2)
+
+        @test all(isapprox.(ϕ2.potential, [0.965, 0.035], atol=0.05))
+    end
 end
