@@ -272,7 +272,7 @@
 
         nodes = [Uᵣ, V, H, R1, R2, R3, R4, R5, frame]
         ebn = EnhancedBayesianNetwork(nodes)
-        eebn = EnhancedBayesianNetworks.evaluate(ebn)
+        eebn = @suppress EnhancedBayesianNetworks.evaluate(ebn)
 
         evidence2 = Dict(
             :R4_d => Symbol([140.0, 150.0]),
