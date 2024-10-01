@@ -13,15 +13,22 @@ end
 
 function verify_interval_probabilities(states::Dict{Symbol,AbstractVector{Real}})
     probability_values = vcat(collect(values(states))...)
-    any(probability_values .< 0) && error("Probabilites must be nonnegative")
-    any(probability_values .> 1) && error("Probabilites must be less or equal to 1.0")
-    sum(first.(values(states))) > 1 && error("sum of intervals lower bounds is bigger than 1 in $states")
-    sum(last.(values(states))) < 1 && error("sum of intervals upper bounds is smaller than 1 in $states")
+    if any(probability_values .< 0)
+        error("Probabilites must be nonnegative")
+    elseif any(probability_values .> 1)
+        error("Probabilites must be less or equal to 1.0")
+    elseif sum(first.(values(states))) > 1
+        error("sum of intervals lower bounds is bigger than 1 in $states")
+    elseif sum(last.(values(states))) < 1
+        error("sum of intervals upper bounds is smaller than 1 in $states")
+    end
 end
 
 function verify_parameters(states::Dict, parameters::Dict{Symbol,Vector{Parameter}})
     if !isempty(parameters)
-        keys(states) != keys(parameters) && error("parameters must be coherent with states")
+        if keys(states) != keys(parameters)
+            error("parameters must be coherent with states")
+        end
     end
 end
 
