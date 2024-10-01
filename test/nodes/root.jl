@@ -40,6 +40,9 @@
 
             @test get_continuous_input(node1, Any[]) == input
             @test EnhancedBayesianNetworks._get_node_distribution_bounds(node1) == (-Inf, Inf)
+            p_box = UnamedProbabilityBox{Uniform}([Interval(1, 2, :a), Interval(5, 6, :b)])
+            node2 = ContinuousRootNode(:x1, p_box)
+            @test EnhancedBayesianNetworks._get_node_distribution_bounds(node2) == (1, 6)
             @test EnhancedBayesianNetworks._is_imprecise(node1)
         end
     end
