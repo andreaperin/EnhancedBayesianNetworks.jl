@@ -20,5 +20,19 @@
     end
     @testset "States Combinations" begin
         @test issetequal([[:c1y, :yes], [:c1n, :yes], [:c1y, :no], [:c1n, :no]], state_combinations(functional1_node))
+        @test state_combinations(root1) == AbstractNode[]
+    end
+    @testset "Extreme Points" begin
+        arg = DiscreteRootNode(:ARG, Dict(:y => [0.2, 0.3], :n => [0.4, 0.6], :m => [0.3, 0.6]))
+        probs = EnhancedBayesianNetworks._extreme_points_states_probabilities(arg.states)
+        @test isapprox(probs[1][:m], 0.3)
+        @test isapprox(probs[1][:n], 0.4)
+        @test isapprox(probs[1][:y], 0.3)
+        @test isapprox(probs[2][:m], 0.4)
+        @test isapprox(probs[2][:n], 0.4)
+        @test isapprox(probs[2][:y], 0.2)
+        @test isapprox(probs[3][:m], 0.3)
+        @test isapprox(probs[3][:n], 0.5)
+        @test isapprox(probs[3][:y], 0.2)
     end
 end

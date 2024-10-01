@@ -15,13 +15,6 @@
         if unique(all_states) != all_states
             error("nodes state must have different symbols")
         end
-        functional_nodes = filter(x -> isa(x, FunctionalNode), nodes)
-        non_root = filter(x -> !isa(x, RootNode), nodes)
-        functional_childrens_vect = map(y -> filter(x -> y ∈ x.parents, non_root), functional_nodes)
-        bool_vect = map(y -> all(map(x -> isa(x, FunctionalNode), y)), functional_childrens_vect)
-        if !all(bool_vect)
-            error("FunctionalNodes can have only FunctionalNode as children")
-        end
         new(dag, nodes, name_to_index)
     end
 end
@@ -107,6 +100,7 @@ end
 
 function _markov_envelope_continuous_nodes_group(ebn, node)
     f = (ebn, nodes) -> unique(vcat(nodes, mapreduce(x -> filter(x -> isa(x, ContinuousNode), markov_blanket(ebn, node)), vcat, nodes)))
+
     list = [node]
     new_list = f(ebn, list)
     while !issetequal(list, new_list)

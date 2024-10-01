@@ -20,6 +20,11 @@
         nodes = [r, v, s, t]
         @test_throws ErrorException("Bayesian Network allows discrete node only!") BayesianNetwork(nodes)
 
+        v_imp = DiscreteRootNode(:V, Dict(:yesV => [0.01, 0.3], :noV => [0.7, 0.99]), Dict(:yesV => [Parameter(0, :v1)], :noV => [Parameter(1, :v1)]))
+        nodes = [v_imp, s, t]
+        @test_throws ErrorException("For Imprecise Discrete Nodes use CrealNetwork structure!") BayesianNetwork(nodes)
+
+
         bn = BayesianNetwork([v, s, t, l])
         dag = SimpleDiGraph{Int64}(2, [[2], Int64[], [4], Int64[]], [Int64[], [1], Int64[], [3]])
 

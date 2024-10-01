@@ -28,7 +28,7 @@ function _discretize(node::ContinuousRootNode)
     discrete_node = DiscreteRootNode(Symbol(string(node.name) * "_d"), states)
     ## Adding continuous node as parents of children of the discretized node
     distribution_symbols = [[i] for i in states_symbols]
-    distribution = Dict(distribution_symbols .=> _truncate.(node.distribution, intervals))
+    distribution = Dict(distribution_symbols .=> _truncate.(Ref(node.distribution), intervals))
     continuous_node = ContinuousChildNode(node.name, [discrete_node], distribution)
     return continuous_node, discrete_node
 end
@@ -52,6 +52,17 @@ function _discretize(dist::UnivariateDistribution, intervals::Vector)
     return cdf.(dist, getindex.(intervals, 2)) .- cdf.(dist, getindex.(intervals, 1))
 end
 
+function _discretize(dist::UnamedProbabilityBox, intervals::Vector)
+    p_box = ProbabilityBox{first(typeof(dist).parameters)}(dist.parameters, :temp)
+    right_bounds = cdf.(Ref(p_box), getindex.(intervals, 2))
+    left_bounds = cdf.(Ref(p_box), getindex.(intervals, 1))
+    map((r, l) -> [minimum([r.lb - l.lb, r.ub - l.ub]), maximum([r.lb - l.lb, r.ub - l.ub])], right_bounds, left_bounds)
+end
+
+function _discretize(dist::Tuple{T,T}, intervals::Vector) where {T<:Real}
+    repeat([[0, 1]], length(intervals))
+end
+
 function _approximate(intervals::Vector, λ::Real)
     dists = map(intervals) do i
         finite = isfinite.(i)
@@ -68,6 +79,7 @@ end
 
 function _format_interval(node::Union{ContinuousChildNode,ContinuousRootNode})
     intervals = deepcopy(node.discretization.intervals)
+    intervals = convert(Vector{Float64}, intervals)
     min = node.discretization.intervals[1]
     max = node.discretization.intervals[end]
     lower_bound, upper_bound = _get_node_distribution_bounds(node)
@@ -79,12 +91,10 @@ function _format_interval(node::Union{ContinuousChildNode,ContinuousRootNode})
         @warn "Minimum intervals value $min < support lower bound $lower_bound. Lower bound will be used as intervals start."
         deleteat!(intervals, intervals .<= lower_bound)
         insert!(intervals, 1, lower_bound)
-
     end
     if maximum(max) < upper_bound
         @warn "Maximum intervals value $max < support upper bound $upper_bound. Upper bound will be used as intervals end."
         push!(intervals, upper_bound)
-
     end
     if maximum(max) > upper_bound
         @warn "Maximum intervals value $max > support upper bound $upper_bound. Upper bound will be used as intervals end."

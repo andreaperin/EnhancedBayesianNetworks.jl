@@ -45,8 +45,8 @@ node_Θ = ContinuousRootNode(:Θ, Uniform(50 / 180 * π, 130 / 180 * π))
 
 
 ## Model node
-x = range(-30, 30, 101)
-y = range(-30, 30, 101)
+x = range(-30, 30, 10)
+y = range(-30, 30, 10)
 z = range(0, 4, 10)
 a = collect(Iterators.product(x, y, z))
 loc = vec(a)

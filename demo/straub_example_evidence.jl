@@ -69,15 +69,12 @@ savefig(plt1, "/Users/andreaperin_macos/Documents/PhD/3_Academic/Papers_Presenta
 
 eebn.nodes[end].states
 
-
-bn = BayesianNetwork(eebn.nodes)
-
 evidence1 = Dict(
     :R4_d => Symbol([61.87668651799769, 70.0]),
     :R5_d => Symbol([100.01, 110.01])
 )
 
-ϕ1 = infer(bn, :E, evidence1)
+ϕ1 = infer(eebn, :E, evidence1)
 
 
 evidence2 = Dict(
@@ -85,14 +82,14 @@ evidence2 = Dict(
     :R5_d => Symbol([90.01, 100.01])
 )
 
-ϕ2 = infer(bn, :E, evidence2)
+ϕ2 = infer(eebn, :E, evidence2)
 
 evidence3 = Dict(
     :R4_d => Symbol([150.0, 160.0]),
     :R5_d => Symbol([200.01, 210.01])
 )
 
-ϕ3 = infer(bn, :E, evidence3)
+ϕ3 = infer(eebn, :E, evidence3)
 
 #### Checking with srps only
 

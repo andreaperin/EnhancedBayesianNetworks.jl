@@ -1,17 +1,27 @@
-struct InferenceState
+struct PreciseInferenceState <: AbstractInferenceState
     bn::BayesianNetwork
     query::Vector{Symbol}
     evidence::Evidence
 
-    function InferenceState(bn::BayesianNetwork, query::Vector{Symbol}, evidence::Evidence)
+    function PreciseInferenceState(bn::BayesianNetwork, query::Vector{Symbol}, evidence::Evidence)
         _ensure_query_nodes_in_bn_and_not_in_evidence(query, bn.nodes, evidence)
         verify_evidence(evidence, bn)
         return new(bn, query, evidence)
     end
 end
 
-function InferenceState(bn::BayesianNetwork, query::Union{Symbol,Vector{Symbol}}, evidence::Evidence)
-    return InferenceState(bn, wrap(query), evidence)
+struct ImpreciseInferenceState <: AbstractInferenceState
+    cn::CredalNetwork
+    query::Vector{Symbol}
+    evidence::Evidence
+end
+
+function PreciseInferenceState(bn::BayesianNetwork, query::Union{Symbol,Vector{Symbol}}, evidence::Evidence)
+    return PreciseInferenceState(bn, wrap(query), evidence)
+end
+
+function ImpreciseInferenceState(cn::CredalNetwork, query::Union{Symbol,Vector{Symbol}}, evidence::Evidence)
+    return ImpreciseInferenceState(cn, wrap(query), evidence)
 end
 
 function _ensure_query_nodes_in_bn_and_not_in_evidence(query::Vector{Symbol}, nodes::Vector{<:AbstractNode}, evidence::Evidence)
@@ -23,12 +33,3 @@ function _ensure_query_nodes_in_bn_and_not_in_evidence(query::Vector{Symbol}, no
 
     return _ensure_query_nodes_in_bn_and_not_in_evidence(query[2:end], nodes, evidence)
 end
-
-function Base.show(io::IO, inf::InferenceState)
-    println(io, "Query: $(inf.query)")
-    println(io, "Evidence:")
-    for (k, v) in inf.evidence
-        println(io, "  $k => $v")
-    end
-end
-

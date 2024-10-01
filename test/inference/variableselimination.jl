@@ -50,7 +50,7 @@
     @test Set([x[1] for x in listv[5:7]]) == Set([:B, :L, :T])
     @test listv[end][1] == :E
 
-    inf = InferenceState(bn, :B, Dict(:X => :yesX))
+    inf = PreciseInferenceState(bn, :B, Dict(:X => :yesX))
     res = infer(inf)
 
     @test res.dimensions == [:B]
@@ -110,4 +110,51 @@
     @test isapprox(ϕ.potential[1], 0.3, atol=0.05)
     @test isapprox(ϕ.potential[2], 0.4, atol=0.05)
     @test isapprox(ϕ.potential[3], 0.3, atol=0.05)
+
+    @testset "Inference With CredalNetwork" begin
+        F = DiscreteRootNode(:F, Dict(:Ft => [0.4, 0.5], :Ff => [0.5, 0.6]))
+
+        B = DiscreteRootNode(:B, Dict(:Bt => 0.5, :Bf => 0.5))
+
+        L = DiscreteChildNode(:L, [F], Dict(
+            [:Ft] => Dict(:Lt => 0.3, :Lf => 0.4, :L2 => 0.3),
+            [:Ff] => Dict(:Lt => 0.05, :Lf => 0.85, :L2 => 0.1)
+        ))
+
+        D = DiscreteChildNode(:D, [F, B], Dict(
+            [:Ft, :Bt] => Dict(:Dt => 0.8, :Df => 0.2),
+            [:Ft, :Bf] => Dict(:Dt => 0.1, :Df => 0.9),
+            [:Ff, :Bt] => Dict(:Dt => 0.1, :Df => 0.9),
+            [:Ff, :Bf] => Dict(:Dt => 0.7, :Df => 0.3)
+        ))
+
+        H = DiscreteChildNode(:H, [D], Dict(
+            [:Dt] => Dict(:Ht => 0.6, :Hf => 0.4),
+            [:Df] => Dict(:Ht => 0.3, :Hf => 0.7)
+        ))
+
+        cn = CredalNetwork([F, B, L, D, H])
+
+        evidence = Dict(
+            :D => :Dt,
+        )
+        query = [:L, :F]
+
+        inference_state = ImpreciseInferenceState(cn, query, evidence)
+        ϕ = infer(inference_state)
+        mat = hcat(
+            [[0.128571, 0.158824], [0.171429, 0.211765], [0.128571, 0.158824]],
+            [[0.0235294, 0.0285714], [0.4, 0.485714], [0.0470588, 0.0571429]])
+
+        @test isequal(ϕ.dimensions, [:L, :F])
+        @test isequal(ϕ.states_mapping, Dict(
+            :F => Dict(:Ft => 1, :Ff => 2),
+            :L => Dict(:Lt => 1, :Lf => 2, :L2 => 3)))
+        @test isapprox(ϕ.potential, mat, atol=0.01)
+
+        ϕ1 = infer(cn, [:L, :F], evidence)
+        @test isequal(ϕ.dimensions, ϕ1.dimensions)
+        @test isequal(ϕ.states_mapping, ϕ1.states_mapping)
+        @test isapprox(ϕ.potential, ϕ1.potential)
+    end
 end

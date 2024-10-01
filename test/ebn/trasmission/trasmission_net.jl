@@ -30,4 +30,5 @@
     new_ebn = transfer_continuous(ebn)
     @test new_ebn == EnhancedBayesianNetwork(EnhancedBayesianNetworks._transfer_continuous!(deepcopy(ebn.nodes)))
     @test issetequal(new_ebn.nodes, [root1, root2, root3, new_discrete_functional1, new_discrete_functional])
+
 end

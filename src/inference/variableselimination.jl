@@ -1,4 +1,4 @@
-function infer(inf::InferenceState)
+function infer(inf::PreciseInferenceState)
     bn = inf.bn
     nodes = bn.nodes
     query = inf.query
@@ -24,6 +24,33 @@ function infer(inf::InferenceState)
     ϕ.potential ./= tot
     return ϕ
 end
+
+function infer(inf::ImpreciseInferenceState)
+    cn = inf.cn
+    nodes = cn.nodes
+    query = inf.query
+    evidence = inf.evidence
+
+    dims = length(query) + 1
+    all_nodes = map(node -> _extreme_points(node), nodes)
+    all_nodes_combination = vec(collect(Iterators.product(all_nodes...)))
+    all_nodes_combination = map(t -> [t...], all_nodes_combination)
+
+    bns = map(anc -> BayesianNetwork(anc), all_nodes_combination)
+
+    r = map(bn -> infer(bn, query, evidence), bns)
+
+    res = map(r -> r.potential, r)
+    res = cat([res[i] for i in range(1, length(res))]..., dims=dims)
+
+    a = minimum(res; dims=dims)
+    b = maximum(res; dims=dims)
+
+    potential = map((a, b) -> [a, b], a, b)
+    potential = reshape(potential, size(r[1].potential))
+    return Factor(r[1].dimensions, potential, r[1].states_mapping)
+end
+
 
 function minimal_increase_in_complexity(factors::Vector{Factor}, name_to_index::Dict{Symbol,Int64})
     g = _moral_graph_from_dimensions([i.dimensions for i in factors], name_to_index)
@@ -74,6 +101,8 @@ function _moral_graph_from_dimensions(dimensions::Vector{Vector{Symbol}}, name_t
     SimpleGraph(length(name_to_index), list)
 end
 
-
 infer(bn::BayesianNetwork, query::Union{Symbol,Vector{Symbol}}, evidence::Evidence=Evidence()) =
-    infer(InferenceState(bn, query, evidence))
+    infer(PreciseInferenceState(bn, query, evidence))
+
+infer(cn::CredalNetwork, query::Union{Symbol,Vector{Symbol}}, evidence::Evidence=Evidence()) =
+    infer(ImpreciseInferenceState(cn, query, evidence))

@@ -18,33 +18,24 @@ function Base.join(op, ϕ1::Factor, ϕ2::Factor)
     new_dims = union(ϕ1.dimensions, ϕ2.dimensions)
     new_states_mapping = merge(ϕ1.states_mapping, ϕ2.states_mapping)
 
-    if ndims(ϕ2.potential) != 0
-        # permute the common dimensions in ϕ2 to the beginning,
-        #  in the order that they appear in ϕ1 (and therefore new_dims)            
-        unique1 = setdiff(ϕ1.dimensions, common)
-        unique2 = setdiff(ϕ2.dimensions, common)
-        # these will also be the same indices for new_dims
-        index_unique1 = indexin(unique1, ϕ1.dimensions)
-        index_unique2 = indexin(unique2, ϕ2.dimensions)
-        perm = vcat(index_common2, index_unique2)
-        temp = permutedims(ϕ2.potential, perm)
-        # reshape by lining up the common dims in ϕ2 with those in ϕ1
-        size_unique2 = size(ϕ2)[index_unique2]
-        # set those dims to have dimension 1 for data in ϕ2
-        reshape_lengths = vcat(size(ϕ1)..., size_unique2...)
-        new_v = Array{Float64}(undef, reshape_lengths...)
-        reshape_lengths[index_unique1] .= 1
-        temp = reshape(temp, (reshape_lengths...,))
-    else
-        new_v = similar(ϕ1.potential)
-        temp = ϕ2.potential
-    end
-    # ndims(ϕ1) == 0 implies ndims(ϕ2) == 0
-    if ndims(ϕ1.potential) == 0
-        new_v = dropdims([op(ϕ1.potential[1], temp[1])], dims=1)
-    else
-        broadcast!(op, new_v, ϕ1.potential, temp)
-    end
+    # permute the common dimensions in ϕ2 to the beginning,
+    #  in the order that they appear in ϕ1 (and therefore new_dims)            
+    unique1 = setdiff(ϕ1.dimensions, common)
+    unique2 = setdiff(ϕ2.dimensions, common)
+    # these will also be the same indices for new_dims
+    index_unique1 = indexin(unique1, ϕ1.dimensions)
+    index_unique2 = indexin(unique2, ϕ2.dimensions)
+    perm = vcat(index_common2, index_unique2)
+    temp = permutedims(ϕ2.potential, perm)
+    # reshape by lining up the common dims in ϕ2 with those in ϕ1
+    size_unique2 = size(ϕ2)[index_unique2]
+    # set those dims to have dimension 1 for data in ϕ2
+    reshape_lengths = vcat(size(ϕ1)..., size_unique2...)
+    new_v = Array{Float64}(undef, reshape_lengths...)
+    reshape_lengths[index_unique1] .= 1
+    temp = reshape(temp, (reshape_lengths...,))
+    broadcast!(op, new_v, ϕ1.potential, temp)
+
     return Factor(new_dims, new_v, new_states_mapping)
 end
 

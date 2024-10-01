@@ -8,7 +8,8 @@ using GraphRecipes
 using Graphs
 using LinearAlgebra
 using Reexport
-using UncertaintyQuantification: sample
+using UncertaintyQuantification: sample, Interval
+using Polyhedra: HalfSpace, doubledescription
 
 @reexport using Graphs
 @reexport using UncertaintyQuantification
@@ -20,6 +21,7 @@ import Base: *, sum, reduce
 export AbstractNode
 export AbstractDiscretization
 export ApproximatedDiscretization
+export UnamedProbabilityBox
 export ContinuousNode
 export DiscreteNode
 export ExactDiscretization
@@ -31,13 +33,15 @@ export ConditionalProbabilityDistribution
 export ContinuousFunctionalNode
 export ContinuousRootNode
 export ContinuousChildNode
+export CredalNetwork
 export DiscreteFunctionalNode
 export DiscreteRootNode
 export DiscreteChildNode
 export EnhancedBayesianNetwork
 export Factor
 export FunctionalNode
-export InferenceState
+export ImpreciseInferenceState
+export PreciseInferenceState
 export RootNode
 
 # Constants

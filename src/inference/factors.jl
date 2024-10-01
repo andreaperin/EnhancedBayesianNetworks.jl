@@ -1,9 +1,9 @@
 mutable struct Factor
     dimensions::Vector{Symbol}
-    potential::Array{Float64}
+    potential::Array
     states_mapping::Dict{Symbol,Dict{Symbol,Int}}
 
-    function Factor(dims::Vector{Symbol}, potential::Array{Float64}, states_mapping::Dict{Symbol,Dict{Symbol,Int}})
+    function Factor(dims::Vector{Symbol}, potential::Array, states_mapping::Dict{Symbol,Dict{Symbol,Int}})
         _ckeck_dims_unique(dims)
         (length(dims) != ndims(potential)) && error("potential must have as many dimensions as length of dimensions")
         (:potential in dims) && error("Having a dimension called potential will cause problems")
@@ -46,7 +46,6 @@ end
 
 Base.convert(::Type{Factor}, cpd::ConditionalProbabilityDistribution) = factorize_cpd(cpd)
 
-
 @inline function _translate_index(ϕ::Factor, e::Evidence)
     inds = Array{Any}(undef, length(ϕ.dimensions))
     inds[:] .= Colon()
@@ -54,15 +53,6 @@ Base.convert(::Type{Factor}, cpd::ConditionalProbabilityDistribution) = factoriz
     for (i, dim) in enumerate(ϕ.dimensions)
         if haskey(e, dim)
             ind = ϕ.states_mapping[dim][e[dim]]
-            if isa(ind, Colon)
-                continue
-            elseif isa(ind, Int)
-                if ind < 1 || ind > size(ϕ, dim)
-                    throw(BoundsError(dim, ind))
-                end
-            else
-                error("Invalid state for dimension $dim")
-            end
             inds[i] = ind
         end
     end

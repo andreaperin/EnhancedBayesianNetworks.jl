@@ -2,7 +2,15 @@ function evaluate(ebn::EnhancedBayesianNetwork)
     while !isempty(filter(x -> isa(x, FunctionalNode), ebn.nodes))
         ebn = _evaluate_routine(ebn)
     end
-    return ebn
+    if isempty(filter(x -> isa(x, ContinuousNode), ebn.nodes))
+        if all(.!_is_imprecise.(ebn.nodes))
+            return BayesianNetwork(ebn.nodes)
+        else
+            return CredalNetwork(ebn.nodes)
+        end
+    else
+        return ebn
+    end
 end
 
 function _evaluate_routine(ebn::EnhancedBayesianNetwork)
@@ -17,7 +25,17 @@ function _evaluate_routine(ebn::EnhancedBayesianNetwork)
     dag = deepcopy(ebn2eval.dag)
     if all(map(x -> _is_reducible(dag, x), indices2reduce))
         i = first(filter(x -> isa(x, FunctionalNode), nodes))
-        evaluated_i = _evaluate(i)
+        try
+            global evaluated_i = _evaluate(i)
+        catch e
+            if isa(e, AssertionError)
+                error("node $(getproperty(i, :name)) has as imprecise parents only one or more child nodes with a discretization srtucture defined. They are approximated with Uniform and Exponential assumption and they are no more imprecise. A prices simulation technique must be selected")
+            else
+                imprecise_parents = i.parents[_is_imprecise.(i.parents)]
+                names = [i.name for i in imprecise_parents]
+                error("node $(getproperty(i, :name)) has $(getproperty(i, :simulation)) as simulation technique, but have $names as imprecise parent/s. DoubleLoop or RandomSlicing technique must be employeed instead.")
+            end
+        end
         nodes = _replace_node!(nodes, i, evaluated_i)
     else
         error("irreducible network")

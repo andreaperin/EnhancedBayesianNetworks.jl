@@ -42,6 +42,7 @@
 
     @test_throws ErrorException("Dimension is not in the factor") broadcast(*, ϕ, [:X, :Z], [[10, 1, 0.1], [1, 2, 3]])
     @test_throws DimensionMismatch broadcast(*, ϕ, :X, [2016, 58.0])
+    @test_throws TypeError(:broadcast!, "Invalid broadcast value", Union{Float64,Vector{Float64}}, [2016]) broadcast(*, ϕ, :X, [2016])
 
     ϕ = Factor(dimensions, potential, states_mapping)
     reducedim!(+, ϕ, :T)
