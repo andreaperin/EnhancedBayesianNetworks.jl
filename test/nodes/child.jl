@@ -48,15 +48,22 @@
         @test_throws ErrorException("node child has a functional parent, must be defined through ContinuousFunctionalNode struct") ContinuousChildNode(name, [root1, root2, functional], distribution)
 
         node = ContinuousChildNode(name, [root1, root2], distribution)
-
         @test node.name == name
         @test issetequal(node.parents, [root1, root2])
         @test node.distribution == distribution
         @test isequal(node.discretization, ApproximatedDiscretization())
         @test node.additional_info == Dict{Vector{Symbol},Dict}()
-        node = ContinuousChildNode(:child, [root1], Dict([:yes] => Normal(), [:no] => Normal(2, 2)))
 
+        node = ContinuousChildNode(name, [root1, root2], distribution, Dict{Vector{Symbol},Dict}())
+        @test node.name == name
+        @test issetequal(node.parents, [root1, root2])
+        @test node.distribution == distribution
+        @test isequal(node.discretization, ApproximatedDiscretization())
+        @test node.additional_info == Dict{Vector{Symbol},Dict}()
+
+        node = ContinuousChildNode(:child, [root1], Dict([:yes] => Normal(), [:no] => Normal(2, 2)))
         evidence = [:a]
+
         @test_throws ErrorException("evidence [:a] does not contain all the parents of the ContinuousChildNode child") get_continuous_input(node, evidence)
 
         evidence = [:yes]
@@ -80,6 +87,31 @@
             @test EnhancedBayesianNetworks._get_node_distribution_bounds(child) == (0.1, 0.7)
             @test EnhancedBayesianNetworks._is_imprecise(child)
         end
+        @testset "Imprecise Child - Interval" begin
+            normal_pbox = UnamedProbabilityBox{Normal}([Interval(-0.5, 0.5, :μ), Interval(1, 2, :σ)])
+            uniform_pbox = UnamedProbabilityBox{Uniform}([Interval(1, 3, :a), Interval(4, 5, :b)])
+            states = Dict(
+                [:yes] => normal_pbox,
+                [:no] => uniform_pbox
+            )
+            child = ContinuousChildNode(:child, [root1], states)
+
+            yes_input = get_continuous_input(child, [:yes])
+            @test typeof(yes_input) == ProbabilityBox{Normal}
+            @test yes_input.lb == normal_pbox.lb
+            @test yes_input.ub == normal_pbox.ub
+            @test yes_input.name == :child
+            @test yes_input.parameters == normal_pbox.parameters
+
+            # ! TODO uncomment this test when issue 204 in UncertaintyQuantification.jl is closed
+            # no_input = get_continuous_input(child, [:no])
+            # @test typeof(no_input) == ProbabilityBox{Uniform}
+            # @test no_input.lb == normal_pbox.lb
+            # @test no_input.ub == normal_pbox.ub
+            # @test no_input.name == :child
+            # @test no_input.parameters == normal_pbox.parameters
+        end
+
     end
 
     @testset "DiscreteChildNode" begin
@@ -174,7 +206,13 @@
         @test_throws ErrorException("node child has a functional parent, must be defined through DiscreteFunctionalNode struct") DiscreteChildNode(name, [root1, root2, functional], states)
 
         node = DiscreteChildNode(name, parents, states)
+        @test node.name == name
+        @test issetequal(node.parents, parents)
+        @test node.states == states
+        @test node.parameters == Dict{Symbol,Vector{Parameter}}()
+        @test node.additional_info == Dict{Vector{Symbol},Dict}()
 
+        node = DiscreteChildNode(name, parents, states, Dict{Vector{Symbol},Dict}())
         @test node.name == name
         @test issetequal(node.parents, parents)
         @test node.states == states
