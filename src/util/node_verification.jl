@@ -11,13 +11,6 @@ function verify_probabilities(states::Dict{Symbol,<:Real})
     end
 end
 
-function verify_probabilities(states::Dict{Symbol,Vector{<:Real}})
-    probabilities_values = (values.(values(states))) .|> collect
-    flatten_probabilities_values = collect(Iterators.flatten(Iterators.flatten(probabilities_values)))
-    any(flatten_probabilities_values .< 0.0) && error("Probabilites must be nonnegative")
-    any(flatten_probabilities_values .> 1.0) && error("Probabilites must be less or equal to 1.0")
-end
-
 function verify_interval_probabilities(states::Dict{Symbol,AbstractVector{Real}})
     probability_values = vcat(collect(values(states))...)
     any(probability_values .< 0) && error("Probabilites must be nonnegative")
