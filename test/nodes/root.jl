@@ -25,6 +25,23 @@
             @test EnhancedBayesianNetworks._get_node_distribution_bounds(node1) == (0.1, 0.3)
             @test EnhancedBayesianNetworks._is_imprecise(node1)
         end
+
+        @testset "Imprecise Root - Pbox" begin
+            p_box = UnamedProbabilityBox{Normal}([Interval(1, 2, :μ), Interval(5, 6, :σ)])
+            node1 = ContinuousRootNode(:x1, p_box)
+            @test node1.name == :x1
+            @test node1.distribution == p_box
+            @test isequal(node1.discretization, ExactDiscretization())
+            input = get_continuous_input(node1)
+            @test typeof(input) == ProbabilityBox{Normal}
+            @test input.lb == p_box.lb
+            @test input.ub == p_box.ub
+            @test input.parameters == p_box.parameters
+
+            @test get_continuous_input(node1, Any[]) == input
+            @test EnhancedBayesianNetworks._get_node_distribution_bounds(node1) == (-Inf, Inf)
+            @test EnhancedBayesianNetworks._is_imprecise(node1)
+        end
     end
 
     @testset "DiscreteRootNode" begin
