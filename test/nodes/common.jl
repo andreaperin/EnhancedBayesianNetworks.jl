@@ -20,6 +20,7 @@
     end
     @testset "States Combinations" begin
         @test issetequal([[:c1y, :yes], [:c1n, :yes], [:c1y, :no], [:c1n, :no]], state_combinations(functional1_node))
+        @test state_combinations(root1) == AbstractNode[]
     end
     @testset "Extreme Points" begin
         arg = DiscreteRootNode(:ARG, Dict(:y => [0.2, 0.3], :n => [0.4, 0.6], :m => [0.3, 0.6]))
