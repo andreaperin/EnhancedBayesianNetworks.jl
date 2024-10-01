@@ -22,9 +22,10 @@ include("ebn/bayesnet.jl")
 include("ebn/credalnet.jl")
 include("ebn/cpd/conditionalprobabilitydistribution.jl")
 
-
 include("inference/inferencestate.jl")
 include("inference/factors.jl")
 include("inference/factor_methods.jl")
 include("inference/factor_algebra.jl")
 include("inference/variableselimination.jl")
+
+include("utils/evidence_verification.jl")
