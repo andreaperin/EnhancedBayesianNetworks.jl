@@ -53,15 +53,6 @@ Base.convert(::Type{Factor}, cpd::ConditionalProbabilityDistribution) = factoriz
     for (i, dim) in enumerate(ϕ.dimensions)
         if haskey(e, dim)
             ind = ϕ.states_mapping[dim][e[dim]]
-            if isa(ind, Colon)
-                continue
-            elseif isa(ind, Int)
-                if ind < 1 || ind > size(ϕ, dim)
-                    throw(BoundsError(dim, ind))
-                end
-            else
-                error("Invalid state for dimension $dim")
-            end
             inds[i] = ind
         end
     end
