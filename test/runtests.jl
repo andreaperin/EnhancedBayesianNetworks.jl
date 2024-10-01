@@ -30,3 +30,4 @@ include("inference/variableselimination.jl")
 
 include("utils/evidence_verification.jl")
 include("utils/node_verification.jl")
+include("utils/wrap.jl")
