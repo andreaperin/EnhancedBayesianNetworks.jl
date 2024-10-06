@@ -279,6 +279,17 @@
             ))
 
             @test issetequal(extreme_points, [n1, n2, n3, n4])
+
+            child = DiscreteChildNode(name, [root1], Dict(
+                [:yes] => Dict(:y => [0.1, 0.3], :n => [0.5, 0.6], :m => [0.1, 0.3]),
+                [:no] => Dict(:y => [0.5, 0.6], :n => [0.4, 0.5], :m => [0.1, 0.3])
+            ))
+            extreme_points = @suppress EnhancedBayesianNetworks._extreme_points(child)
+
+            @test isapprox(collect(values(extreme_points[1].states[[:yes]])), [0.1, 0.6, 0.3])
+            @test isapprox(collect(values(extreme_points[2].states[[:yes]])), [0.2, 0.5, 0.3])
+            @test isapprox(collect(values(extreme_points[3].states[[:yes]])), [0.3, 0.6, 0.1])
+            @test isapprox(collect(values(extreme_points[4].states[[:yes]])), [0.3, 0.5, 0.2])
         end
     end
 end
