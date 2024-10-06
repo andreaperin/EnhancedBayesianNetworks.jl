@@ -80,25 +80,24 @@
         @test EnhancedBayesianNetworks._is_imprecise(node2) == false
         @testset "Imprecise Root - Interval" begin
             name = :x
-            parameters = Dict(:yes => [Parameter(2, :d)], :no => [Parameter(0, :d)])
 
             states = Dict(:yes => [0.1, 0.15], :no => 0.8)
-            @test_throws ErrorException("node x has mixed interval and single value states probabilities!") DiscreteRootNode(name, states, parameters)
+            @test_throws ErrorException("node x has mixed interval and single value states probabilities!") DiscreteRootNode(name, states)
 
             states = Dict(:yes => [-0.5, 0.6], :no => [0.7, 0.9])
-            @test_throws ErrorException("Probabilites must be nonnegative") DiscreteRootNode(name, states, parameters)
+            @test_throws ErrorException("Probabilites must be nonnegative") DiscreteRootNode(name, states)
 
             states = Dict(:yes => [1.5, 0.6], :no => [0.7, 0.9])
-            @test_throws ErrorException("Probabilites must be less or equal to 1.0") DiscreteRootNode(name, states, parameters)
+            @test_throws ErrorException("Probabilites must be less or equal to 1.0") DiscreteRootNode(name, states)
 
             states = Dict(:yes => [0.5, 0.6], :no => [0.7, 0.9])
-            @test_throws ErrorException("sum of intervals lower bounds is bigger than 1 in Dict{Symbol, AbstractVector{Real}}(:yes => [0.5, 0.6], :no => [0.7, 0.9])") DiscreteRootNode(name, states, parameters)
+            @test_throws ErrorException("sum of intervals lower bounds is bigger than 1 in Dict{Symbol, AbstractVector{Real}}(:yes => [0.5, 0.6], :no => [0.7, 0.9])") DiscreteRootNode(name, states)
 
             states = Dict(:yes => [0.1, 0.15], :no => [0.7, 0.8])
-            @test_throws ErrorException("sum of intervals upper bounds is smaller than 1 in Dict{Symbol, AbstractVector{Real}}(:yes => [0.1, 0.15], :no => [0.7, 0.8])") DiscreteRootNode(name, states, parameters)
+            @test_throws ErrorException("sum of intervals upper bounds is smaller than 1 in Dict{Symbol, AbstractVector{Real}}(:yes => [0.1, 0.15], :no => [0.7, 0.8])") DiscreteRootNode(name, states)
 
             states = Dict(:yes => [0.1, 0.15], :no => "a")
-            @test_throws ErrorException("node x must have real valued states probabilities") DiscreteRootNode(name, states, parameters)
+            @test_throws ErrorException("node x must have real valued states probabilities") DiscreteRootNode(name, states)
 
             states = Dict(:yes => [0.1, 0.3], :no => [0.7, 0.9])
             imp_disc = DiscreteRootNode(name, states, parameters)
@@ -109,10 +108,18 @@
             @test get_parameters(imp_disc, [:yes]) == [Parameter(2, :d)]
 
             states = Dict(:yes => [0.4, 0.5], :no => [0.5, 0.6])
-            imp_disc = DiscreteRootNode(name, states, parameters)
+            imp_disc = DiscreteRootNode(name, states)
             extreme_points = EnhancedBayesianNetworks._extreme_points(imp_disc)
-            @test isequal(extreme_points[1], DiscreteRootNode(name, Dict(:yes => 0.4, :no => 0.6), parameters))
-            @test isequal(extreme_points[2], DiscreteRootNode(name, Dict(:yes => 0.5, :no => 0.5), parameters))
+            @test isequal(extreme_points[1], DiscreteRootNode(name, Dict(:yes => 0.4, :no => 0.6)))
+            @test isequal(extreme_points[2], DiscreteRootNode(name, Dict(:yes => 0.5, :no => 0.5)))
+
+            states = Dict(:yes => [0.4, 0.5], :no => [0.2, 0.4], :maybe => [0.2, 0.3])
+            imp_disc = DiscreteRootNode(name, states)
+            extreme_points = EnhancedBayesianNetworks._extreme_points(imp_disc)
+            @test isapprox(collect(values(extreme_points[1].states)), [0.4, 0.2, 0.4])
+            @test isapprox(collect(values(extreme_points[2].states)), [0.5, 0.3, 0.2])
+            @test isapprox(collect(values(extreme_points[3].states)), [0.4, 0.3, 0.3])
+            @test isapprox(collect(values(extreme_points[4].states)), [0.5, 0.2, 0.3])
         end
     end
 end
