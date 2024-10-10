@@ -40,8 +40,7 @@ function infer(inf::ImpreciseInferenceState)
 
     r = map(bn -> infer(bn, query, evidence), bns)
 
-    res = map(r -> r.potential, r)
-    res = cat([res[i] for i in range(1, length(res))]..., dims=dims)
+    res = stack(map(r -> r.potential, r))
 
     a = minimum(res; dims=dims)
     b = maximum(res; dims=dims)
