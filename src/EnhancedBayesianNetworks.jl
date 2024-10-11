@@ -72,10 +72,10 @@ export markov_envelope
 # export minimal_increase_in_complexity
 # export _reducedim
 # export _reducedim!
-export reduce_ebn_markov_envelopes
-export reduce_ebn_standard
+# export reduce_ebn_markov_envelopes
+# export reduce_ebn_standard
 export show
-export transfer_continuous
+export _transfer_continuous
 export update_network!
 
 export pdf
