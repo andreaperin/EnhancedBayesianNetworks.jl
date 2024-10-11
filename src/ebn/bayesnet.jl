@@ -3,7 +3,7 @@ struct BayesianNetwork <: ProbabilisticGraphicalModel
     nodes::Vector{<:DiscreteNode}
     name_to_index::Dict{Symbol,Int}
 
-    function BayesianNetwork(dag::DiGraph, nodes::Vector{AbstractNode}, name_to_index::Dict{Symbol,Int})
+    function BayesianNetwork(dag::DiGraph, nodes::Vector{<:AbstractNode}, name_to_index::Dict{Symbol,Int})
         if any([isa(x, FunctionalNode) for x in nodes])
             error("Network needs to be evaluated first")
         else
