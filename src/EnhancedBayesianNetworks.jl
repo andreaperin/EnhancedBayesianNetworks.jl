@@ -51,6 +51,7 @@ export Evidence
 # Methods
 export discretize
 export evaluate
+export evaluate_with_envelope
 export factorize_cpd
 export discrete_ancestors
 export get_children

@@ -1,16 +1,20 @@
+function evaluate_with_envelope(ebn::EnhancedBayesianNetwork)
+    ebns = markov_envelope(ebn)
+    if length(ebns) > 1
+        ebns = _add_missing_nodes_to_envelope.(ebns)
+        eebns = map(ebn -> evaluate(EnhancedBayesianNetwork(ebn)), ebns)
+        final_nodes = unique(collect(Iterators.Flatten([i.nodes for i in eebns])))
+        return get_specific_network(final_nodes)
+    else
+        return evaluate(ebn)
+    end
+end
+
 function evaluate(ebn::EnhancedBayesianNetwork)
     while !isempty(filter(x -> isa(x, FunctionalNode), ebn.nodes))
         ebn = _evaluate_routine(ebn)
     end
-    if isempty(filter(x -> isa(x, ContinuousNode), ebn.nodes))
-        if all(.!_is_imprecise.(ebn.nodes))
-            return BayesianNetwork(ebn.nodes)
-        else
-            return CredalNetwork(ebn.nodes)
-        end
-    else
-        return ebn
-    end
+    return get_specific_network(ebn)
 end
 
 function _evaluate_routine(ebn::EnhancedBayesianNetwork)
@@ -45,7 +49,21 @@ function _evaluate_routine(ebn::EnhancedBayesianNetwork)
     ebn = EnhancedBayesianNetwork(nodes)
 end
 
-function _replace_node!(nodes::AbstractVector{AbstractNode}, old::FunctionalNode, new::Union{ChildNode,RootNode})
+function get_specific_network(nodes::Vector{<:AbstractNode})
+    if isempty(filter(x -> isa(x, ContinuousNode), nodes))
+        if all(.!_is_imprecise.(nodes))
+            return BayesianNetwork(nodes)
+        else
+            return CredalNetwork(nodes)
+        end
+    else
+        return EnhancedBayesianNetwork(nodes)
+    end
+end
+
+get_specific_network(ebn::EnhancedBayesianNetwork) = get_specific_network(ebn.nodes)
+
+function _replace_node!(nodes::AbstractVector{<:AbstractNode}, old::FunctionalNode, new::Union{ChildNode,RootNode})
     index = findfirst(x -> isequal(x, old), nodes)
     deleteat!(nodes, index)
     for node in nodes
@@ -60,7 +78,7 @@ function _replace_node!(nodes::AbstractVector{AbstractNode}, old::FunctionalNode
     insert!(nodes, index, new)
 end
 
-function _clean_up!(nodes::AbstractVector{AbstractNode})
+function _clean_up!(nodes::AbstractVector{<:AbstractNode})
     nodes2clean = filter(x -> isa(x, ContinuousNode) && !isa(x, FunctionalNode), nodes)
     is_withoutchild = map(x -> _count_children(x, nodes) == 0, nodes2clean)
     nodes2clean = nodes2clean[is_withoutchild]
@@ -91,4 +109,17 @@ function _count_children(n, nodes)
         end
     end
     return counter
+end
+
+function _add_missing_nodes_to_envelope(nodes::AbstractVector{<:AbstractNode})
+    parents_vectors = map(x -> x.parents, filter(x -> !isa(x, RootNode), nodes))
+    is_not_in = map(x -> [i ∉ nodes for i in x], parents_vectors)
+    while any(collect(Iterators.Flatten(is_not_in)))
+        missing_nodes = map((x, y) -> x[y], parents_vectors, is_not_in)
+        missing_nodes = unique(collect(Iterators.Flatten(missing_nodes)))
+        nodes = append!(nodes, missing_nodes)
+        parents_vectors = map(x -> x.parents, filter(x -> !isa(x, RootNode), nodes))
+        is_not_in = map(x -> [i ∉ nodes for i in x], parents_vectors)
+    end
+    return nodes
 end
