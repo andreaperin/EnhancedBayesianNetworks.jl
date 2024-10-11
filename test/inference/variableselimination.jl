@@ -44,7 +44,7 @@
 
     @test moral_graph == SimpleGraph(n, fadjlist)
 
-    listv = minimal_increase_in_complexity(factors, bn.name_to_index)
+    listv = EnhancedBayesianNetworks._minimal_increase_in_complexity(factors, bn.name_to_index)
     @test Set([x[1] for x in listv[1:3]]) == Set([:X, :D, :V])
     @test listv[4][1] == :S
     @test Set([x[1] for x in listv[5:7]]) == Set([:B, :L, :T])

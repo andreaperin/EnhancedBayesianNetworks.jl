@@ -50,8 +50,6 @@
 
         new_discrete_functional2 = DiscreteFunctionalNode(:fd2, [root2, root3], [model2, model4], performance2, MonteCarlo(300))
         new_discrete_functional1 = DiscreteFunctionalNode(:fd1, [root1, root2, root3], [model2, model1, model3], performance1, MonteCarlo(300))
-
-        # l = EnhancedBayesianNetworks._transfer_continuous!(nodes)
         @test issetequal(EnhancedBayesianNetworks._transfer_continuous!(nodes), [root1, root2, root3, new_discrete_functional1, new_discrete_functional2])
     end
 end

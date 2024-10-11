@@ -19,9 +19,9 @@ end
 
 function _evaluate_routine(ebn::EnhancedBayesianNetwork)
     ## Discretize ebn
-    disc_ebn = discretize(ebn)
+    disc_ebn = _discretize(ebn)
     ## transfer_continuous
-    ebn2eval = transfer_continuous(disc_ebn)
+    ebn2eval = _transfer_continuous(disc_ebn)
     nodes = ebn2eval.nodes
     ## Reducibility check
     nodes2reduce = filter(x -> isa(x, ContinuousNode) && !isa(x, FunctionalNode), nodes)

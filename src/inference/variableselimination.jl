@@ -5,7 +5,7 @@ function infer(inf::PreciseInferenceState)
     evidence = inf.evidence
     factors = map(n -> Factor(bn, n.name, evidence), nodes)
     # successively remove the hidden nodes
-    δ = [x[1] for x in minimal_increase_in_complexity(factors, bn.name_to_index)]
+    δ = [x[1] for x in _minimal_increase_in_complexity(factors, bn.name_to_index)]
     δ = deleteat!(δ, findall(x -> x ∈ vcat(query, collect(keys(evidence))), δ))
 
     while !isempty(δ)
@@ -16,7 +16,7 @@ function infer(inf::PreciseInferenceState)
             τ_h = sum(reduce((*), contain_h), h)
             push!(factors, τ_h)
         end
-        δ = [x[1] for x in minimal_increase_in_complexity(factors, bn.name_to_index)]
+        δ = [x[1] for x in _minimal_increase_in_complexity(factors, bn.name_to_index)]
         δ = deleteat!(δ, findall(x -> x ∈ vcat(query, collect(keys(evidence))), δ))
     end
     ϕ = reduce((*), factors)
@@ -51,7 +51,7 @@ function infer(inf::ImpreciseInferenceState)
 end
 
 
-function minimal_increase_in_complexity(factors::Vector{Factor}, name_to_index::Dict{Symbol,Int64})
+function _minimal_increase_in_complexity(factors::Vector{Factor}, name_to_index::Dict{Symbol,Int64})
     g = _moral_graph_from_dimensions([i.dimensions for i in factors], name_to_index)
     res = Tuple[]
     filter!(x -> !isempty(x.dimensions), factors)

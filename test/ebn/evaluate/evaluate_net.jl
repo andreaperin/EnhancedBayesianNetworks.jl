@@ -34,8 +34,8 @@
         functional2 = ContinuousFunctionalNode(:cf1, [root4, root5, root6], [model2], MonteCarlo(300))
         _nodes = [root4, root5, root6, functional2]
         ebn = EnhancedBayesianNetwork(_nodes)
-        disc_ebn = discretize(ebn)
-        ebn2eval = transfer_continuous(disc_ebn)
+        disc_ebn = EnhancedBayesianNetworks._discretize(ebn)
+        ebn2eval = EnhancedBayesianNetworks._transfer_continuous(disc_ebn)
         nodes = ebn2eval.nodes
         nodes2reduce = filter(x -> isa(x, ContinuousNode) && !isa(x, FunctionalNode), nodes)
         indices2reduce = map(x -> ebn2eval.name_to_index[x.name], nodes2reduce)

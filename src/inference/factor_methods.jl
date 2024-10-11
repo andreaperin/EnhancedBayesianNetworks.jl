@@ -12,7 +12,7 @@ Base.length(ϕ::Factor) = length(ϕ.potential)
 _reddim(op, ϕ::Factor, inds::Tuple, ::Nothing) =
     dropdims(reduce(op, ϕ.potential, dims=inds), dims=inds)
 
-function reducedim(op, ϕ::Factor, dims::Union{Symbol,Vector{Symbol}}, v0=nothing)
+function _reducedim(op, ϕ::Factor, dims::Union{Symbol,Vector{Symbol}}, v0=nothing)
     dims = wrap(dims)
     _check_dims_valid(dims, ϕ)
     # needs to be a tuple for squeeze
@@ -28,7 +28,7 @@ function reducedim(op, ϕ::Factor, dims::Union{Symbol,Vector{Symbol}}, v0=nothin
     return ϕ
 end
 
-function reducedim!(op, ϕ::Factor, dims::Union{Symbol,Vector{Symbol}}, v0=nothing)
+function _reducedim!(op, ϕ::Factor, dims::Union{Symbol,Vector{Symbol}}, v0=nothing)
     dims = wrap(dims)
     _check_dims_valid(dims, ϕ)
     # needs to be a tuple for squeeze
