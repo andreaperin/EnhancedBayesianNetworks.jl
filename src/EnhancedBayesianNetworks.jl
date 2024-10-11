@@ -70,8 +70,8 @@ export infer
 export markov_blanket
 export markov_envelope
 # export minimal_increase_in_complexity
-export reducedim
-export reducedim!
+# export _reducedim
+# export _reducedim!
 export reduce_ebn_markov_envelopes
 export reduce_ebn_standard
 export show
