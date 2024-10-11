@@ -66,7 +66,7 @@ export state_combinations
 export get_state_probability
 export get_continuous_input
 export infer
-export is_equal
+# export is_equal
 export markov_blanket
 export markov_envelope
 export minimal_increase_in_complexity
