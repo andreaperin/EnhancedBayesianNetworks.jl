@@ -69,7 +69,7 @@ export infer
 # export is_equal
 export markov_blanket
 export markov_envelope
-export minimal_increase_in_complexity
+# export minimal_increase_in_complexity
 export reducedim
 export reducedim!
 export reduce_ebn_markov_envelopes
