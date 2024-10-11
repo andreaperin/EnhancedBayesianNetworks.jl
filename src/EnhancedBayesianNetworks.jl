@@ -49,7 +49,7 @@ const Evidence = Dict{Symbol,Symbol}
 export Evidence
 
 # Methods
-export discretize
+# export discretize
 export evaluate
 export evaluate_with_envelope
 export factorize_cpd

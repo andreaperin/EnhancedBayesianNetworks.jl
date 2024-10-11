@@ -19,7 +19,7 @@ end
 
 function _evaluate_routine(ebn::EnhancedBayesianNetwork)
     ## Discretize ebn
-    disc_ebn = discretize(ebn)
+    disc_ebn = _discretize(ebn)
     ## transfer_continuous
     ebn2eval = transfer_continuous(disc_ebn)
     nodes = ebn2eval.nodes
