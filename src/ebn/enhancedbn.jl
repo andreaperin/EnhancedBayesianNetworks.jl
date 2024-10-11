@@ -82,16 +82,20 @@ function markov_blanket(ebn::EnhancedBayesianNetwork, node::N) where {N<:Abstrac
 end
 
 function markov_envelope(ebn)
-    Xm_groups = map(x -> _markov_envelope_continuous_nodes_group(ebn, x), filter(x -> isa(x, ContinuousNode), ebn.nodes))
+    Xm_groups = map(x -> EnhancedBayesianNetworks._markov_envelope_continuous_nodes_group(ebn, x), filter(x -> isa(x, ContinuousNode), ebn.nodes))
     markov_envelopes = unique.(mapreduce.(x -> push!(markov_blanket(ebn, x), x), vcat, Xm_groups))
     # check when a vector is included into another
-    sorted_envelopes = sort(markov_envelopes, by=length)
+    sorted_envelopes = sort(markov_envelopes, by=length, rev=true)
     final_envelopes = []
-    for envelope in sorted_envelopes
-        to_compare = filter(x -> x != envelope, sorted_envelopes)
-        if any(map(x -> all(envelope .∈ [x]), to_compare))
-            filter!(x -> x != envelope, sorted_envelopes)
+    while length(sorted_envelopes) >= 1
+        if length(sorted_envelopes) == 1
+            append!(final_envelopes, sorted_envelopes)
+            popfirst!(sorted_envelopes)
         else
+            envelope = first(sorted_envelopes)
+            to_compare_list = sorted_envelopes[2:end]
+            is_excluded = map(to_compare -> any(to_compare .∉ [envelope]), to_compare_list)
+            sorted_envelopes = to_compare_list[is_excluded]
             push!(final_envelopes, envelope)
         end
     end
