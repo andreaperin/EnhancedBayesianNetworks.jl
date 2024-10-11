@@ -1,4 +1,4 @@
-struct PreciseInferenceState <: AbstractInferenceState
+@auto_hash_equals struct PreciseInferenceState <: AbstractInferenceState
     bn::BayesianNetwork
     query::Vector{Symbol}
     evidence::Evidence
@@ -10,7 +10,7 @@ struct PreciseInferenceState <: AbstractInferenceState
     end
 end
 
-struct ImpreciseInferenceState <: AbstractInferenceState
+@auto_hash_equals struct ImpreciseInferenceState <: AbstractInferenceState
     cn::CredalNetwork
     query::Vector{Symbol}
     evidence::Evidence
