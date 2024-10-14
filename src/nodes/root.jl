@@ -75,12 +75,6 @@ end
     end
 end
 
-function _normalize_state!(states::Dict{Symbol,Real})
-    normalized_prob = normalize(collect(values(states)), 1)
-    normalized_states = Dict(zip(collect(keys(states)), normalized_prob))
-    return convert(Dict{Symbol,Real}, normalized_states)
-end
-
 DiscreteRootNode(name::Symbol, states::Dict, parameters::Dict{Symbol,Vector{Parameter}}) = DiscreteRootNode(name, states, Dict(), parameters)
 
 DiscreteRootNode(name::Symbol, states::Dict) = DiscreteRootNode(name, states, Dict{Symbol,Vector{Parameter}}())

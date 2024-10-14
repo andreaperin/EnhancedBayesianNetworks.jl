@@ -37,6 +37,12 @@ function _verify_single_state(state::Union{Dict{Symbol,Real},Dict{Symbol,Abstrac
     verify_parameters(state, parameters)
 end
 
+function _normalize_state!(states::Dict{Symbol,Real})
+    normalized_prob = normalize(collect(values(states)), 1)
+    normalized_states = Dict(zip(collect(keys(states)), normalized_prob))
+    return convert(Dict{Symbol,Real}, normalized_states)
+end
+
 function _verify_discrete_root_node_state!(states, parameters)
     try
         states = convert(Dict{Symbol,Real}, states)
