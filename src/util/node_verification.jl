@@ -24,7 +24,7 @@ function _verify_probabilities(states::Dict{Symbol,AbstractVector{Real}})
     end
 end
 
-function verify_parameters(states::Dict, parameters::Dict{Symbol,Vector{Parameter}})
+function _verify_parameters(states::Dict, parameters::Dict{Symbol,Vector{Parameter}})
     if !isempty(parameters)
         if keys(states) != keys(parameters)
             error("parameters must be coherent with states")
@@ -34,7 +34,7 @@ end
 
 function _verify_single_state(state::Union{Dict{Symbol,Real},Dict{Symbol,AbstractVector{Real}}}, parameters::Dict{Symbol,Vector{Parameter}})
     _verify_probabilities(state)
-    verify_parameters(state, parameters)
+    _verify_parameters(state, parameters)
 end
 
 function _normalize_state!(states::Dict{Symbol,Real})
