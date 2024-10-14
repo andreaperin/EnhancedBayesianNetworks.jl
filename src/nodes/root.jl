@@ -2,7 +2,7 @@
     name::Symbol
     distribution::AbstractContinuousInput
     additional_info::Dict
-    discretization::ExactDiscretization # discretization just as increasing values?
+    discretization::ExactDiscretization
 end
 
 ContinuousRootNode(name::Symbol, distribution::AbstractContinuousInput, discretetization::ExactDiscretization) = ContinuousRootNode(name, distribution, Dict(), discretetization)
