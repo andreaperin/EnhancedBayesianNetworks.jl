@@ -83,7 +83,7 @@ function _verify_child_node_states_scenario(states, parents::AbstractVector{<:Ab
     end
 end
 
-function verify_functionalnode_parents(parents::Vector{<:AbstractNode})
+function _verify_functionalnode_parents(parents::Vector{<:AbstractNode})
     discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
     discrete_parents = filter(x -> !isa(x, FunctionalNode), discrete_parents)
     if !isempty(discrete_parents)
