@@ -60,6 +60,19 @@ function _verify_discrete_root_node_state!(states, parameters)
     return states
 end
 
+function _verify_discrete_child_parents(states, parents::AbstractVector{<:AbstractNode})
+    functional_parents = filter(x -> isa(x, FunctionalNode), parents)
+    if !isempty(functional_parents)
+        functional_names = [i.name for i in functional_parents]
+        error("Children of functional node/s $functional_names, must be defined through DiscreteFunctionalNode struct")
+    end
+    node_states = [keys(s) for s in values(states)]
+    if length(reduce(intersect, node_states)) != length(reduce(union, node_states))
+        state_list = unique(collect(Iterators.Flatten(node_states)))
+        error("non-coherent definition of nodes states: $state_list")
+    end
+end
+
 function verify_functionalnode_parents(parents::Vector{<:AbstractNode})
     discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
     discrete_parents = filter(x -> !isa(x, FunctionalNode), discrete_parents)
