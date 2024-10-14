@@ -65,29 +65,42 @@ end
     parameters::Dict{Symbol,Vector{Parameter}}
 
     function DiscreteRootNode(name::Symbol, states::Dict, additional_info::Dict, parameters::Dict{Symbol,Vector{Parameter}})
-        if all(isa.(values(states), Real))
-            verify_probabilities(states)
-            normalized_states = Dict{Symbol,Real}()
-            normalized_prob = normalize(collect(values(states)), 1)
-            normalized_states = Dict(zip(collect(keys(states)), normalized_prob))
-            verify_parameters(normalized_states, parameters)
-            return new(name, normalized_states, additional_info, parameters)
 
+        if !allequal(typeof.(values(states)))
+            error("node $name has mixed interval and single value states probabilities!")
         else
-            if any(isa.(values(states), Real))
-                error("node $name has mixed interval and single value states probabilities!")
-            else
+            try
+                states = convert(Dict{Symbol,Real}, states)
+            catch
                 try
                     states = convert(Dict{Symbol,AbstractVector{Real}}, states)
                 catch
-                    error("node $name must have real valued states probabilities")
+                    error("node $name must have real valued states probailities or real valued interval states probabilities")
                 end
-                verify_interval_probabilities(states)
-                verify_parameters(states, parameters)
-                return new(name, states, additional_info, parameters)
             end
+            _verify_single_state(states, parameters)
+            if isa(states, Dict{Symbol,Real})
+                states = _normalize_state!(states)
+            end
+            return new(name, states, additional_info, parameters)
         end
     end
+end
+
+function _normalize_state!(states::Dict{Symbol,Real})
+    normalized_prob = normalize(collect(values(states)), 1)
+    normalized_states = Dict(zip(collect(keys(states)), normalized_prob))
+    return convert(Dict{Symbol,Real}, normalized_states)
+end
+
+function _verify_single_state(state::Dict{Symbol,Real}, parameters::Dict{Symbol,Vector{Parameter}})
+    verify_probabilities(state)
+    verify_parameters(state, parameters)
+end
+
+function _verify_single_state(state::Dict{Symbol,AbstractVector{Real}}, parameters::Dict{Symbol,Vector{Parameter}})
+    verify_interval_probabilities(state)
+    verify_parameters(state, parameters)
 end
 
 DiscreteRootNode(name::Symbol, states::Dict, parameters::Dict{Symbol,Vector{Parameter}}) = DiscreteRootNode(name, states, Dict(), parameters)
