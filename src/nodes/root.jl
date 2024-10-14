@@ -69,7 +69,7 @@ end
         if !allequal(typeof.(values(states)))
             error("node $name has mixed interval and single value states probabilities!")
         else
-            states = _verify_discrete_root_node_state!(states, parameters)
+            states = _verify_child_node_state!(states, parameters)
             return new(name, states, additional_info, parameters)
         end
     end

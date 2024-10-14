@@ -43,7 +43,7 @@ function _normalize_state!(states::Dict{Symbol,Real})
     return convert(Dict{Symbol,Real}, normalized_states)
 end
 
-function _verify_discrete_root_node_state!(states, parameters)
+function _verify_child_node_state!(states, parameters)
     try
         states = convert(Dict{Symbol,Real}, states)
     catch

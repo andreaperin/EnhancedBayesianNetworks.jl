@@ -128,7 +128,7 @@ end
             if !allequal(typeof.(values(val)))
                 error("node $name has mixed interval and single value states probabilities!")
             else
-                new_states[key] = EnhancedBayesianNetworks._verify_discrete_root_node_state!(val, parameters)
+                new_states[key] = EnhancedBayesianNetworks._verify_child_node_state!(val, parameters)
                 if length(discrete_parents) != length(key)
                     error("In node $name, defined parents states differ from number of its discrete parents")
                 end
