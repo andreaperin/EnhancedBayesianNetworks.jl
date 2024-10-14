@@ -11,7 +11,7 @@ function verify_probabilities(states::Dict{Symbol,<:Real})
     end
 end
 
-function verify_interval_probabilities(states::Dict{Symbol,AbstractVector{Real}})
+function verify_probabilities(states::Dict{Symbol,AbstractVector{Real}})
     probability_values = vcat(collect(values(states))...)
     if any(probability_values .< 0)
         error("Probabilites must be nonnegative")
