@@ -94,7 +94,7 @@ function _is_imprecise(node::DiscreteRootNode)
 end
 
 function _extreme_points(node::DiscreteRootNode)
-    if EnhancedBayesianNetworks._is_imprecise(node)
+    if _is_imprecise(node)
         new_states = _extreme_points_states_probabilities(node.states)
         return map(new_state -> DiscreteRootNode(node.name, new_state, node.additional_info, node.parameters), new_states)
     else
