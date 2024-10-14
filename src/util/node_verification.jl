@@ -60,7 +60,7 @@ function _verify_child_node_state!(states, parameters)
     return states
 end
 
-function _verify_discrete_child_parents(states, parents::AbstractVector{<:AbstractNode})
+function _verify_child_parents(states, parents::AbstractVector{<:AbstractNode})
     functional_parents = filter(x -> isa(x, FunctionalNode), parents)
     if !isempty(functional_parents)
         functional_names = [i.name for i in functional_parents]
@@ -68,13 +68,18 @@ function _verify_discrete_child_parents(states, parents::AbstractVector{<:Abstra
     end
     continuous_parents = filter(x -> isa(x, ContinuousNode), parents)
     if !isempty(continuous_parents)
-        continuous_names = [i.name for i in functional_parents]
+        continuous_names = [i.name for i in continuous_parents]
         error("Children of continuous node/s $continuous_names, must be defined through a FunctionalNode struct")
     end
-    node_states = [keys(s) for s in values(states)]
-    if length(reduce(intersect, node_states)) != length(reduce(union, node_states))
-        state_list = unique(collect(Iterators.Flatten(node_states)))
-        error("non-coherent definition of nodes states: $state_list")
+end
+
+function _verify_child_node_states_scenario(states, parents::AbstractVector{<:AbstractNode})
+    discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
+    discrete_parents_combination = Iterators.product(_get_states.(discrete_parents)...)
+    discrete_parents_combination = map(t -> [t...], discrete_parents_combination)
+    if !issetequal(discrete_parents_combination, collect(keys(states)))
+        combination_list = collect(keys(states))
+        error("Defined combinations, $combination_list ,are not equal to the theorical discrete parents combinations: $discrete_parents_combination")
     end
 end
 
