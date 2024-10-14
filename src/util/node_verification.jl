@@ -64,7 +64,12 @@ function _verify_discrete_child_parents(states, parents::AbstractVector{<:Abstra
     functional_parents = filter(x -> isa(x, FunctionalNode), parents)
     if !isempty(functional_parents)
         functional_names = [i.name for i in functional_parents]
-        error("Children of functional node/s $functional_names, must be defined through DiscreteFunctionalNode struct")
+        error("Children of functional node/s $functional_names, must be defined through a FunctionalNode struct")
+    end
+    continuous_parents = filter(x -> isa(x, ContinuousNode), parents)
+    if !isempty(continuous_parents)
+        continuous_names = [i.name for i in functional_parents]
+        error("Children of continuous node/s $continuous_names, must be defined through a FunctionalNode struct")
     end
     node_states = [keys(s) for s in values(states)]
     if length(reduce(intersect, node_states)) != length(reduce(union, node_states))

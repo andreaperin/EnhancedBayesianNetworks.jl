@@ -203,7 +203,7 @@
             [:no, :no] => Dict(:a => 0.2, :b => 0.8)
         )
 
-        @test_throws ErrorException("Children of functional node/s [:F], must be defined through DiscreteFunctionalNode struct") DiscreteChildNode(name, [root1, root2, functional], states)
+        @test_throws ErrorException("Children of functional node/s [:F], must be defined through a FunctionalNode struct") DiscreteChildNode(name, [root1, root2, functional], states)
 
         node = DiscreteChildNode(name, parents, states)
         @test node.name == name
