@@ -37,6 +37,23 @@ function _verify_single_state(state::Union{Dict{Symbol,Real},Dict{Symbol,Abstrac
     verify_parameters(state, parameters)
 end
 
+function _verify_discrete_root_node_state!(states, parameters)
+    try
+        states = convert(Dict{Symbol,Real}, states)
+    catch
+        try
+            states = convert(Dict{Symbol,AbstractVector{Real}}, states)
+        catch
+            error("node $name must have real valued states probailities or real valued interval states probabilities")
+        end
+    end
+    _verify_single_state(states, parameters)
+    if isa(states, Dict{Symbol,Real})
+        states = _normalize_state!(states)
+    end
+    return states
+end
+
 function verify_functionalnode_parents(parents::Vector{<:AbstractNode})
     discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
     discrete_parents = filter(x -> !isa(x, FunctionalNode), discrete_parents)
