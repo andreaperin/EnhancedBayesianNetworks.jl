@@ -69,19 +69,7 @@ end
         if !allequal(typeof.(values(states)))
             error("node $name has mixed interval and single value states probabilities!")
         else
-            try
-                states = convert(Dict{Symbol,Real}, states)
-            catch
-                try
-                    states = convert(Dict{Symbol,AbstractVector{Real}}, states)
-                catch
-                    error("node $name must have real valued states probailities or real valued interval states probabilities")
-                end
-            end
-            _verify_single_state(states, parameters)
-            if isa(states, Dict{Symbol,Real})
-                states = _normalize_state!(states)
-            end
+            states = _verify_discrete_root_node_state!(states, parameters)
             return new(name, states, additional_info, parameters)
         end
     end
@@ -93,14 +81,21 @@ function _normalize_state!(states::Dict{Symbol,Real})
     return convert(Dict{Symbol,Real}, normalized_states)
 end
 
-function _verify_single_state(state::Dict{Symbol,Real}, parameters::Dict{Symbol,Vector{Parameter}})
-    verify_probabilities(state)
-    verify_parameters(state, parameters)
-end
-
-function _verify_single_state(state::Dict{Symbol,AbstractVector{Real}}, parameters::Dict{Symbol,Vector{Parameter}})
-    verify_interval_probabilities(state)
-    verify_parameters(state, parameters)
+function _verify_discrete_root_node_state!(states, parameters)
+    try
+        states = convert(Dict{Symbol,Real}, states)
+    catch
+        try
+            states = convert(Dict{Symbol,AbstractVector{Real}}, states)
+        catch
+            error("node $name must have real valued states probailities or real valued interval states probabilities")
+        end
+    end
+    _verify_single_state(states, parameters)
+    if isa(states, Dict{Symbol,Real})
+        states = _normalize_state!(states)
+    end
+    return states
 end
 
 DiscreteRootNode(name::Symbol, states::Dict, parameters::Dict{Symbol,Vector{Parameter}}) = DiscreteRootNode(name, states, Dict(), parameters)

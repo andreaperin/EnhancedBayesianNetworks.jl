@@ -32,6 +32,11 @@ function verify_parameters(states::Dict, parameters::Dict{Symbol,Vector{Paramete
     end
 end
 
+function _verify_single_state(state::Union{Dict{Symbol,Real},Dict{Symbol,AbstractVector{Real}}}, parameters::Dict{Symbol,Vector{Parameter}})
+    verify_probabilities(state)
+    verify_parameters(state, parameters)
+end
+
 function verify_functionalnode_parents(parents::Vector{<:AbstractNode})
     discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
     discrete_parents = filter(x -> !isa(x, FunctionalNode), discrete_parents)
