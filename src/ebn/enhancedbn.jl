@@ -82,7 +82,7 @@ function markov_blanket(ebn::EnhancedBayesianNetwork, node::N) where {N<:Abstrac
 end
 
 function markov_envelope(ebn)
-    Xm_groups = map(x -> EnhancedBayesianNetworks._markov_envelope_continuous_nodes_group(ebn, x), filter(x -> isa(x, ContinuousNode), ebn.nodes))
+    Xm_groups = map(x -> _markov_envelope_continuous_nodes_group(ebn, x), filter(x -> isa(x, ContinuousNode), ebn.nodes))
     markov_envelopes = unique.(mapreduce.(x -> push!(markov_blanket(ebn, x), x), vcat, Xm_groups))
     # check when a vector is included into another
     sorted_envelopes = sort(markov_envelopes, by=length, rev=true)

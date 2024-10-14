@@ -2,7 +2,7 @@
     name::Symbol
     distribution::AbstractContinuousInput
     additional_info::Dict
-    discretization::ExactDiscretization # discretization just as increasing values?
+    discretization::ExactDiscretization
 end
 
 ContinuousRootNode(name::Symbol, distribution::AbstractContinuousInput, discretetization::ExactDiscretization) = ContinuousRootNode(name, distribution, Dict(), discretetization)
@@ -65,27 +65,12 @@ end
     parameters::Dict{Symbol,Vector{Parameter}}
 
     function DiscreteRootNode(name::Symbol, states::Dict, additional_info::Dict, parameters::Dict{Symbol,Vector{Parameter}})
-        if all(isa.(values(states), Real))
-            verify_probabilities(states)
-            normalized_states = Dict{Symbol,Real}()
-            normalized_prob = normalize(collect(values(states)), 1)
-            normalized_states = Dict(zip(collect(keys(states)), normalized_prob))
-            verify_parameters(normalized_states, parameters)
-            return new(name, normalized_states, additional_info, parameters)
 
+        if !allequal(typeof.(values(states)))
+            error("node $name has mixed interval and single value states probabilities!")
         else
-            if any(isa.(values(states), Real))
-                error("node $name has mixed interval and single value states probabilities!")
-            else
-                try
-                    states = convert(Dict{Symbol,AbstractVector{Real}}, states)
-                catch
-                    error("node $name must have real valued states probabilities")
-                end
-                verify_interval_probabilities(states)
-                verify_parameters(states, parameters)
-                return new(name, states, additional_info, parameters)
-            end
+            states = _verify_child_node_state!(states, parameters)
+            return new(name, states, additional_info, parameters)
         end
     end
 end
@@ -109,7 +94,7 @@ function _is_imprecise(node::DiscreteRootNode)
 end
 
 function _extreme_points(node::DiscreteRootNode)
-    if EnhancedBayesianNetworks._is_imprecise(node)
+    if _is_imprecise(node)
         new_states = _extreme_points_states_probabilities(node.states)
         return map(new_state -> DiscreteRootNode(node.name, new_state, node.additional_info, node.parameters), new_states)
     else

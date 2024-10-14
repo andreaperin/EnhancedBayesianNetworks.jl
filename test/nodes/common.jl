@@ -6,7 +6,7 @@
     child1_states = Dict(
         [:y] => Dict(:c1y => 0.3, :c1n => 0.7),
         [:n] => Dict(:c1y => 0.4, :c1n => 0.6),)
-    child1 = DiscreteChildNode(:C1, [root1, root3], child1_states, Dict(:c1y => [Parameter(1, :X1)], :c1n => [Parameter(0, :X1)]))
+    child1 = DiscreteChildNode(:C1, [root1], child1_states, Dict(:c1y => [Parameter(1, :X1)], :c1n => [Parameter(0, :X1)]))
 
     child2 = ContinuousChildNode(:C2, [root2], Dict([:yes] => Normal(), [:no] => Normal(1, 1)))
 

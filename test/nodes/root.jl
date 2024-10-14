@@ -58,7 +58,7 @@
         @test_throws ErrorException("Probabilites must be less or equal to 1.0") DiscreteRootNode(name, states, parameters)
 
         states = Dict(:yes => 0.8, :no => 0.8)
-        @test_throws ErrorException("defined states probabilities Dict(:yes => 0.8, :no => 0.8) are wrong") DiscreteRootNode(name, states, parameters)
+        @test_throws ErrorException("defined states probabilities Dict{Symbol, Real}(:yes => 0.8, :no => 0.8) are wrong") DiscreteRootNode(name, states, parameters)
 
         states = Dict(:yes => 0.4999, :no => 0.4999)
         @test_logs (:warn, "total probaility should be one, but the evaluated value is 0.9998 , and will be normalized") DiscreteRootNode(name, states, parameters)
@@ -97,7 +97,7 @@
             @test_throws ErrorException("sum of intervals upper bounds is smaller than 1 in Dict{Symbol, AbstractVector{Real}}(:yes => [0.1, 0.15], :no => [0.7, 0.8])") DiscreteRootNode(name, states)
 
             states = Dict(:yes => [0.1, 0.15], :no => "a")
-            @test_throws ErrorException("node x must have real valued states probabilities") DiscreteRootNode(name, states)
+            @test_throws ErrorException("node x has mixed interval and single value states probabilities!") DiscreteRootNode(name, states)
 
             states = Dict(:yes => [0.1, 0.3], :no => [0.7, 0.9])
             imp_disc = DiscreteRootNode(name, states, parameters)

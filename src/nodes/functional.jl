@@ -12,7 +12,7 @@
         simulation::AbstractMonteCarlo,
         discretization::ApproximatedDiscretization
     )
-        verify_functionalnode_parents(parents)
+        _verify_functionalnode_parents(parents)
         parents = convert(Vector{AbstractNode}, parents)
         new(name, parents, models, simulation, discretization)
     end
@@ -46,7 +46,7 @@ end
         parameters::Dict{Symbol,Vector{Parameter}}
     )
         if isempty(filter(x -> isa(x, FunctionalNode), parents))
-            verify_functionalnode_parents(parents)
+            _verify_functionalnode_parents(parents)
         end
         parents = convert(Vector{AbstractNode}, parents)
         new(name, parents, models, performance, simulation, parameters)

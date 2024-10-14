@@ -14,13 +14,13 @@
             [:yes, :yes] => Normal(),
             [:no] => Normal(1, 1)
         )
-        @test_throws ErrorException("In node child, defined parents states differ from number of its discrete parents") ContinuousChildNode(name, [root1], distribution)
+        @test_throws ErrorException("Defined combinations, [[:yes, :yes], [:no]] ,are not equal to the theorical discrete parents combinations: [[:yes], [:no]]") ContinuousChildNode(name, [root1], distribution)
 
         distribution = Dict(
             [:yes] => Normal(),
             [:no] => Normal(1, 1)
         )
-        @test_throws ErrorException("ContinuousChildNode child cannot have continuous parents! Use ContinuousFunctionalNode instead") ContinuousChildNode(name, [root1, root3], distribution)
+        @test_throws ErrorException("Children of continuous node/s [:z], must be defined through a FunctionalNode struct") ContinuousChildNode(name, [root1, root3], distribution)
 
         parents = [root1, root2]
         distribution = Dict(
@@ -28,7 +28,7 @@
             [:no, :y] => Normal(1, 1),
             [:yes, :n] => Normal(2, 1)
         )
-        @test_throws ErrorException("In node child, defined combinations are not equal to the theorical discrete parents combinations: [[:yes, :n] [:yes, :y]; [:no, :n] [:no, :y]]") ContinuousChildNode(name, parents, distribution)
+        @test_throws ErrorException("Defined combinations, [[:yes, :y], [:no, :y], [:yes, :n]] ,are not equal to the theorical discrete parents combinations: [[:yes, :n] [:yes, :y]; [:no, :n] [:no, :y]]") ContinuousChildNode(name, parents, distribution)
 
         distribution = Dict(
             [:yes, :maybe] => Normal(),
@@ -36,7 +36,7 @@
             [:yes, :n] => Normal(2, 1),
             [:no, :n] => Normal(3, 1)
         )
-        @test_throws ErrorException("In node child, defined parents states are not coherent with its discrete parents states") ContinuousChildNode(name, parents, distribution)
+        @test_throws ErrorException("Defined combinations, [[:yes, :maybe], [:no, :n], [:no, :y], [:yes, :n]] ,are not equal to the theorical discrete parents combinations: [[:yes, :n] [:yes, :y]; [:no, :n] [:no, :y]]") ContinuousChildNode(name, parents, distribution)
 
         distribution = Dict(
             [:yes, :y] => Normal(),
@@ -45,7 +45,7 @@
             [:no, :n] => Normal(3, 1)
         )
 
-        @test_throws ErrorException("node child has a functional parent, must be defined through ContinuousFunctionalNode struct") ContinuousChildNode(name, [root1, root2, functional], distribution)
+        @test_throws ErrorException("Children of functional node/s [:F], must be defined through a FunctionalNode struct") ContinuousChildNode(name, [root1, root2, functional], distribution)
 
         node = ContinuousChildNode(name, [root1, root2], distribution)
         @test node.name == name
@@ -125,11 +125,11 @@
         name = :child
 
         states = Dict(
-            [:yes] => Dict(:yes => "a", :no => 0.9),
+            [:yes] => Dict(:yes => [0.1, 0.2], :no => 0.9),
             [:no] => Dict(:yes => 0.2, :no => 0.8)
         )
 
-        @test_throws ErrorException("node child must have real valued states probailities") DiscreteChildNode(name, [root1], states)
+        @test_throws ErrorException("node child has mixed interval and single value states probabilities!") DiscreteChildNode(name, [root1], states)
 
         states = Dict(
             [:yes] => Dict(:yes => 0.1, :no => 0.9),
@@ -170,7 +170,7 @@
             [:yes, :yes] => Dict(:yes => 0.1, :no => 0.9),
             [:no] => Dict(:yes => 0.2, :no => 0.8)
         )
-        @test_throws ErrorException("In node child, defined parents states differ from number of its discrete parents") DiscreteChildNode(name, [root1], states)
+        @test_throws ErrorException("Defined combinations, [[:yes, :yes], [:no]] ,are not equal to the theorical discrete parents combinations: [[:yes], [:no]]") DiscreteChildNode(name, [root1], states)
 
         parents = [root1, root2]
         states = Dict(
@@ -179,14 +179,14 @@
             [:yes, :no] => Dict(:yes => 0.2, :no => 0.8),
             [:no, :no] => Dict(:yes => 0.2, :no => 0.8)
         )
-        @test_throws ErrorException("node child: non-coherent definition of nodes states") DiscreteChildNode(name, parents, states)
+        @test_throws ErrorException("non-coherent definition of nodes states: [:yes, :no, :yep]") DiscreteChildNode(name, parents, states)
 
         states = Dict(
             [:yes, :yes] => Dict(:yes => 0.2, :no => 0.8),
             [:no, :yes] => Dict(:yes => 0.2, :no => 0.8),
             [:yes, :no] => Dict(:yes => 0.2, :no => 0.8)
         )
-        @test_throws ErrorException("In node child, defined combinations are not equal to the theorical discrete parents combinations: [[:yes, :yes] [:yes, :no]; [:no, :yes] [:no, :no]]") DiscreteChildNode(name, parents, states)
+        @test_throws ErrorException("Defined combinations, [[:yes, :no], [:yes, :yes], [:no, :yes]] ,are not equal to the theorical discrete parents combinations: [[:yes, :yes] [:yes, :no]; [:no, :yes] [:no, :no]]") DiscreteChildNode(name, parents, states)
 
         states = Dict(
             [:yes, :maybe] => Dict(:yes => 0.2, :no => 0.8),
@@ -194,7 +194,7 @@
             [:yes, :no] => Dict(:yes => 0.2, :no => 0.8),
             [:no, :no] => Dict(:yes => 0.2, :no => 0.8),
         )
-        @test_throws ErrorException("In node child, defined parents states are not coherent with its discrete parents states") DiscreteChildNode(name, parents, states)
+        @test_throws ErrorException("Defined combinations, [[:yes, :no], [:no, :no], [:yes, :maybe], [:no, :yes]] ,are not equal to the theorical discrete parents combinations: [[:yes, :yes] [:yes, :no]; [:no, :yes] [:no, :no]]") DiscreteChildNode(name, parents, states)
 
         states = Dict(
             [:yes, :yes] => Dict(:a => 0.2, :b => 0.8),
@@ -203,7 +203,7 @@
             [:no, :no] => Dict(:a => 0.2, :b => 0.8)
         )
 
-        @test_throws ErrorException("node child has a functional parent, must be defined through DiscreteFunctionalNode struct") DiscreteChildNode(name, [root1, root2, functional], states)
+        @test_throws ErrorException("Children of functional node/s [:F], must be defined through a FunctionalNode struct") DiscreteChildNode(name, [root1, root2, functional], states)
 
         node = DiscreteChildNode(name, parents, states)
         @test node.name == name
@@ -232,7 +232,7 @@
         @test get_parameters(node, evidence) == [Parameter(1.1, :g)]
         @test EnhancedBayesianNetworks._is_imprecise(node) == false
         @testset "Imprecise Child - Interval" begin
-
+            parents = [root1, root2]
             states = Dict(
                 [:yes, :yes] => Dict(:a => [0.4, 0.5], :b => [0.5, 0.6]),
                 [:no, :yes] => Dict(:a => [0.4, 0.5], :b => [0.5, 0.6]),
