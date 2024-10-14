@@ -110,19 +110,12 @@ end
         _verify_child_parents(states, parents)
         _verify_discrete_child_node_state(states)
         _verify_child_node_states_scenario(states, parents)
-        discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
         new_states = Dict()
         for (key, val) in states
             if !allequal(typeof.(values(val)))
                 error("node $name has mixed interval and single value states probabilities!")
             else
                 new_states[key] = _verify_child_node_state!(val, parameters)
-                if length(discrete_parents) != length(key)
-                    error("In node $name, defined parents states differ from number of its discrete parents")
-                end
-                if any([k ∉ _get_states(discrete_parents[i]) for (i, k) in enumerate(key)])
-                    error("In node $name, defined parents states are not coherent with its discrete parents states")
-                end
             end
         end
         parents = convert(Vector{AbstractNode}, parents)
