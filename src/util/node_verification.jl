@@ -1,4 +1,4 @@
-function verify_probabilities(states::Dict{Symbol,<:Real})
+function _verify_probabilities(states::Dict{Symbol,<:Real})
     any(values(states) .< 0.0) && error("Probabilites must be nonnegative")
     any(values(states) .> 1.0) && error("Probabilites must be less or equal to 1.0")
     total_proability = sum(values(states))
@@ -11,7 +11,7 @@ function verify_probabilities(states::Dict{Symbol,<:Real})
     end
 end
 
-function verify_probabilities(states::Dict{Symbol,AbstractVector{Real}})
+function _verify_probabilities(states::Dict{Symbol,AbstractVector{Real}})
     probability_values = vcat(collect(values(states))...)
     if any(probability_values .< 0)
         error("Probabilites must be nonnegative")
@@ -33,7 +33,7 @@ function verify_parameters(states::Dict, parameters::Dict{Symbol,Vector{Paramete
 end
 
 function _verify_single_state(state::Union{Dict{Symbol,Real},Dict{Symbol,AbstractVector{Real}}}, parameters::Dict{Symbol,Vector{Parameter}})
-    verify_probabilities(state)
+    _verify_probabilities(state)
     verify_parameters(state, parameters)
 end
 
