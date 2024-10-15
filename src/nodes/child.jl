@@ -179,7 +179,7 @@ function _is_imprecise(node::DiscreteChildNode)
 end
 
 function _extreme_points(node::DiscreteChildNode)
-    if EnhancedBayesianNetworks._is_imprecise(node)
+    if _is_imprecise(node)
         new_states = map(states -> _extreme_points_states_probabilities(states), values(node.states))
         new_states_combination = vec(collect(Iterators.product(new_states...)))
 
