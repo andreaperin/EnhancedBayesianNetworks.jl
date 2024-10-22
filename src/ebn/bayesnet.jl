@@ -1,4 +1,4 @@
-struct BayesianNetwork <: ProbabilisticGraphicalModel
+struct BayesianNetwork <: AbstractNetwork
     dag::SimpleDiGraph
     nodes::Vector{<:DiscreteNode}
     name_to_index::Dict{Symbol,Int}

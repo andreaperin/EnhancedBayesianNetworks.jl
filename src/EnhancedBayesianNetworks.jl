@@ -18,8 +18,11 @@ using Polyhedra: HalfSpace, doubledescription
 import Base: *, sum, reduce
 
 # Types
-export AbstractNode
+export AbstractContinuousInput
+export AbstractDiscreteProbability
 export AbstractDiscretization
+export AbstractNetwork
+export AbstractNode
 export ApproximatedDiscretization
 export UnamedProbabilityBox
 export ContinuousNode

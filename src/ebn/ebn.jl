@@ -1,4 +1,4 @@
-abstract type ProbabilisticGraphicalModel end
+abstract type AbstractNetwork end
 
 include("cpd/conditionalprobabilitydistribution.jl")
 include("enhancedbn.jl")
