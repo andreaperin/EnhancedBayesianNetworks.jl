@@ -1,4 +1,4 @@
-function verify_probabilities(states::Dict{Symbol,<:Real})
+function _verify_probabilities(states::Dict{Symbol,<:Real})
     any(values(states) .< 0.0) && error("Probabilites must be nonnegative")
     any(values(states) .> 1.0) && error("Probabilites must be less or equal to 1.0")
     total_proability = sum(values(states))
@@ -11,7 +11,7 @@ function verify_probabilities(states::Dict{Symbol,<:Real})
     end
 end
 
-function verify_interval_probabilities(states::Dict{Symbol,AbstractVector{Real}})
+function _verify_probabilities(states::Dict{Symbol,AbstractVector{Real}})
     probability_values = vcat(collect(values(states))...)
     if any(probability_values .< 0)
         error("Probabilites must be nonnegative")
@@ -24,7 +24,7 @@ function verify_interval_probabilities(states::Dict{Symbol,AbstractVector{Real}}
     end
 end
 
-function verify_parameters(states::Dict, parameters::Dict{Symbol,Vector{Parameter}})
+function _verify_parameters(states::Dict, parameters::Dict{Symbol,Vector{Parameter}})
     if !isempty(parameters)
         if keys(states) != keys(parameters)
             error("parameters must be coherent with states")
@@ -32,7 +32,58 @@ function verify_parameters(states::Dict, parameters::Dict{Symbol,Vector{Paramete
     end
 end
 
-function verify_functionalnode_parents(parents::Vector{<:AbstractNode})
+function _verify_single_state(state::Union{Dict{Symbol,Real},Dict{Symbol,AbstractVector{Real}}}, parameters::Dict{Symbol,Vector{Parameter}})
+    _verify_probabilities(state)
+    _verify_parameters(state, parameters)
+end
+
+function _normalize_state!(states::Dict{Symbol,Real})
+    normalized_prob = normalize(collect(values(states)), 1)
+    normalized_states = Dict(zip(collect(keys(states)), normalized_prob))
+    return convert(Dict{Symbol,Real}, normalized_states)
+end
+
+function _verify_child_node_state!(states, parameters)
+    try
+        states = convert(Dict{Symbol,Real}, states)
+    catch
+        try
+            states = convert(Dict{Symbol,AbstractVector{Real}}, states)
+        catch
+            error("node $name must have real valued states probailities or real valued interval states probabilities")
+        end
+    end
+    _verify_single_state(states, parameters)
+    if isa(states, Dict{Symbol,Real})
+        states = _normalize_state!(states)
+    end
+    return states
+end
+
+function _verify_child_parents(states, parents::AbstractVector{<:AbstractNode})
+    functional_parents = filter(x -> isa(x, FunctionalNode), parents)
+    if !isempty(functional_parents)
+        functional_names = [i.name for i in functional_parents]
+        error("Children of functional node/s $functional_names, must be defined through a FunctionalNode struct")
+    end
+    continuous_parents = filter(x -> isa(x, ContinuousNode), parents)
+    if !isempty(continuous_parents)
+        continuous_names = [i.name for i in continuous_parents]
+        error("Children of continuous node/s $continuous_names, must be defined through a FunctionalNode struct")
+    end
+end
+
+function _verify_child_node_states_scenario(states, parents::AbstractVector{<:AbstractNode})
+    discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
+    discrete_parents_combination = Iterators.product(_get_states.(discrete_parents)...)
+    discrete_parents_combination = map(t -> [t...], discrete_parents_combination)
+    if !issetequal(discrete_parents_combination, collect(keys(states)))
+        combination_list = collect(keys(states))
+        error("Defined combinations, $combination_list ,are not equal to the theorical discrete parents combinations: $discrete_parents_combination")
+    end
+end
+
+function _verify_functionalnode_parents(parents::Vector{<:AbstractNode})
     discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
     discrete_parents = filter(x -> !isa(x, FunctionalNode), discrete_parents)
     if !isempty(discrete_parents)

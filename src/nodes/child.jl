@@ -14,19 +14,8 @@
         additional_info::Dict{Vector{Symbol},Dict},
         discretization::ApproximatedDiscretization
     )
-        functional_parents = filter(x -> isa(x, FunctionalNode), parents)
-        !isempty(functional_parents) && error("node $name has a functional parent, must be defined through ContinuousFunctionalNode struct")
-
-        discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
-        !issetequal(discrete_parents, parents) && error("ContinuousChildNode $name cannot have continuous parents! Use ContinuousFunctionalNode instead")
-        for key in keys(distribution)
-            length(discrete_parents) != length(key) && error("In node $name, defined parents states differ from number of its discrete parents")
-            any([k ∉ _get_states(discrete_parents[i]) for (i, k) in enumerate(key)]) && error("In node $name, defined parents states are not coherent with its discrete parents states")
-        end
-
-        discrete_parents_combination = Iterators.product(_get_states.(discrete_parents)...)
-        discrete_parents_combination = map(t -> [t...], discrete_parents_combination)
-        length(discrete_parents_combination) != length(distribution) && error("In node $name, defined combinations are not equal to the theorical discrete parents combinations: $discrete_parents_combination")
+        _verify_child_parents(distribution, parents)
+        _verify_child_node_states_scenario(distribution, parents)
         parents = convert(Vector{AbstractNode}, parents)
         return new(name, parents, distribution, additional_info, discretization)
     end
@@ -37,7 +26,6 @@ function ContinuousChildNode(
     parents::Vector{<:AbstractNode},
     distribution::Dict{Vector{Symbol},<:AbstractContinuousInput}
 )
-
     additional_info = Dict{Vector{Symbol},Dict}()
     discretization = ApproximatedDiscretization()
     ContinuousChildNode(name, parents, distribution, additional_info, discretization)
@@ -49,7 +37,6 @@ function ContinuousChildNode(
     distribution::Dict{Vector{Symbol},<:AbstractContinuousInput},
     additional_info::Dict{Vector{Symbol},Dict}
 )
-
     discretization = ApproximatedDiscretization()
     ContinuousChildNode(name, parents, distribution, additional_info, discretization)
 end
@@ -120,45 +107,19 @@ end
         additional_info::Dict{Vector{Symbol},Dict},
         parameters::Dict{Symbol,Vector{Parameter}}
     )
-        try
-            states = convert(Dict{Vector{Symbol},Dict{Symbol,Real}}, states)
-        catch
-            try
-                states = convert(Dict{Vector{Symbol},Dict{Symbol,Vector{Real}}}, states)
-            catch
-                error("node $name must have real valued states probailities")
+        _verify_child_parents(states, parents)
+        _verify_discrete_child_node_state(states)
+        _verify_child_node_states_scenario(states, parents)
+        new_states = Dict()
+        for (key, val) in states
+            if !allequal(typeof.(values(val)))
+                error("node $name has mixed interval and single value states probabilities!")
+            else
+                new_states[key] = _verify_child_node_state!(val, parameters)
             end
         end
-
-        functional_parents = filter(x -> isa(x, FunctionalNode), parents)
-        !isempty(functional_parents) && error("node $name has a functional parent, must be defined through DiscreteFunctionalNode struct")
-
-        discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
-
-        if isa(states, Dict{Vector{Symbol},Dict{Symbol,Real}})
-            normalized_states = Dict{Vector{Symbol},Dict{Symbol,Real}}()
-            for (key, val) in states
-                verify_probabilities(val)
-                normalized_prob = normalize(collect(values(val)), 1)
-                normalized_states[key] = Dict(zip(collect(keys(val)), normalized_prob))
-                verify_parameters(val, parameters)
-                length(discrete_parents) != length(key) && error("In node $name, defined parents states differ from number of its discrete parents")
-                any([k ∉ _get_states(discrete_parents[i]) for (i, k) in enumerate(key)]) && error("In node $name, defined parents states are not coherent with its discrete parents states")
-            end
-            states = normalized_states
-        end
-
-        node_states = [keys(s) for s in values(states)]
-        if length(reduce(intersect, node_states)) != length(reduce(union, node_states))
-            error("node $name: non-coherent definition of nodes states")
-        end
-
-        discrete_parents_combination = Iterators.product(_get_states.(discrete_parents)...)
-        discrete_parents_combination = map(t -> [t...], discrete_parents_combination)
-        length(discrete_parents_combination) != length(states) && error("In node $name, defined combinations are not equal to the theorical discrete parents combinations: $discrete_parents_combination")
         parents = convert(Vector{AbstractNode}, parents)
-
-        return new(name, parents, states, additional_info, parameters)
+        return new(name, parents, new_states, additional_info, parameters)
     end
 end
 
@@ -193,6 +154,14 @@ function DiscreteChildNode(
     DiscreteChildNode(name, parents, states, additional_info, parameters)
 end
 
+function _verify_discrete_child_node_state(states::Dict)
+    node_states = [keys(s) for s in values(states)]
+    if length(reduce(intersect, node_states)) != length(reduce(union, node_states))
+        state_list = unique(collect(Iterators.Flatten(node_states)))
+        error("non-coherent definition of nodes states: $state_list")
+    end
+end
+
 _get_states(node::DiscreteChildNode) = keys(first(values(node.states))) |> collect
 
 function get_parameters(node::DiscreteChildNode, evidence::Vector{Symbol})
@@ -210,7 +179,7 @@ function _is_imprecise(node::DiscreteChildNode)
 end
 
 function _extreme_points(node::DiscreteChildNode)
-    if EnhancedBayesianNetworks._is_imprecise(node)
+    if _is_imprecise(node)
         new_states = map(states -> _extreme_points_states_probabilities(states), values(node.states))
         new_states_combination = vec(collect(Iterators.product(new_states...)))
 

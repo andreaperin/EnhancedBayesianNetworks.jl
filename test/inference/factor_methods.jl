@@ -20,7 +20,7 @@
 
     ϕ = Factor(dimensions, potential, states_mapping)
 
-    red = reducedim(+, ϕ, :T)
+    red = EnhancedBayesianNetworks._reducedim(+, ϕ, :T)
     @test red.dimensions == [:V]
     @test red.potential == [1.0, 1.0]
     @test red.states_mapping == Dict(:V => Dict(:yesV => 1, :noV => 2))
@@ -45,7 +45,7 @@
     @test_throws TypeError(:broadcast!, "Invalid broadcast value", Union{Float64,Vector{Float64}}, [2016]) broadcast(*, ϕ, :X, [2016])
 
     ϕ = Factor(dimensions, potential, states_mapping)
-    reducedim!(+, ϕ, :T)
+    EnhancedBayesianNetworks._reducedim!(+, ϕ, :T)
     @test ϕ.dimensions == [:V]
     @test ϕ.potential == [1.0, 1.0]
     @test ϕ.states_mapping == Dict(:V => Dict(:yesV => 1, :noV => 2))

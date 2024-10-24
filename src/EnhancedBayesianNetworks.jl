@@ -54,8 +54,8 @@ const Evidence = Dict{Symbol,Symbol}
 export Evidence
 
 # Methods
-export discretize
 export evaluate
+export evaluate_with_envelope
 export factorize_cpd
 export discrete_ancestors
 export get_children
@@ -71,21 +71,9 @@ export get_state_probability
 export get_continuous_input
 export gplot
 export infer
-export is_equal
 export markov_blanket
 export markov_envelope
-export minimal_increase_in_complexity
-export reducedim
-export reducedim!
-export reduce_ebn_markov_envelopes
-export reduce_ebn_standard
 export show
-export transfer_continuous
-export update_network!
-
-export pdf
-export cdf
-export logpdf
 
 include("nodes/nodes.jl")
 include("ebn/ebn.jl")
