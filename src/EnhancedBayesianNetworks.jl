@@ -1,13 +1,15 @@
 module EnhancedBayesianNetworks
 
 using AutoHashEquals
+using Compose
 using DataFrames
 using Distributed
 using Distributions
-using GraphRecipes
 using Graphs
 using LinearAlgebra
+using NetworkLayout
 using Reexport
+using SparseArrays
 using UncertaintyQuantification: sample, Interval
 using Polyhedra: HalfSpace, doubledescription
 
@@ -67,6 +69,7 @@ export get_simulation
 export state_combinations
 export get_state_probability
 export get_continuous_input
+export gplot
 export infer
 export is_equal
 export markov_blanket
@@ -87,5 +90,7 @@ export logpdf
 include("nodes/nodes.jl")
 include("ebn/ebn.jl")
 include("inference/inference.jl")
+include("util/base_show.jl")
+include("util/plots.jl")
 
 end
