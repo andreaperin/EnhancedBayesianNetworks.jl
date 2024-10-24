@@ -151,7 +151,11 @@ end
 
 function node_color(n::AbstractNode)
     if isa(n, FunctionalNode)
-        return "lightsalmon"
+        if isa(n, DiscreteNode)
+            return "lightsalmon"
+        else
+            return "red1"
+        end
     elseif isa(n, ContinuousNode)
         if EnhancedBayesianNetworks._is_imprecise(n)
             return "cyan1"
