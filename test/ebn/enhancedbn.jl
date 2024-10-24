@@ -194,8 +194,8 @@
         @test issetequal(EnhancedBayesianNetworks._markov_envelope_continuous_nodes_group(ebn, Y5), [Y5, X4, X3])
 
         envelopes = markov_envelope(ebn)
-        @test issetequal(envelopes[1], [Y6, Y5, X4])
-        @test issetequal(envelopes[2], [X1, X2, X3, Y1, Y2, Y3, Y4, Y5])
+        @test issetequal(envelopes[1], [X1, X2, X3, Y1, Y2, Y3, Y4, Y5])
+        @test issetequal(envelopes[2], [Y6, Y5, X4])
     end
 
     @testset "Straub-Example" begin

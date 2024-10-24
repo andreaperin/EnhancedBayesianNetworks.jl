@@ -27,7 +27,7 @@
 
     new_discrete_functional = DiscreteFunctionalNode(:fd, [new_discrete_functional1, root2, root3], [model2, model4, model5], performance2, MonteCarlo(300))
 
-    new_ebn = transfer_continuous(ebn)
+    new_ebn = EnhancedBayesianNetworks._transfer_continuous(ebn)
     @test new_ebn == EnhancedBayesianNetwork(EnhancedBayesianNetworks._transfer_continuous!(deepcopy(ebn.nodes)))
     @test issetequal(new_ebn.nodes, [root1, root2, root3, new_discrete_functional1, new_discrete_functional])
 

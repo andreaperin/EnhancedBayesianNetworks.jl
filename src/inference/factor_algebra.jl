@@ -1,5 +1,5 @@
 # reduce the dimension and then squeeze them out
-Base.sum(ϕ::Factor, dims::Union{Symbol,Vector{Symbol}}) = reducedim(+, ϕ, dims)
+Base.sum(ϕ::Factor, dims::Union{Symbol,Vector{Symbol}}) = _reducedim(+, ϕ, dims)
 
 function Base.join(op, ϕ1::Factor, ϕ2::Factor)
     if length(ϕ1) < length(ϕ2)

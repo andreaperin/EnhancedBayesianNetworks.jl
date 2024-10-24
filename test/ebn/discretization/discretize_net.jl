@@ -37,5 +37,5 @@
 
     nodes = [standard1_node, root1, root3, root2, standard2_node, functional2_node]
     ebn = EnhancedBayesianNetwork(nodes)
-    @test discretize(ebn) == EnhancedBayesianNetwork(EnhancedBayesianNetworks._discretize!(ebn.nodes))
+    @test EnhancedBayesianNetworks._discretize(ebn) == EnhancedBayesianNetwork(EnhancedBayesianNetworks._discretize!(ebn.nodes))
 end

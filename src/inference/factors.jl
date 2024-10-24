@@ -1,4 +1,4 @@
-mutable struct Factor
+@auto_hash_equals mutable struct Factor
     dimensions::Vector{Symbol}
     potential::Array
     states_mapping::Dict{Symbol,Dict{Symbol,Int}}
