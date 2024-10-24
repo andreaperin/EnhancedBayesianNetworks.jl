@@ -1,4 +1,4 @@
-abstract type ProbabilisticGraphicalModel end
+abstract type AbstractNetwork end
 
 include("cpd/conditionalprobabilitydistribution.jl")
 include("enhancedbn.jl")
@@ -15,6 +15,3 @@ include("trasmission/trasmission_net.jl")
 
 include("evaluation/evaluate_node.jl")
 include("evaluation/evaluate_net.jl")
-
-
-include("../util/plots.jl")

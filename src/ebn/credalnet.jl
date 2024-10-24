@@ -1,4 +1,4 @@
-@auto_hash_equals struct CredalNetwork <: ProbabilisticGraphicalModel
+@auto_hash_equals struct CredalNetwork <: AbstractNetwork
     dag::SimpleDiGraph
     nodes::Vector{<:DiscreteNode}
     name_to_index::Dict{Symbol,Int}

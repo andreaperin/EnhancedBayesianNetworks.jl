@@ -1,4 +1,5 @@
-@auto_hash_equals struct BayesianNetwork <: ProbabilisticGraphicalModel
+
+@auto_hash_equals struct BayesianNetwork <: AbstractNetwork
     dag::SimpleDiGraph
     nodes::Vector{<:DiscreteNode}
     name_to_index::Dict{Symbol,Int}
