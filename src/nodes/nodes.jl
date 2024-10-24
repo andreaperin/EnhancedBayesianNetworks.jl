@@ -66,7 +66,6 @@ end
 
 ApproximatedDiscretization() = ApproximatedDiscretization(Vector{Real}(), 0)
 
-
 function _get_position(nodes::AbstractVector{<:AbstractNode})
     adj_matrix = get_adj_matrix(nodes)
     pos = spring(adj_matrix; iterations=1000)
@@ -110,7 +109,6 @@ function _order_node(nodes::AbstractVector{<:AbstractNode})
     end
     return root
 end
-
 
 include("../util/node_verification.jl")
 include("root.jl")
