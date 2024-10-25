@@ -1,4 +1,5 @@
 function gplot(net::AbstractNetwork;
+    auto_node_size=false,
     title="",
     title_color="black",
     title_size=4.0,
@@ -17,11 +18,11 @@ function gplot(net::AbstractNetwork;
     arrowlengthfrac=0.1,
     arrowangleoffset=π / 9,
     background_color=nothing,
-    plot_size=(15cm, 15cm),
-    leftpad=0mm,
-    rightpad=0mm,
-    toppad=0mm,
-    bottompad=0mm
+    plot_size=(15, 15),
+    leftpad=0,
+    rightpad=0,
+    toppad=0,
+    bottompad=0
 )
     ## Title
     title_offset = isempty(title) ? 0 : 0.1 * title_size / 4 #Fix title offset
@@ -51,12 +52,15 @@ function gplot(net::AbstractNetwork;
     end
     map!(z -> scaler(z, min_x, max_x), locs_x, locs_x)
     map!(z -> scaler(z, min_y, max_y), locs_y, locs_y)
+
     nodecircle = fill(0.4 * 2.4, length(locs_x))
-    nodesize = map(n -> length(String(n.name)), node_list)
-    nodesize = normalize(nodesize) .* nodesizefactor
-    for i = 1:length(locs_x)
-        nodecircle[i] *= nodesize[i]
+    if auto_node_size
+        nodesize = map(n -> length(String(n.name)), node_list)
+        nodesize = normalize(nodesize) .* 3
+    else
+        nodesize = fill(nodesizefactor, length(locs_x))
     end
+    nodecircle = map((x, y) -> x * y, nodecircle, nodesize)
     nodes = circle(locs_x, locs_y, nodecircle)
 
     nodelabel = map(n -> n.name, node_list)
@@ -183,6 +187,11 @@ function _midpoint(pt1, pt2)
     x = (pt1[1] + pt2[1]) / 2
     y = (pt1[2] + pt2[2]) / 2
     return x, y
+end
+
+function saveplot(gplot::Compose.Context, filename::String)
+    draw(SVG(filename), gplot)
+    return nothing
 end
 
 # ```

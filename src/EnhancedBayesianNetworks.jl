@@ -73,6 +73,7 @@ export gplot
 export infer
 export markov_blanket
 export markov_envelope
+export saveplot
 export show
 
 include("nodes/nodes.jl")
