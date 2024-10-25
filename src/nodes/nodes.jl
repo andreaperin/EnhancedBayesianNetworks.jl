@@ -115,3 +115,7 @@ include("root.jl")
 include("child.jl")
 include("functional.jl")
 include("common.jl")
+
+
+include("new_child.jl")
+include("new_functional.jl")

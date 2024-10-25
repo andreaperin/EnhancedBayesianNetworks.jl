@@ -15,3 +15,6 @@ include("trasmission/trasmission_net.jl")
 
 include("evaluation/evaluate_node.jl")
 include("evaluation/evaluate_net.jl")
+
+
+include("new_enhancedbn.jl")
