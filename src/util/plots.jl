@@ -71,10 +71,10 @@ function gplot(net::AbstractNetwork;
     nodelabelsize *= max_nodelabelsize
 
     edges_list = _get_edges(get_adj_matrix(node_list))
-    lines, larrows = build_straight_edges(edges_list, locs_x, locs_y, nodesize, arrowlengthfrac, arrowangleoffset)
+    lines, larrows = _build_straight_edges(edges_list, locs_x, locs_y, nodesize, arrowlengthfrac, arrowangleoffset)
     nodestrokelw = map(n -> isa(n, DiscreteNode) ? 0.0 : 0.0, node_list)
 
-    colors = node_color.(node_list)
+    colors = _node_color.(node_list)
 
     Compose.set_default_graphic_size(plot_size...)
     compose(
@@ -91,20 +91,20 @@ function gplot(net::AbstractNetwork;
     )
 end
 
-function build_straight_edges(edge_list, locs_x, locs_y, nodesize, arrowlengthfrac, arrowangleoffset)
+function _build_straight_edges(edge_list, locs_x, locs_y, nodesize, arrowlengthfrac, arrowangleoffset)
     if arrowlengthfrac > 0.0
-        lines_cord, arrows_cord = graphline(edge_list, locs_x, locs_y, nodesize, arrowlengthfrac, arrowangleoffset)
+        lines_cord, arrows_cord = _graphline(edge_list, locs_x, locs_y, nodesize, arrowlengthfrac, arrowangleoffset)
         lines = line(lines_cord)
         larrows = polygon(arrows_cord)
     else
-        lines_cord = graphline(edge_list, locs_x, locs_y, nodesize)
+        lines_cord = _graphline(edge_list, locs_x, locs_y, nodesize)
         lines = line(lines_cord)
         larrows = nothing
     end
     return lines, larrows
 end
 
-function graphline(edge_list, locs_x, locs_y, nodesize::Vector{T}) where {T<:Real}
+function _graphline(edge_list, locs_x, locs_y, nodesize::Vector{T}) where {T<:Real}
     num_edges = length(edge_list)
     lines = Array{Vector{Tuple{Float64,Float64}}}(undef, num_edges)
     for (e_idx, e) in enumerate(edge_list)
@@ -122,7 +122,7 @@ function graphline(edge_list, locs_x, locs_y, nodesize::Vector{T}) where {T<:Rea
     lines
 end
 
-function graphline(edge_list, locs_x, locs_y, nodesize::Vector{T}, arrowlength, angleoffset) where {T<:Real}
+function _graphline(edge_list, locs_x, locs_y, nodesize::Vector{T}, arrowlength, angleoffset) where {T<:Real}
     num_edges = length(edge_list)
     lines = Array{Vector{Tuple{Float64,Float64}}}(undef, num_edges)
     arrows = Array{Vector{Tuple{Float64,Float64}}}(undef, num_edges)
@@ -136,11 +136,11 @@ function graphline(edge_list, locs_x, locs_y, nodesize::Vector{T}, arrowlength, 
         starty = locs_y[i] + nodesize[i] * sin(θ)
         endx = locs_x[j] + nodesize[j] * cos(θ + π)
         endy = locs_y[j] + nodesize[j] * sin(θ + π)
-        arr1, arr2 = arrowcoords(θ, endx, endy, arrowlength, angleoffset)
-        endx0, endy0 = midpoint(arr1, arr2)
+        arr1, arr2 = _arrowcoords(θ, endx, endy, arrowlength, angleoffset)
+        endx0, endy0 = _midpoint(arr1, arr2)
         e_idx2 = findfirst(==((j, i)), edge_list)
         if !isnothing(e_idx2) && e_idx2 < e_idx
-            startx, starty = midpoint(arrows[e_idx2][[1, 3]]...)
+            startx, starty = _midpoint(arrows[e_idx2][[1, 3]]...)
             lines[e_idx2][1] = (endx0, endy0)
         end
         lines[e_idx] = [(startx, starty), (endx0, endy0)]
@@ -149,7 +149,7 @@ function graphline(edge_list, locs_x, locs_y, nodesize::Vector{T}, arrowlength, 
     lines, arrows
 end
 
-function node_color(n::AbstractNode)
+function _node_color(n::AbstractNode)
     if isa(n, FunctionalNode)
         if isa(n, DiscreteNode)
             return "lightsalmon"
@@ -171,7 +171,7 @@ function node_color(n::AbstractNode)
     end
 end
 
-function arrowcoords(θ, endx, endy, arrowlength, angleoffset=20.0 / 180.0 * π)
+function _arrowcoords(θ, endx, endy, arrowlength, angleoffset=20.0 / 180.0 * π)
     arr1x = endx - arrowlength * cos(θ + angleoffset)
     arr1y = endy - arrowlength * sin(θ + angleoffset)
     arr2x = endx - arrowlength * cos(θ - angleoffset)
@@ -179,7 +179,7 @@ function arrowcoords(θ, endx, endy, arrowlength, angleoffset=20.0 / 180.0 * π)
     return (arr1x, arr1y), (arr2x, arr2y)
 end
 
-function midpoint(pt1, pt2)
+function _midpoint(pt1, pt2)
     x = (pt1[1] + pt2[1]) / 2
     y = (pt1[2] + pt2[2]) / 2
     return x, y
