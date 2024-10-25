@@ -13,8 +13,6 @@ function gplot(net::AbstractNetwork;
     edgelinewidth=1.0,
     EDGELINEWIDTH=1.0 / sqrt(length(net.nodes)),
     nodesizefactor=0.3,
-    nodestrokec=nothing,
-    nodestrokelw=0.0,
     arrowlengthfrac=0.1,
     arrowangleoffset=π / 9,
     background_color=nothing,
@@ -29,11 +27,6 @@ function gplot(net::AbstractNetwork;
     title = Compose.text(0, -1.2 - title_offset / 2, title, hcenter, vcenter)
     ## Plot dim
     plot_area = (-1.2, -1.2 - title_offset, +2.4, +2.4 + title_offset)
-    max_nodestrokelw = maximum(nodestrokelw)
-    if max_nodestrokelw > 0.0
-        max_nodestrokelw = EDGELINEWIDTH / max_nodestrokelw
-        nodestrokelw *= max_nodestrokelw
-    end
     max_edgelinewidth = EDGELINEWIDTH / maximum(edgelinewidth)
     edgelinewidth *= max_edgelinewidth
 
@@ -76,7 +69,21 @@ function gplot(net::AbstractNetwork;
 
     edges_list = _get_edges(get_adj_matrix(node_list))
     lines, larrows = _build_straight_edges(edges_list, locs_x, locs_y, nodesize, arrowlengthfrac, arrowangleoffset)
-    nodestrokelw = map(n -> isa(n, DiscreteNode) ? 0.0 : 0.0, node_list)
+
+    function _is2discretize(n)
+        if isa(n, ContinuousNode)
+            if !isempty(n.discretization.intervals)
+                return true
+            else
+                return false
+            end
+        else
+            return false
+        end
+    end
+
+    nodestrokelw = map(n -> _is2discretize(n) ? 2 : 0.0, node_list)
+    nodestrokec = map(n -> _is2discretize(n) ? "black" : nothing, node_list)
 
     colors = _node_color.(node_list)
 
