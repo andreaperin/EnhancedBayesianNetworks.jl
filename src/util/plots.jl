@@ -80,6 +80,13 @@ function gplot(net::AbstractNetwork;
 
     colors = _node_color.(node_list)
 
+    plot_size = (plot_size[1]cm, plot_size[2]cm)
+    padding = [leftpad, rightpad, toppad, bottompad]
+    leftpad = padding[1]mm
+    rightpad = padding[2]mm
+    toppad = padding[3]mm
+    bottompad = padding[4]mm
+
     Compose.set_default_graphic_size(plot_size...)
     compose(
         context(units=UnitBox(plot_area...; leftpad, rightpad, toppad, bottompad)),
