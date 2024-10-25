@@ -1,5 +1,8 @@
 function gplot(net::AbstractNetwork;
     auto_node_size=false,
+    nodesizefactor=0.3,
+    arrowlengthfrac=0.1,
+    discretization_thickness=0.2,
     title="",
     title_color="black",
     title_size=4.0,
@@ -12,8 +15,6 @@ function gplot(net::AbstractNetwork;
     edgestrokec="black",
     edgelinewidth=1.0,
     EDGELINEWIDTH=1.0 / sqrt(length(net.nodes)),
-    nodesizefactor=0.3,
-    arrowlengthfrac=0.1,
     arrowangleoffset=π / 9,
     background_color=nothing,
     plot_size=(15, 15),
@@ -82,7 +83,7 @@ function gplot(net::AbstractNetwork;
         end
     end
 
-    nodestrokelw = map(n -> _is2discretize(n) ? 2 : 0.0, node_list)
+    nodestrokelw = map(n -> _is2discretize(n) ? discretization_thickness : 0.0, node_list)
     nodestrokec = map(n -> _is2discretize(n) ? "black" : nothing, node_list)
 
     colors = _node_color.(node_list)
