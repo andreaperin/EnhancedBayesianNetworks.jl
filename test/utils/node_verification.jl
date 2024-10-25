@@ -2,7 +2,7 @@
     states = Dict(:a => 0.2, :b => 0.8)
     @test isnothing(EnhancedBayesianNetworks._verify_probabilities(states))
     states = Dict(:a => 0.2, :b => 0.1)
-    @test_throws ErrorException("defined states probabilities Dict(:a => 0.2, :b => 0.1) are wrong") EnhancedBayesianNetworks._verify_probabilities(states)
+    @test_throws ErrorException("defined states probabilities [0.2, 0.1] are wrong") EnhancedBayesianNetworks._verify_probabilities(states)
     states = Dict(:a => 0.2, :b => 0.7999999999)
     @test_logs (:warn, "total probaility should be one, but the evaluated value is 0.9999999999 , and will be normalized") EnhancedBayesianNetworks._verify_probabilities(states)
 

@@ -1,12 +1,13 @@
 function _verify_probabilities(states::Dict{Symbol,<:Real})
     any(values(states) .< 0.0) && error("Probabilites must be nonnegative")
     any(values(states) .> 1.0) && error("Probabilites must be less or equal to 1.0")
-    total_proability = sum(values(states))
-    if total_proability != 1
-        if isapprox(total_proability, 1; rtol=0.01)
-            @warn "total probaility should be one, but the evaluated value is $total_proability , and will be normalized"
+    total_probability = sum(values(states))
+    if total_probability != 1
+        if isapprox(total_probability, 1; atol=0.05)
+            @warn "total probaility should be one, but the evaluated value is $total_probability , and will be normalized"
         else
-            error("defined states probabilities $states are wrong")
+            probs = collect(values(states))
+            error("defined states probabilities $probs are wrong")
         end
     end
 end

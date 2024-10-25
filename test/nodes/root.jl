@@ -58,7 +58,7 @@
         @test_throws ErrorException("Probabilites must be less or equal to 1.0") DiscreteRootNode(name, states, parameters)
 
         states = Dict(:yes => 0.8, :no => 0.8)
-        @test_throws ErrorException("defined states probabilities Dict{Symbol, Real}(:yes => 0.8, :no => 0.8) are wrong") DiscreteRootNode(name, states, parameters)
+        @test_throws ErrorException("defined states probabilities Real[0.8, 0.8] are wrong") DiscreteRootNode(name, states, parameters)
 
         states = Dict(:yes => 0.4999, :no => 0.4999)
         @test_logs (:warn, "total probaility should be one, but the evaluated value is 0.9998 , and will be normalized") DiscreteRootNode(name, states, parameters)
