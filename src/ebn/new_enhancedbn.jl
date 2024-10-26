@@ -13,7 +13,7 @@ function Network(nodes::AbstractVector)
     return Network(topology_dict, adj_matrix)
 end
 
-function add_child!(net::Network, par::Symbol, ch::Symbol)
+function add_child!(net::Network, nodes::AbstractVector, par::Symbol, ch::Symbol)
     index_par = net.topology_dict[par]
     index_ch = net.topology_dict[ch]
     net.adj_matrix[index_par, index_ch] = 1

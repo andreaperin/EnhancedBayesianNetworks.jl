@@ -34,7 +34,7 @@ demo/TH_model/*
 demo/BayesianUpdate/*
 demo/imprecise_bn.jl
 demo/markov.jl
-
+demo/paper_figs/*
 coverage/*
 
 old/*
@@ -45,9 +45,12 @@ demo/HC_ebn.jl
 .DS_Store
 imgs/
 demo/Hydrogen_new/ebn/
+demo/Diegos_tower/
 demo/papers_fig.jl
 demo/credal.jl
 demo/imprecise_bn_continuous.jl
 demo/imprecise_bn.jl
 demo/jasper_example_math.jl
 demo/vehicle_suspension.jl
+demo/vehicle_suspension_imprecise.jl
+demo/adiajency.jl
