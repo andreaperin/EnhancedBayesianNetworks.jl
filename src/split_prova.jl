@@ -10,25 +10,26 @@ using EnhancedBayesianNetworks
 #     [:YesT, :YesF] => Dict(:NoA => [0.400000, 0.435894], :YesA => [0.564106, 0.600000])
 # )
 
-# alarm = EnhancedBayesianNetworks.NewDiscreteChildNode(:Alarm, alarm_states)
+# alarm = DiscreteChildNode(:Alarm, alarm_states)
 
 # smoke_state = Dict(
 #     [:NoF] => Dict(:NoS => [0.897531, 0.915557], :YesS => [0.010000, 0.102469]),
 #     [:YesF] => Dict(:NoS => [0.090000, 0.110000], :YesS => [0.890000, 0.910000])
 # )
-# smoke = EnhancedBayesianNetworks.NewDiscreteChildNode(:Smoke, smoke_state)
+# smoke = DiscreteChildNode(:Smoke, smoke_state)
 
 leaving_state = Dict(
     [:NoA] => Dict(:NoL => [0.585577, 0.599999], :YesL => [0.400001, 0.414423]),
     [:YesA] => Dict(:NoL => [0.100000, 0.129999], :YesL => [0.870001, 0.900000])
 )
-leaving = EnhancedBayesianNetworks.NewDiscreteChildNode(:Leaving, leaving_state)
+name = :Leaving
+leaving = DiscreteChildNode(:Leaving, leaving_state)
 
 # report_state = Dict(
 #     [:NoL] => Dict(:NoR => [0.809988, 0.828899], :YesR => [0.171101, 0.190012]),
 #     [:YesL] => Dict(:NoR => [0.240011, 0.250000], :YesR => [0.750000, 0.759989])
 # )
-# report = EnhancedBayesianNetworks.NewDiscreteChildNode(:Report, report_state)
+# report = DiscreteChildNode(:Report, report_state)
 
 # nodes = [fire, alarm, smoke, tampering, leaving, report]
 # EnhancedBayesianNetworks.add_child!(net, :Tampering, :Alarm)
@@ -41,15 +42,16 @@ leaving = EnhancedBayesianNetworks.NewDiscreteChildNode(:Leaving, leaving_state)
 M = 3.2633
 m = 0.8158
 g = 981
-A = EnhancedBayesianNetworks.NewDiscreteRootNode(:A, Dict(:road => [0.6, 0.7], :offroad => [0.3, 0.4]), Dict(:road => [Parameter(0.15915, :A)], :offroad => [Parameter(0.8, :A)]))
-b₀ = EnhancedBayesianNetworks.NewDiscreteRootNode(:b₀, Dict(:normal_load => 0.6999, :over_load => 0.3), Dict(:normal_load => [Parameter(0.27, :b₀)], :over_load => [Parameter(0.5, :b₀)]))
+A = DiscreteRootNode(:A, Dict(:road => [0.6, 0.7], :offroad => [0.3, 0.4]), Dict(:road => [Parameter(0.15915, :A)], :offroad => [Parameter(0.8, :A)]))
+b₀ = DiscreteRootNode(:b₀, Dict(:normal_load => 0.6999, :over_load => 0.3), Dict(:normal_load => [Parameter(0.27, :b₀)], :over_load => [Parameter(0.5, :b₀)]))
 
 discretization_v = EnhancedBayesianNetworks.ExactDiscretization(collect(range(8.5, 11.5, 4)))
 
-V = EnhancedBayesianNetworks.NewContinuousRootNode(:V, Uniform(7, 12), discretization_v)
-C = EnhancedBayesianNetworks.NewContinuousRootNode(:C, Normal(431.7221, 10))
-Cₖ = EnhancedBayesianNetworks.NewContinuousRootNode(:Cₖ, Normal(1475.5503, 10))
-K = EnhancedBayesianNetworks.NewContinuousRootNode(:K, Normal(55.0406, 10))
+V = ContinuousRootNode(:V, Uniform(7, 12), discretization_v)
+C = ContinuousRootNode(:C, Normal(431.7221, 10))
+Cₖ = ContinuousRootNode(:Cₖ, Normal(1475.5503, 10))
+K = ContinuousRootNode(:K, Normal(55.0406, 10))
+
 
 function composite_model(A, b₀, V, M, m, g, C, Cₖ, K)
     g1 = 1 .- (π .* m .* V .* A) ./ (b₀ .* K .* g .^ 2) .* [(Cₖ ./ (m .+ M) .- (C ./ M)) .^ 2 .+ C .^ 2 ./ (m .* M) .+ Cₖ .* K .^ 2 ./ (m .* M .^ 2)]
@@ -63,7 +65,7 @@ model = Model(df -> composite_model.(df.A, df.b₀, df.V, M, m, g, df.C, df.Cₖ
 performance = df -> df.y
 sim = MonteCarlo(2 * 10^6)
 
-E = EnhancedBayesianNetworks.NewDiscreteFunctionalNode(:E, [model], performance, sim)
+E = DiscreteFunctionalNode(:E, [model], performance, sim)
 
 nodes = [A, b₀, V, C, Cₖ, K, E]
 net = EnhancedBayesianNetworks.Network(nodes)

@@ -25,7 +25,7 @@ function _verify_probabilities(states::Dict{Symbol,AbstractVector{Real}})
     end
 end
 
-function _verify_parameters(states::Dict, parameters::Dict{Symbol,Vector{Parameter}})
+function __verify_parameters(states::Dict, parameters::Dict{Symbol,Vector{Parameter}})
     if !isempty(parameters)
         if keys(states) != keys(parameters)
             error("parameters must be coherent with states")

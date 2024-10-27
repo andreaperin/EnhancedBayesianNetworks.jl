@@ -66,6 +66,22 @@ end
 
 ApproximatedDiscretization() = ApproximatedDiscretization(Vector{Real}(), 0)
 
+function _extreme_points_states_probabilities(states::Dict{Symbol,<:AbstractDiscreteProbability})
+    n = length(states)
+    A = zeros(2 * n, n)
+    A[collect(1:2:2*n), :] = Matrix(-1.0I, n, n)
+    A[collect(2:2:2*n), :] = Matrix(1.0I, n, n)
+    A = vcat(A, [-ones(n)'; ones(n)'])
+
+    b = collect(Iterators.flatten(collect(values(states))))
+    b[collect(1:2:2*n)] = -b[collect(1:2:2*n)]
+    b = vcat(b, [-1 1]')
+
+    h = mapreduce((Ai, bi) -> HalfSpace(Ai, bi), ∩, [A[i, :] for i in axes(A, 1)], b)
+    v = doubledescription(h)
+    return map(val -> Dict(keys(states) .=> val), v.points.points)
+end
+
 # function _get_position(nodes::AbstractVector{<:AbstractNode})
 #     adj_matrix = get_adj_matrix(nodes)
 #     pos = spring(adj_matrix; iterations=1000)
@@ -115,7 +131,7 @@ ApproximatedDiscretization() = ApproximatedDiscretization(Vector{Real}(), 0)
 # include("child.jl")
 # include("functional.jl")
 # include("common.jl")
-
-include("new_root.jl")
-include("new_child.jl")
-include("new_functional.jl")
+include("../util/probabilities_verification.jl")
+include("root.jl")
+include("child.jl")
+include("functional.jl")
