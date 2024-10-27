@@ -19,7 +19,7 @@
 
     states = Dict(:a => 0.2, :b => 0.1)
     parameters = Dict(:a => [Parameter(1, :A)], :b => [Parameter(2, :A)])
-    @test isnothing(EnhancedBayesianNetworks._verify_parameters(states, parameters))
+    @test isnothing(EnhancedBayesianNetworks.__verify_parameters(states, parameters))
     parameters = Dict(:c => [Parameter(1, :A)], :b => [Parameter(2, :A)])
-    @test_throws ErrorException("parameters must be coherent with states") EnhancedBayesianNetworks._verify_parameters(states, parameters)
+    @test_throws ErrorException("parameters must be coherent with states") EnhancedBayesianNetworks.__verify_parameters(states, parameters)
 end

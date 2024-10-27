@@ -1,4 +1,4 @@
-@auto_hash_equals struct ContinuousRootNode <: ContinuousNode
+@auto_hash_equals struct ContinuousRootNode
     name::Symbol
     distribution::AbstractContinuousInput
     additional_info::Dict
@@ -9,7 +9,7 @@ ContinuousRootNode(name::Symbol, distribution::AbstractContinuousInput, discrete
 
 ContinuousRootNode(name::Symbol, distribution::AbstractContinuousInput) = ContinuousRootNode(name, distribution, Dict(), ExactDiscretization())
 
-function get_continuous_input(node::ContinuousRootNode, ::Vector{Symbol})
+function _get_continuous_input(node::ContinuousRootNode, ::Vector{Symbol})
     if isa(node.distribution, UnivariateDistribution)
         return RandomVariable(node.distribution, node.name)
     elseif isa(node.distribution, Tuple{Real,Real})
@@ -19,8 +19,8 @@ function get_continuous_input(node::ContinuousRootNode, ::Vector{Symbol})
     end
 end
 
-get_continuous_input(node::ContinuousRootNode) = get_continuous_input(node, Vector{Symbol}())
-get_continuous_input(node::ContinuousRootNode, ::Vector{Any}) = get_continuous_input(node)
+_get_continuous_input(node::ContinuousRootNode) = _get_continuous_input(node, Vector{Symbol}())
+_get_continuous_input(node::ContinuousRootNode, ::Vector{Any}) = _get_continuous_input(node)
 
 function _get_node_distribution_bounds(node::ContinuousRootNode)
     if isa(node.distribution, UnivariateDistribution)
@@ -58,18 +58,18 @@ function _is_imprecise(node::ContinuousRootNode)
     !isa(node.distribution, UnivariateDistribution)
 end
 
-@auto_hash_equals struct DiscreteRootNode <: DiscreteNode
+@auto_hash_equals struct DiscreteRootNode
     name::Symbol
-    states::Dict{Symbol,AbstractDiscreteProbability}
+    states::Dict{Symbol,<:AbstractDiscreteProbability}
     additional_info::Dict
     parameters::Dict{Symbol,Vector{Parameter}}
 
     function DiscreteRootNode(name::Symbol, states::Dict, additional_info::Dict, parameters::Dict{Symbol,Vector{Parameter}})
-
         if !allequal(typeof.(values(states)))
             error("node $name has mixed interval and single value states probabilities!")
         else
-            states = _verify_child_node_state!(states, parameters)
+            _check_root_states!(states)
+            _verify_parameters(states, parameters)
             return new(name, states, additional_info, parameters)
         end
     end
@@ -81,7 +81,8 @@ DiscreteRootNode(name::Symbol, states::Dict) = DiscreteRootNode(name, states, Di
 
 _get_states(node::DiscreteRootNode) = collect(keys(node.states))
 
-function get_parameters(node::DiscreteRootNode, evidence::Vector{Symbol})
+
+function _get_parameters(node::DiscreteRootNode, evidence::Vector{Symbol})
     name = node.name
     isempty(node.parameters) && error("node $name has an empty parameters vector")
     e = filter(e -> haskey(node.parameters, e), evidence)
@@ -90,7 +91,7 @@ function get_parameters(node::DiscreteRootNode, evidence::Vector{Symbol})
 end
 
 function _is_imprecise(node::DiscreteRootNode)
-    any(isa.(values(node.states), Vector{Real}))
+    any(isa.(values(node.states), AbstractVector{<:Real}))
 end
 
 function _extreme_points(node::DiscreteRootNode)
@@ -101,5 +102,3 @@ function _extreme_points(node::DiscreteRootNode)
         return [node]
     end
 end
-
-const global RootNode = Union{DiscreteRootNode,ContinuousRootNode}

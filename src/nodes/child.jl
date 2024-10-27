@@ -1,57 +1,40 @@
 ``` ContinuousChildNode
 ```
-@auto_hash_equals struct ContinuousChildNode <: ContinuousNode
+@auto_hash_equals struct ContinuousChildNode
     name::Symbol
-    parents::Vector{<:AbstractNode}
     distribution::Dict{Vector{Symbol},<:AbstractContinuousInput}
     additional_info::Dict{Vector{Symbol},Dict}
     discretization::ApproximatedDiscretization
-
-    function ContinuousChildNode(
-        name::Symbol,
-        parents::Vector{<:AbstractNode},
-        distribution::Dict{Vector{Symbol},<:AbstractContinuousInput},
-        additional_info::Dict{Vector{Symbol},Dict},
-        discretization::ApproximatedDiscretization
-    )
-        _verify_child_parents(distribution, parents)
-        _verify_child_node_states_scenario(distribution, parents)
-        parents = convert(Vector{AbstractNode}, parents)
-        return new(name, parents, distribution, additional_info, discretization)
-    end
 end
 
 function ContinuousChildNode(
     name::Symbol,
-    parents::Vector{<:AbstractNode},
     distribution::Dict{Vector{Symbol},<:AbstractContinuousInput}
 )
     additional_info = Dict{Vector{Symbol},Dict}()
     discretization = ApproximatedDiscretization()
-    ContinuousChildNode(name, parents, distribution, additional_info, discretization)
+    ContinuousChildNode(name, distribution, additional_info, discretization)
 end
 
 function ContinuousChildNode(
     name::Symbol,
-    parents::Vector{<:AbstractNode},
     distribution::Dict{Vector{Symbol},<:AbstractContinuousInput},
     additional_info::Dict{Vector{Symbol},Dict}
 )
     discretization = ApproximatedDiscretization()
-    ContinuousChildNode(name, parents, distribution, additional_info, discretization)
+    ContinuousChildNode(name, distribution, additional_info, discretization)
 end
 
 function ContinuousChildNode(
     name::Symbol,
-    parents::Vector{<:AbstractNode},
     distribution::Dict{Vector{Symbol},<:AbstractContinuousInput},
     discretization::ApproximatedDiscretization
 )
     additional_info = Dict{Vector{Symbol},Dict}()
-    ContinuousChildNode(name, parents, distribution, additional_info, discretization)
+    ContinuousChildNode(name, distribution, additional_info, discretization)
 end
 
-function get_continuous_input(node::ContinuousChildNode, evidence::Vector{Symbol})
+function _get_continuous_input(node::ContinuousChildNode, evidence::Vector{Symbol})
     node_keys = keys(node.distribution) |> collect
     name = node.name
     all(.![issubset(i, evidence) for i in keys(node.distribution)]) && error("evidence $evidence does not contain all the parents of the ContinuousChildNode $name")
@@ -93,78 +76,54 @@ end
 
 ``` DiscreteChildNode
 ```
-@auto_hash_equals struct DiscreteChildNode <: DiscreteNode
+@auto_hash_equals struct DiscreteChildNode
     name::Symbol
-    parents::Vector{<:AbstractNode}
     states::Dict{Vector{Symbol},Dict{Symbol,AbstractDiscreteProbability}}
     additional_info::Dict{Vector{Symbol},Dict}
     parameters::Dict{Symbol,Vector{Parameter}}
 
     function DiscreteChildNode(
         name::Symbol,
-        parents::Vector{<:AbstractNode},
         states::Dict,
         additional_info::Dict{Vector{Symbol},Dict},
         parameters::Dict{Symbol,Vector{Parameter}}
     )
-        _verify_child_parents(states, parents)
-        _verify_discrete_child_node_state(states)
-        _verify_child_node_states_scenario(states, parents)
-        new_states = Dict()
-        for (key, val) in states
-            if !allequal(typeof.(values(val)))
-                error("node $name has mixed interval and single value states probabilities!")
-            else
-                new_states[key] = _verify_child_node_state!(val, parameters)
-            end
-        end
-        parents = convert(Vector{AbstractNode}, parents)
-        return new(name, parents, new_states, additional_info, parameters)
+        _check_child_states!(states)
+        _verify_parameters(first(values(states)), parameters)
+        return new(name, states, additional_info, parameters)
     end
 end
 
 function DiscreteChildNode(
     name::Symbol,
-    parents::Vector{<:AbstractNode},
     states::Dict,
     additional_info::Dict{Vector{Symbol},Dict}
 )
     parameters = Dict{Symbol,Vector{Parameter}}()
-    DiscreteChildNode(name, parents, states, additional_info, parameters)
+    DiscreteChildNode(name, states, additional_info, parameters)
 end
 
 function DiscreteChildNode(
     name::Symbol,
-    parents::Vector{<:AbstractNode},
     states::Dict
 )
     additional_info = Dict{Vector{Symbol},Dict}()
     parameters = Dict{Symbol,Vector{Parameter}}()
-    DiscreteChildNode(name, parents, states, additional_info, parameters)
+    DiscreteChildNode(name, states, additional_info, parameters)
 end
 
 function DiscreteChildNode(
     name::Symbol,
-    parents::Vector{<:AbstractNode},
     states::Dict,
     parameters::Dict{Symbol,Vector{Parameter}}
 )
-
     additional_info = Dict{Vector{Symbol},Dict}()
-    DiscreteChildNode(name, parents, states, additional_info, parameters)
-end
-
-function _verify_discrete_child_node_state(states::Dict)
-    node_states = [keys(s) for s in values(states)]
-    if length(reduce(intersect, node_states)) != length(reduce(union, node_states))
-        state_list = unique(collect(Iterators.Flatten(node_states)))
-        error("non-coherent definition of nodes states: $state_list")
-    end
+    DiscreteChildNode(name, states, additional_info, parameters)
 end
 
 _get_states(node::DiscreteChildNode) = keys(first(values(node.states))) |> collect
 
-function get_parameters(node::DiscreteChildNode, evidence::Vector{Symbol})
+function _get_parameters(node::DiscreteChildNode, evidence::Vector{Symbol})
     name = node.name
     isempty(node.parameters) && error("node $name has an empty parameters vector")
     e = filter(e -> haskey(node.parameters, e), evidence)
@@ -175,19 +134,16 @@ end
 function _is_imprecise(node::DiscreteChildNode)
     probability_values = values(node.states) |> collect
     probability_values = vcat(collect.(values.(probability_values))...)
-    any(isa.(probability_values, Vector{Real}))
+    any(isa.(probability_values, AbstractVector{<:Real}))
 end
 
 function _extreme_points(node::DiscreteChildNode)
     if _is_imprecise(node)
         new_states = map(states -> _extreme_points_states_probabilities(states), values(node.states))
         new_states_combination = vec(collect(Iterators.product(new_states...)))
-
         new_states = map(nsc -> Dict(keys(node.states) .=> nsc), new_states_combination)
-        return map(new_state -> DiscreteChildNode(node.name, node.parents, new_state, node.additional_info, node.parameters), new_states)
+        return map(new_state -> DiscreteChildNode(node.name, new_state, node.additional_info, node.parameters), new_states)
     else
         return [node]
     end
 end
-
-const global ChildNode = Union{DiscreteChildNode,ContinuousChildNode}

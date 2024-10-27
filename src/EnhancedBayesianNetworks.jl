@@ -5,7 +5,7 @@ using Compose
 using DataFrames
 using Distributed
 using Distributions
-using Graphs
+# using Graphs
 using LinearAlgebra
 using NetworkLayout
 using Reexport
@@ -20,16 +20,22 @@ using Polyhedra: HalfSpace, doubledescription
 import Base: *, sum, reduce
 
 # Types
-# export AbstractContinuousInput
-# export AbstractDiscreteProbability
-# export AbstractDiscretization
+export AbstractContinuousInput
+export AbstractDiscreteProbability
+export AbstractDiscretization
+export ContinuousChildNode
+export ContinuousFunctionalNode
+export ContinuousRootNode
+export DiscreteChildNode
+export DiscreteFunctionalNode
+export DiscreteRootNode
 # export AbstractNetwork
 # export AbstractNode
-# export ApproximatedDiscretization
-# export UnamedProbabilityBox
+export ApproximatedDiscretization
+export UnamedProbabilityBox
 # export ContinuousNode
 # export DiscreteNode
-# export ExactDiscretization
+export ExactDiscretization
 
 # struct
 # export BayesianNetwork
@@ -62,13 +68,13 @@ import Base: *, sum, reduce
 # export get_cpd
 # export get_models
 # export get_neighbors
-# export get_parameters
+# export _get_parameters
 # export get_parents
 # export get_performance
 # export get_simulation
 # export state_combinations
 # export get_state_probability
-# export get_continuous_input
+# export _get_continuous_input
 # export gplot
 # export infer
 # export markov_blanket
@@ -78,8 +84,5 @@ import Base: *, sum, reduce
 
 include("nodes/nodes.jl")
 include("ebn/ebn.jl")
-# include("inference/inference.jl")
-# include("util/base_show.jl")
-# include("util/plots.jl")
 
 end

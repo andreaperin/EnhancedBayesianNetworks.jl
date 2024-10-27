@@ -64,10 +64,10 @@
         node = ContinuousChildNode(:child, [root1], Dict([:yes] => Normal(), [:no] => Normal(2, 2)))
         evidence = [:a]
 
-        @test_throws ErrorException("evidence [:a] does not contain all the parents of the ContinuousChildNode child") get_continuous_input(node, evidence)
+        @test_throws ErrorException("evidence [:a] does not contain all the parents of the ContinuousChildNode child") _get_continuous_input(node, evidence)
 
         evidence = [:yes]
-        @test get_continuous_input(node, evidence) == RandomVariable(Normal(), node.name)
+        @test _get_continuous_input(node, evidence) == RandomVariable(Normal(), node.name)
         @test EnhancedBayesianNetworks._get_node_distribution_bounds(node) == (-Inf, Inf)
         @test EnhancedBayesianNetworks._is_imprecise(node) == false
 
@@ -83,7 +83,7 @@
             @test isequal(child.discretization, ApproximatedDiscretization())
             @test child.additional_info == Dict{Vector{Symbol},Dict}()
 
-            @test get_continuous_input(child, [:yes]) == Interval(0.1, 0.3, :child)
+            @test _get_continuous_input(child, [:yes]) == Interval(0.1, 0.3, :child)
             @test EnhancedBayesianNetworks._get_node_distribution_bounds(child) == (0.1, 0.7)
             @test EnhancedBayesianNetworks._is_imprecise(child)
         end
@@ -96,7 +96,7 @@
             )
             child = ContinuousChildNode(:child, [root1], states)
 
-            yes_input = get_continuous_input(child, [:yes])
+            yes_input = _get_continuous_input(child, [:yes])
             @test typeof(yes_input) == ProbabilityBox{Normal}
             @test yes_input.lb == normal_pbox.lb
             @test yes_input.ub == normal_pbox.ub
@@ -104,7 +104,7 @@
             @test yes_input.parameters == normal_pbox.parameters
 
             # ! TODO uncomment this test when issue 204 in UncertaintyQuantification.jl is closed
-            # no_input = get_continuous_input(child, [:no])
+            # no_input = _get_continuous_input(child, [:no])
             # @test typeof(no_input) == ProbabilityBox{Uniform}
             # @test no_input.lb == normal_pbox.lb
             # @test no_input.ub == normal_pbox.ub
@@ -223,13 +223,13 @@
 
         node = DiscreteChildNode(name, parents, states, Dict(:a => [Parameter(1.1, :g)], :b => [Parameter(1.2, :g)]))
         evidence = [:yes]
-        @test_throws ErrorException("evidence [:yes] does not contain child") get_parameters(node, evidence)
+        @test_throws ErrorException("evidence [:yes] does not contain child") _get_parameters(node, evidence)
 
         node_ = DiscreteChildNode(name, parents, states)
-        @test_throws ErrorException("node child has an empty parameters vector") get_parameters(node_, evidence)
+        @test_throws ErrorException("node child has an empty parameters vector") _get_parameters(node_, evidence)
 
         evidence = [:a, :yes]
-        @test get_parameters(node, evidence) == [Parameter(1.1, :g)]
+        @test _get_parameters(node, evidence) == [Parameter(1.1, :g)]
         @test EnhancedBayesianNetworks._is_imprecise(node) == false
         @testset "Imprecise Child - Interval" begin
             parents = [root1, root2]
@@ -248,7 +248,7 @@
             @test child.parameters == parameters
             @test node.additional_info == Dict{Vector{Symbol},Dict}()
 
-            @test EnhancedBayesianNetworks.get_parameters(child, [:a]) == [Parameter(1, :a1)]
+            @test EnhancedBayesianNetworks._get_parameters(child, [:a]) == [Parameter(1, :a1)]
             @test EnhancedBayesianNetworks._get_states(child) == [:a, :b]
             @test EnhancedBayesianNetworks._is_imprecise(child)
 
