@@ -1,4 +1,4 @@
-@auto_hash_equals struct ContinuousRootNode
+@auto_hash_equals struct ContinuousRootNode <: ContinuousNode
     name::Symbol
     distribution::AbstractContinuousInput
     additional_info::Dict
@@ -58,7 +58,7 @@ function _is_imprecise(node::ContinuousRootNode)
     !isa(node.distribution, UnivariateDistribution)
 end
 
-@auto_hash_equals struct DiscreteRootNode
+@auto_hash_equals struct DiscreteRootNode <: DiscreteNode
     name::Symbol
     states::Dict{Symbol,<:AbstractDiscreteProbability}
     additional_info::Dict
@@ -102,3 +102,5 @@ function _extreme_points(node::DiscreteRootNode)
         return [node]
     end
 end
+
+const global RootNode = Union{DiscreteRootNode,ContinuousRootNode}

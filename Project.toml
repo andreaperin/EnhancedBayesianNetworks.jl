@@ -19,5 +19,7 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 UncertaintyQuantification = "7183a548-a887-11e9-15ce-a56ab60bad7a"
 
 [compat]
+Graphs = "1.12.0"
+SparseArrays = "1.11.0"
 UncertaintyQuantification = "0.10"
 julia = "1.10"
