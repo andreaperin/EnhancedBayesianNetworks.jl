@@ -18,5 +18,5 @@ abstract type AbstractNetwork end
 
 
 # include("new_enhancedbn.jl")
-
+include("../util/node_verification.jl")
 include("new_enhancedbn.jl")

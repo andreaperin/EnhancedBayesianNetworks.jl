@@ -38,7 +38,7 @@ export UnamedProbabilityBox
 # export ContinuousNode
 # export DiscreteNode
 export ExactDiscretization
-export Network
+export EnhancedBayesianNetwork
 export AbstractNode
 export ContinuousNode
 export DiscreteNode
@@ -95,5 +95,6 @@ export get_parents
 
 include("nodes/nodes.jl")
 include("ebn/ebn.jl")
+include("util/base_show.jl")
 
 end

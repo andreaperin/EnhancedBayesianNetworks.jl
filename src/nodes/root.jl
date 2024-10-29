@@ -81,7 +81,6 @@ DiscreteRootNode(name::Symbol, states::Dict) = DiscreteRootNode(name, states, Di
 
 _get_states(node::DiscreteRootNode) = collect(keys(node.states))
 
-
 function _get_parameters(node::DiscreteRootNode, evidence::Vector{Symbol})
     name = node.name
     isempty(node.parameters) && error("node $name has an empty parameters vector")
