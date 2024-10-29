@@ -1,4 +1,4 @@
-@auto_hash_equals struct ContinuousFunctionalNode
+@auto_hash_equals struct ContinuousFunctionalNode <: ContinuousNode
     name::Symbol
     models::Vector{<:UQModel}
     simulation::AbstractMonteCarlo
@@ -14,7 +14,7 @@ function ContinuousFunctionalNode(
     ContinuousFunctionalNode(name, models, simulation, discretization)
 end
 
-@auto_hash_equals struct DiscreteFunctionalNode
+@auto_hash_equals struct DiscreteFunctionalNode <: DiscreteNode
     name::Symbol
     models::Vector{<:UQModel}
     performance::Function

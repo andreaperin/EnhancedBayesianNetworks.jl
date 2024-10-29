@@ -1,4 +1,4 @@
-function gplot(net::AbstractNetwork;
+function gplot(net::EnhancedBayesianNetwork;
     auto_node_size=false,
     nodesizefactor=0.3,
     arrowlengthfrac=0.1,
@@ -31,8 +31,8 @@ function gplot(net::AbstractNetwork;
     max_edgelinewidth = EDGELINEWIDTH / maximum(edgelinewidth)
     edgelinewidth *= max_edgelinewidth
 
-    node_list = _order_node(net.nodes)
-    pos = _get_position(node_list)
+    node_list = net.nodes
+    pos = _get_position(net.adj_matrix)
     locs_x = map(p -> p[1], pos)
     locs_y = map(p -> p[2], pos)
     min_x, max_x = extrema(locs_x)
@@ -68,7 +68,7 @@ function gplot(net::AbstractNetwork;
     max_nodelabelsize = NODELABELSIZE / maximum(nodelabelsize)
     nodelabelsize *= max_nodelabelsize
 
-    edges_list = _get_edges(get_adj_matrix(node_list))
+    edges_list = _get_edges(net.adj_matrix)
     lines, larrows = _build_straight_edges(edges_list, locs_x, locs_y, nodesize, arrowlengthfrac, arrowangleoffset)
 
     function _is2discretize(n)
@@ -108,6 +108,25 @@ function gplot(net::AbstractNetwork;
         # compose(context(), curves, stroke(edgestrokec), linewidth(edgelinewidth)),
         compose(context(units=UnitBox(plot_area...)), rectangle(plot_area...), fill(background_color))
     )
+end
+
+
+function _get_position(adj_matrix::SparseMatrixCSC)
+    pos = spring(adj_matrix; iterations=1000)
+    return pos
+end
+
+function _get_edges(adj_matrix::SparseMatrixCSC)
+    n = size(adj_matrix)
+    edge_list = Vector{Tuple{Int64,Int64}}()
+    for i in range(1, n[1])
+        for j in range(1, n[2])
+            if adj_matrix[i, j] != 0
+                push!(edge_list, (i, j))
+            end
+        end
+    end
+    return edge_list
 end
 
 function _build_straight_edges(edge_list, locs_x, locs_y, nodesize, arrowlengthfrac, arrowangleoffset)
@@ -176,13 +195,13 @@ function _node_color(n::AbstractNode)
             return "red1"
         end
     elseif isa(n, ContinuousNode)
-        if EnhancedBayesianNetworks._is_imprecise(n)
+        if _is_imprecise(n)
             return "cyan1"
         else
             return "paleturquoise"
         end
     elseif isa(n, DiscreteNode)
-        if EnhancedBayesianNetworks._is_imprecise(n)
+        if _is_imprecise(n)
             return "green1"
         else
             return "palegreen"

@@ -2,6 +2,19 @@ mutable struct EnhancedBayesianNetwork
     nodes::AbstractVector{<:AbstractNode}
     topology_dict::Dict
     adj_matrix::SparseMatrixCSC
+
+    function EnhancedBayesianNetwork(nodes::AbstractVector{<:AbstractNode}, topology_dict::Dict, adj_matrix::SparseMatrixCSC)
+        nodes_names = map(i -> i.name, nodes)
+        if nodes_names != unique(nodes_names)
+            error("network nodes names must be unique")
+        end
+        discrete_nodes = filter(x -> isa(x, DiscreteNode) && !isa(x, FunctionalNode), nodes)
+        states_list = mapreduce(i -> EnhancedBayesianNetworks._get_states(i), vcat, discrete_nodes)
+        if states_list != unique(states_list)
+            error("network nodes states must be unique")
+        end
+        new(nodes, topology_dict, adj_matrix)
+    end
 end
 
 function EnhancedBayesianNetwork(nodes::AbstractVector{<:AbstractNode})
@@ -24,6 +37,10 @@ function add_child!(net::EnhancedBayesianNetwork, par::Symbol, ch::Symbol)
     if par == ch
         error("Recursion on the same node is not allowed in EnhancedBayesianNetworks")
     end
+    ## Check children of functional node needs to be functional Nodes
+    if isa(par_node, FunctionalNode) && !isa(ch_node, FunctionalNode)
+        error("Functional node $par can have only functional children, and $ch is not")
+    end
     ## Root Nodes cannot be childrens
     if isa(ch_node, RootNode)
         error("root node $ch cannot have parents")
@@ -40,6 +57,19 @@ function add_child!(net::EnhancedBayesianNetwork, par::Symbol, ch::Symbol)
     end
     net.adj_matrix[index_par, index_ch] = 1
     return nothing
+end
+
+function add_child!(net::EnhancedBayesianNetwork, par_index::Int64, ch_index::Int64)
+    reverse_dict = Dict(value => key for (key, value) in net.topology_dict)
+    par = reverse_dict[par_index]
+    ch = reverse_dict[ch_index]
+    add_child!(net, par, ch)
+end
+
+function add_child!(net::EnhancedBayesianNetwork, par_node::AbstractNode, ch_node::AbstractNode)
+    par = par_node.name
+    ch = ch_node.name
+    add_child!(net, par, ch)
 end
 
 function order_net!(net::EnhancedBayesianNetwork)
@@ -113,4 +143,79 @@ end
 function get_parents(net::EnhancedBayesianNetwork, node::AbstractNode)
     index = net.topology_dict[node.name]
     get_parents(net, index)
+end
+
+function get_children(net::EnhancedBayesianNetwork, index::Int64)
+    reverse_dict = Dict(value => key for (key, value) in net.topology_dict)
+    indices = net.adj_matrix[index, :].nzind
+    names = map(x -> reverse_dict[x], indices)
+    nodes = filter(x -> x.name ∈ names, net.nodes)
+    return indices, names, nodes
+end
+
+function get_children(net::EnhancedBayesianNetwork, name::Symbol)
+    index = net.topology_dict[name]
+    get_children(net, index)
+end
+
+function get_children(net::EnhancedBayesianNetwork, node::AbstractNode)
+    index = net.topology_dict[node.name]
+    get_children(net, index)
+end
+
+function markov_blanket(net::EnhancedBayesianNetwork, index::Int64)
+    blanket = []
+    reverse_dict = Dict(value => key for (key, value) in net.topology_dict)
+    for child in get_children(net, index)[1]
+        append!(blanket, get_parents(net, child)[1])
+        push!(blanket, child)
+    end
+    append!(blanket, get_parents(net, index)[1])
+    indices = unique(setdiff(blanket, [index]))
+    names = map(x -> reverse_dict[x], indices)
+    nodes = filter(x -> x.name ∈ names, net.nodes)
+    return indices, names, nodes
+end
+
+function markov_blanket(net::EnhancedBayesianNetwork, name::Symbol)
+    index = net.topology_dict[name]
+    markov_blanket(net, index)
+end
+
+function markov_blanket(net::EnhancedBayesianNetwork, node::AbstractNode)
+    index = net.topology_dict[node.name]
+    markov_blanket(net, index)
+end
+
+function _get_markov_group(net::EnhancedBayesianNetwork, node::AbstractNode)
+    fun = (a, b) -> unique(vcat(b, mapreduce(x -> filter(x -> isa(x, ContinuousNode), markov_blanket(a, node)[3]), vcat, b)))
+    list = [node]
+    new_list = fun(net, list)
+    while !issetequal(list, new_list)
+        list = new_list
+        new_list = fun(net, new_list)
+    end
+    return new_list
+end
+
+function markov_envelope(net)
+    cont_nodes = filter(x -> isa(x, ContinuousNode), net.nodes)
+    Xm_groups = map(x -> _get_markov_group(net, x), cont_nodes)
+    markov_envelopes = unique.(mapreduce.(x -> push!(markov_blanket(net, x)[3], x), vcat, Xm_groups))
+    # check when a vector is included into another
+    sorted_envelopes = sort(markov_envelopes, by=length, rev=true)
+    final_envelopes = []
+    while length(sorted_envelopes) >= 1
+        if length(sorted_envelopes) == 1
+            append!(final_envelopes, sorted_envelopes)
+            popfirst!(sorted_envelopes)
+        else
+            envelope = first(sorted_envelopes)
+            to_compare_list = sorted_envelopes[2:end]
+            is_excluded = map(to_compare -> any(to_compare .∉ [envelope]), to_compare_list)
+            sorted_envelopes = to_compare_list[is_excluded]
+            push!(final_envelopes, envelope)
+        end
+    end
+    return final_envelopes
 end
