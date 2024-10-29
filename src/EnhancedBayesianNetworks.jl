@@ -13,9 +13,11 @@ using SparseArrays
 using UncertaintyQuantification: sample, Interval
 using Polyhedra: HalfSpace, doubledescription
 
-@reexport using Graphs
+# @reexport using Graphs
 @reexport using UncertaintyQuantification
 @reexport using DataFrames
+@reexport using SparseArrays
+
 
 import Base: *, sum, reduce
 
@@ -36,7 +38,13 @@ export UnamedProbabilityBox
 # export ContinuousNode
 # export DiscreteNode
 export ExactDiscretization
-
+export Network
+export AbstractNode
+export ContinuousNode
+export DiscreteNode
+export RootNode
+export ChildNode
+export FunctionalNode
 # struct
 # export BayesianNetwork
 # export ChildNode
@@ -60,6 +68,9 @@ export ExactDiscretization
 # export Evidence
 
 # Methods
+export add_child!
+export order_net!
+export get_parents
 # export evaluate
 # export evaluate_with_envelope
 # export factorize_cpd

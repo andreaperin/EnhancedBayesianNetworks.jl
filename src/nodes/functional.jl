@@ -31,3 +31,5 @@ function DiscreteFunctionalNode(
     parameters = Dict{Symbol,Vector{Parameter}}()
     DiscreteFunctionalNode(name, models, performance, simulation, parameters)
 end
+
+const global FunctionalNode = Union{DiscreteFunctionalNode,ContinuousFunctionalNode}

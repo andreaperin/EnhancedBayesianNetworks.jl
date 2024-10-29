@@ -1,6 +1,6 @@
 ``` ContinuousChildNode
 ```
-@auto_hash_equals struct ContinuousChildNode
+@auto_hash_equals struct ContinuousChildNode <: ContinuousNode
     name::Symbol
     distribution::Dict{Vector{Symbol},<:AbstractContinuousInput}
     additional_info::Dict{Vector{Symbol},Dict}
@@ -33,6 +33,8 @@ function ContinuousChildNode(
     additional_info = Dict{Vector{Symbol},Dict}()
     ContinuousChildNode(name, distribution, additional_info, discretization)
 end
+
+_get_scenarios(node::ContinuousChildNode) = collect(keys(node.distribution))
 
 function _get_continuous_input(node::ContinuousChildNode, evidence::Vector{Symbol})
     node_keys = keys(node.distribution) |> collect
@@ -76,7 +78,7 @@ end
 
 ``` DiscreteChildNode
 ```
-@auto_hash_equals struct DiscreteChildNode
+@auto_hash_equals struct DiscreteChildNode <: DiscreteNode
     name::Symbol
     states::Dict{Vector{Symbol},Dict{Symbol,AbstractDiscreteProbability}}
     additional_info::Dict{Vector{Symbol},Dict}
@@ -121,6 +123,8 @@ function DiscreteChildNode(
     DiscreteChildNode(name, states, additional_info, parameters)
 end
 
+_get_scenarios(node::DiscreteChildNode) = collect(keys(node.states))
+
 _get_states(node::DiscreteChildNode) = keys(first(values(node.states))) |> collect
 
 function _get_parameters(node::DiscreteChildNode, evidence::Vector{Symbol})
@@ -147,3 +151,5 @@ function _extreme_points(node::DiscreteChildNode)
         return [node]
     end
 end
+
+const global ChildNode = Union{DiscreteChildNode,ContinuousChildNode}

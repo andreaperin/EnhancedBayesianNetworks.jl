@@ -7,7 +7,7 @@ using Suppressor
 include("utils/probabilities_verification.jl")
 include("nodes/new_root.jl")
 include("nodes/new_child.jl")
-
+include("ebn/new_enhancedbn.jl")
 # include("nodes/nodes.jl")
 # include("nodes/root.jl")
 # include("nodes/child.jl")
