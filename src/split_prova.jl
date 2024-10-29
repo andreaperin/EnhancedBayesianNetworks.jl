@@ -1,4 +1,4 @@
-using EnhancedBayesianEnhancedBayesianNetworks
+using EnhancedBayesianNetworks
 
 tampering = DiscreteRootNode(:Tampering, Dict(:NoT => [0.98999, 0.99111], :YesT => [0.00889, 0.01001]))
 fire = DiscreteRootNode(:Fire, Dict(:NoF => [0.958978, 0.959989], :YesF => [0.00011, 0.041002]))
@@ -32,7 +32,7 @@ report_state = Dict(
 report = DiscreteChildNode(:Report, report_state)
 
 nodes = [fire, alarm, smoke, tampering, leaving, report]
-net = EnhancedBayesianEnhancedBayesianNetworks.EnhancedBayesianNetwork(nodes)
+net = EnhancedBayesianNetwork(nodes)
 add_child!(net, :Tampering, :Alarm)
 add_child!(net, :Fire, :Smoke)
 add_child!(net, :Fire, :Alarm)
@@ -71,7 +71,7 @@ E = DiscreteFunctionalNode(:E, [model], performance, sim)
 A = DiscreteRootNode(:A, Dict(:road => [0.6, 0.7], :offroad => [0.3, 0.4]))
 
 nodes = [A, b₀, V, C, Cₖ, K, E]
-net = EnhancedBayesianEnhancedBayesianNetworks.EnhancedBayesianNetwork(nodes)
+net = EnhancedBayesianNetwork(nodes)
 
 add_child!(net, nodes, :A, :E)
 add_child!(net, nodes, :b₀, :E)

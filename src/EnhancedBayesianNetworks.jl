@@ -71,6 +71,8 @@ export FunctionalNode
 export add_child!
 export order_net!
 export get_parents
+export get_children
+export markov_blanket
 # export evaluate
 # export evaluate_with_envelope
 # export factorize_cpd
@@ -86,15 +88,16 @@ export get_parents
 # export state_combinations
 # export get_state_probability
 # export _get_continuous_input
-# export gplot
+export gplot
 # export infer
 # export markov_blanket
 # export markov_envelope
-# export saveplot
+export saveplot
 # export show
 
 include("nodes/nodes.jl")
 include("ebn/ebn.jl")
 include("util/base_show.jl")
+include("util/plots.jl")
 
 end
