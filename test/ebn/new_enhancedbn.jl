@@ -332,7 +332,7 @@
         gplot(ebn; nodesizefactor=0.06, arrowlengthfrac=0.1)
 
         @test issetequal(EnhancedBayesianNetworks._get_markov_group(ebn, Y5), [Y5, X4, X3])
-        envelopes = EnhancedBayesianNetworks.markov_envelope(ebn)
+        envelopes = markov_envelope(ebn)
         @test issetequal(envelopes[1], [X1, X2, X3, Y1, Y2, Y3, Y4, Y5])
         @test issetequal(envelopes[2], [Y6, Y5, X4])
     end

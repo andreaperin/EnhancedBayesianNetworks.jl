@@ -1,89 +1,194 @@
-``` EnhancedBayesianNetwork
-        
-        Structure for build the Enhanced Bayesian Network from a list of nodes.
-```
-@auto_hash_equals struct EnhancedBayesianNetwork <: AbstractNetwork
-    dag::DiGraph
-    nodes::Vector{<:AbstractNode}
-    name_to_index::Dict{Symbol,Int}
+mutable struct EnhancedBayesianNetwork
+    nodes::AbstractVector{<:AbstractNode}
+    topology_dict::Dict
+    adj_matrix::SparseMatrixCSC
 
-    function EnhancedBayesianNetwork(dag::DiGraph, nodes::Vector{<:AbstractNode}, name_to_index::Dict{Symbol,Int})
-        all_states = vcat(_get_states.(filter(x -> !isa(x, DiscreteFunctionalNode) && isa(x, DiscreteNode), nodes))...)
-        if unique([i.name for i in nodes]) != [i.name for i in nodes]
-            error("nodes must have different names")
+    function EnhancedBayesianNetwork(nodes::AbstractVector{<:AbstractNode}, topology_dict::Dict, adj_matrix::SparseMatrixCSC)
+        nodes_names = map(i -> i.name, nodes)
+        if nodes_names != unique(nodes_names)
+            error("network nodes names must be unique")
         end
-        if unique(all_states) != all_states
-            error("nodes state must have different symbols")
+        discrete_nodes = filter(x -> isa(x, DiscreteNode) && !isa(x, FunctionalNode), nodes)
+        states_list = mapreduce(i -> EnhancedBayesianNetworks._get_states(i), vcat, discrete_nodes)
+        if states_list != unique(states_list)
+            error("network nodes states must be unique")
         end
-        new(dag, nodes, name_to_index)
+        new(nodes, topology_dict, adj_matrix)
     end
 end
 
-function EnhancedBayesianNetwork(nodes::Vector{<:AbstractNode})
-    ordered_dag, ordered_nodes, ordered_name_to_index = _topological_ordered_dag(nodes)
-    ebn = EnhancedBayesianNetwork(ordered_dag, ordered_nodes, ordered_name_to_index)
-    return ebn
-end
-
-function _build_digraph(nodes::Vector{<:AbstractNode})
-    name_to_index = Dict{Symbol,Int}()
-    for (i, node) in enumerate(nodes)
-        name_to_index[node.name] = i
-    end
-    dag = DiGraph(length(nodes))
-    for node in filter(x -> !isa(x, RootNode), nodes)
-        j = name_to_index[node.name]
-        for p in node.parents
-            i = name_to_index[p.name]
-            add_edge!(dag, i, j)
-        end
-    end
-    return dag
-end
-
-function _topological_ordered_dag(nodes::Vector{<:AbstractNode})
-    dag = _build_digraph(nodes)
-    ordered_vector = topological_sort_by_dfs(dag)
+function EnhancedBayesianNetwork(nodes::AbstractVector{<:AbstractNode})
     n = length(nodes)
-    ordered_name_to_index = Dict{Symbol,Int}()
-    ordered_nodes = Vector{AbstractNode}(undef, n)
-    for (new_index, old_index) in enumerate(ordered_vector)
-        ordered_name_to_index[nodes[old_index].name] = new_index
-        ordered_nodes[new_index] = nodes[old_index]
+    topology_dict = Dict()
+    for (i, n) in enumerate(nodes)
+        topology_dict[n.name] = i
     end
-    ordered_dag = _build_digraph(ordered_nodes)
-    return ordered_dag, ordered_nodes, ordered_name_to_index
+    adj_matrix = sparse(zeros(n, n))
+    return EnhancedBayesianNetwork(nodes, topology_dict, adj_matrix)
 end
 
-function get_children(ebn::EnhancedBayesianNetwork, node::N) where {N<:AbstractNode}
-    i = ebn.name_to_index[node.name]
-    [ebn.nodes[j] for j in outneighbors(ebn.dag, i)]
+function add_child!(net::EnhancedBayesianNetwork, par::Symbol, ch::Symbol)
+    index_par = net.topology_dict[par]
+    index_ch = net.topology_dict[ch]
+    nodes = net.nodes
+    par_node = first(filter(n -> n.name == par, nodes))
+    ch_node = first(filter(n -> n.name == ch, nodes))
+    ## No recursion in BayesianNetworks
+    if par == ch
+        error("Recursion on the same node is not allowed in EnhancedBayesianNetworks")
+    end
+    ## Check children of functional node needs to be functional Nodes
+    if isa(par_node, FunctionalNode) && !isa(ch_node, FunctionalNode)
+        error("Functional node $par can have only functional children, and $ch is not")
+    end
+    ## Root Nodes cannot be childrens
+    if isa(ch_node, RootNode)
+        error("root node $ch cannot have parents")
+    end
+    ## Check parents is in the scenarios with all its states
+    if isa(ch_node, ChildNode)
+        par_states = _get_states(par_node)
+        scenarios = collect(keys(ch_node.states))
+        is_present = map(scenario -> any((par_states) .∈ [scenario]), scenarios)
+        if !all(is_present)
+            wrong_scenarios = scenarios[.!is_present]
+            error("child node $ch has scenarios $wrong_scenarios, that do not contain any of $par_states from its parent $par")
+        end
+    end
+    net.adj_matrix[index_par, index_ch] = 1
+    return nothing
 end
 
-function get_parents(ebn::EnhancedBayesianNetwork, node::N) where {N<:AbstractNode}
-    i = ebn.name_to_index[node.name]
-    [ebn.nodes[j] for j in unique(inneighbors(ebn.dag, i))]
+function add_child!(net::EnhancedBayesianNetwork, par_index::Int64, ch_index::Int64)
+    reverse_dict = Dict(value => key for (key, value) in net.topology_dict)
+    par = reverse_dict[par_index]
+    ch = reverse_dict[ch_index]
+    add_child!(net, par, ch)
 end
 
-function get_neighbors(ebn::EnhancedBayesianNetwork, node::N) where {N<:AbstractNode}
-    i = ebn.name_to_index[node.name]
-    [ebn.nodes[j] for j in unique(append!(inneighbors(ebn.dag, i), outneighbors(ebn.dag, i)))]
+function add_child!(net::EnhancedBayesianNetwork, par_node::AbstractNode, ch_node::AbstractNode)
+    par = par_node.name
+    ch = ch_node.name
+    add_child!(net, par, ch)
 end
 
-## Returns a Set of AbstractNode representing the Markov Blanket for the choosen node
-function markov_blanket(ebn::EnhancedBayesianNetwork, node::N) where {N<:AbstractNode}
-    blanket = AbstractNode[]
-    for child in get_children(ebn, node)
-        append!(blanket, get_parents(ebn, child))
+function order_net!(net::EnhancedBayesianNetwork)
+    n = net.adj_matrix.n
+    reverse_dict = Dict(value => key for (key, value) in net.topology_dict)
+    all_nodes = range(1, n)
+    root_indices = findall(map(col -> all(col .== 0), eachcol(net.adj_matrix)))
+    root_nodes = AbstractVector{AbstractNode}(map(x -> first(filter(j -> j.name == reverse_dict[x], net.nodes)), root_indices))
+    to_be_classified = setdiff(all_nodes, root_indices)
+    while !isempty(to_be_classified)
+        par_list = map(r -> net.adj_matrix[:, r].nzind, to_be_classified)
+        new_root_indices = findall(map(p -> all(p .∈ [root_indices]), par_list))
+        new_root = map(i -> to_be_classified[i], new_root_indices)
+        append!(root_indices, new_root)
+        new_root_nodes = map(x -> first(filter(j -> j.name == reverse_dict[x], net.nodes)), new_root)
+        append!(root_nodes, new_root_nodes)
+        to_be_classified = setdiff(to_be_classified, new_root)
+    end
+
+    ordered_topology_dict = Dict(map(i -> (reverse_dict[i[2]], i[1]), enumerate(root_indices)))
+
+    conversion = Dict(map(i -> (i[2], i[1]), enumerate(root_indices)))
+    ordered_matrix = sparse(zeros(n, n))
+    for i in range(1, n)
+        for j in range(1, n)
+            if net.adj_matrix[i, j] == 1
+                ordered_matrix[conversion[i], conversion[j]] = 1
+            end
+        end
+    end
+
+    net.adj_matrix = ordered_matrix
+    net.topology_dict = ordered_topology_dict
+    net.nodes = root_nodes
+
+    return nothing
+end
+
+function _verify_net(net::EnhancedBayesianNetwork)
+    nodes2check = filter(x -> !isa(x, RootNode), net.nodes)
+    map(n -> _verify_node(n, get_parents(net, net.topology_dict[n.name])[3]), nodes2check)
+    return nothing
+end
+
+function get_parents(net::EnhancedBayesianNetwork, index::Int64)
+    reverse_dict = Dict(value => key for (key, value) in net.topology_dict)
+    indices = net.adj_matrix[:, index].nzind
+    names = map(x -> reverse_dict[x], indices)
+    nodes = filter(x -> x.name ∈ names, net.nodes)
+    return indices, names, nodes
+end
+
+function get_parents(net::EnhancedBayesianNetwork, name::Symbol)
+    index = net.topology_dict[name]
+    get_parents(net, index)
+end
+
+function get_parents(net::EnhancedBayesianNetwork, node::AbstractNode)
+    index = net.topology_dict[node.name]
+    get_parents(net, index)
+end
+
+function get_children(net::EnhancedBayesianNetwork, index::Int64)
+    reverse_dict = Dict(value => key for (key, value) in net.topology_dict)
+    indices = net.adj_matrix[index, :].nzind
+    names = map(x -> reverse_dict[x], indices)
+    nodes = filter(x -> x.name ∈ names, net.nodes)
+    return indices, names, nodes
+end
+
+function get_children(net::EnhancedBayesianNetwork, name::Symbol)
+    index = net.topology_dict[name]
+    get_children(net, index)
+end
+
+function get_children(net::EnhancedBayesianNetwork, node::AbstractNode)
+    index = net.topology_dict[node.name]
+    get_children(net, index)
+end
+
+function markov_blanket(net::EnhancedBayesianNetwork, index::Int64)
+    blanket = []
+    reverse_dict = Dict(value => key for (key, value) in net.topology_dict)
+    for child in get_children(net, index)[1]
+        append!(blanket, get_parents(net, child)[1])
         push!(blanket, child)
     end
-    append!(blanket, get_parents(ebn, node))
-    return unique(setdiff(blanket, [node]))
+    append!(blanket, get_parents(net, index)[1])
+    indices = unique(setdiff(blanket, [index]))
+    names = map(x -> reverse_dict[x], indices)
+    nodes = filter(x -> x.name ∈ names, net.nodes)
+    return indices, names, nodes
 end
 
-function markov_envelope(ebn)
-    Xm_groups = map(x -> _markov_envelope_continuous_nodes_group(ebn, x), filter(x -> isa(x, ContinuousNode), ebn.nodes))
-    markov_envelopes = unique.(mapreduce.(x -> push!(markov_blanket(ebn, x), x), vcat, Xm_groups))
+function markov_blanket(net::EnhancedBayesianNetwork, name::Symbol)
+    index = net.topology_dict[name]
+    markov_blanket(net, index)
+end
+
+function markov_blanket(net::EnhancedBayesianNetwork, node::AbstractNode)
+    index = net.topology_dict[node.name]
+    markov_blanket(net, index)
+end
+
+function _get_markov_group(net::EnhancedBayesianNetwork, node::AbstractNode)
+    fun = (a, b) -> unique(vcat(b, mapreduce(x -> filter(x -> isa(x, ContinuousNode), markov_blanket(a, node)[3]), vcat, b)))
+    list = [node]
+    new_list = fun(net, list)
+    while !issetequal(list, new_list)
+        list = new_list
+        new_list = fun(net, new_list)
+    end
+    return new_list
+end
+
+function markov_envelope(net)
+    cont_nodes = filter(x -> isa(x, ContinuousNode), net.nodes)
+    Xm_groups = map(x -> _get_markov_group(net, x), cont_nodes)
+    markov_envelopes = unique.(mapreduce.(x -> push!(markov_blanket(net, x)[3], x), vcat, Xm_groups))
     # check when a vector is included into another
     sorted_envelopes = sort(markov_envelopes, by=length, rev=true)
     final_envelopes = []
@@ -100,16 +205,4 @@ function markov_envelope(ebn)
         end
     end
     return final_envelopes
-end
-
-function _markov_envelope_continuous_nodes_group(ebn, node)
-    f = (ebn, nodes) -> unique(vcat(nodes, mapreduce(x -> filter(x -> isa(x, ContinuousNode), markov_blanket(ebn, node)), vcat, nodes)))
-
-    list = [node]
-    new_list = f(ebn, list)
-    while !issetequal(list, new_list)
-        list = new_list
-        new_list = f(ebn, new_list)
-    end
-    return new_list
 end
