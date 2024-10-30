@@ -19,10 +19,11 @@ function _verify_node(node::FunctionalNode, parents::AbstractVector{<:AbstractNo
     continuous_parents = filter(x -> isa(x, ContinuousNode), parents)
     discrete_parents = filter(x -> isa(x, DiscreteNode), parents)
     if isempty(continuous_parents)
-        error("functional nodes $(node.name) must have at least one continuous parent")
+        @warn("functional nodes $(node.name) have no continuous parents")
     end
-    have_no_parameter = map(x -> isempty(x.parameters), discrete_parents)
-    no_parameters_nodes = discrete_parents[have_no_parameter]
+    non_functional_discrete_parents = filter(x -> !isa(x, FunctionalNode), discrete_parents)
+    have_no_parameter = map(x -> isempty(x.parameters), non_functional_discrete_parents)
+    no_parameters_nodes = non_functional_discrete_parents[have_no_parameter]
     ## Functional Node must have discrete parents with a defined parameters argument
     if !isempty(no_parameters_nodes)
         no_parameters_nodes_name = [i.name for i in no_parameters_nodes]

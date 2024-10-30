@@ -103,13 +103,11 @@
             [:cloudy] => Dict(:no_rain => 0.2, :rain => 0.8)
         )
         rain = DiscreteChildNode(:r, rain_state)
-
         rain_cont_dist = Dict(
             [:sunny] => Normal(),
             [:cloudy] => Normal()
         )
         rain_cont = ContinuousChildNode(:rc, rain_cont_dist)
-
         grass_states = Dict(
             [:on, :no_rain, :random] => Dict(:dry => 0.9, :wet => 0.1),
             [:on, :rain] => Dict(:dry => 0.9, :wet => 0.1),
@@ -121,15 +119,16 @@
         grass_functional_model = Model(df -> df.rc .+ df.s, :gf)
         perfomance = df -> df.rc .- 1
         simulation = MonteCarlo(100)
-
         grass_functional = DiscreteFunctionalNode(:gf, [grass_functional_model], perfomance, simulation)
 
         @test_throws ErrorException("parents combinations Set{Symbol}[Set([:on, :no_rain])], are missing in node g defined scenarios Set{Symbol}[Set([:on, :random, :no_rain]), Set([:off, :rain]), Set([:off, :no_rain]), Set([:rain, :on])]") EnhancedBayesianNetworks._verify_node(grass, [sprinkler, rain])
 
         @test isnothing(EnhancedBayesianNetworks._verify_node(sprinkler, [weather]))
 
-        @test_throws ErrorException("functional nodes gf must have at least one continuous parent") EnhancedBayesianNetworks._verify_node(grass_functional, [sprinkler])
+        sprinkler = DiscreteChildNode(:s, sprinkler_states, Dict(:on => [Parameter(1, :s)], :off => [Parameter(2, :s)]))
+        @test_logs (:warn, "functional nodes gf have no continuous parents") EnhancedBayesianNetworks._verify_node(grass_functional, [sprinkler])
 
+        sprinkler = DiscreteChildNode(:s, sprinkler_states)
         @test_throws ErrorException("node/s [:s] are discrete and parents of the functional node gf, therefore a parameter argument must be defined") EnhancedBayesianNetworks._verify_node(grass_functional, [rain_cont, sprinkler])
 
         sprinkler = DiscreteChildNode(:s, sprinkler_states, Dict(:on => [Parameter(1, :s)], :off => [Parameter(2, :s)]))
@@ -174,7 +173,7 @@
 
         @test isnothing(EnhancedBayesianNetworks._verify_net(net))
 
-        # @test EnhancedBayesianNetworks._get_edges(net.adj_matrix) == [(1, 2), (1, 3), (2, 4), (3, 4)]
+        @test EnhancedBayesianNetworks._get_edges(net.adj_matrix) == [(1, 2), (1, 3), (2, 4), (3, 4)]
 
         grass_parents = ([2, 3], [:s, :r], [sprinkler, rain])
 
@@ -275,6 +274,50 @@
         @test issetequal(markov_bl[3], [x3, x4, x5, x8, x9, x10])
     end
 
+    @testset "Remove Node" begin
+        weather = DiscreteRootNode(:w, Dict(:sunny => 0.5, :cloudy => 0.5))
+        sprinkler_states = Dict(
+            [:sunny] => Dict(:on => 0.9, :off => 0.1),
+            [:cloudy] => Dict(:on => 0.2, :off => 0.8)
+        )
+        sprinkler = DiscreteChildNode(:s, sprinkler_states)
+        rain_state = Dict(
+            [:sunny] => Dict(:no_rain => 0.9, :rain => 0.1),
+            [:cloudy] => Dict(:no_rain => 0.2, :rain => 0.8)
+        )
+        rain = DiscreteChildNode(:r, rain_state)
+        grass_states = Dict(
+            [:on, :no_rain] => Dict(:dry => 0.9, :wet => 0.1),
+            [:on, :rain] => Dict(:dry => 0.9, :wet => 0.1),
+            [:off, :no_rain] => Dict(:dry => 0.9, :wet => 0.1),
+            [:off, :rain] => Dict(:dry => 0.9, :wet => 0.1)
+        )
+        grass = DiscreteChildNode(:g, grass_states)
+
+        nodes = [weather, sprinkler, rain, grass]
+        net = EnhancedBayesianNetwork(nodes)
+        add_child!(net, :w, :s)
+        add_child!(net, :w, :r)
+        add_child!(net, :s, :g)
+        add_child!(net, :r, :g)
+        order_net!(net)
+
+        net1 = deepcopy(net)
+        net2 = deepcopy(net)
+        net3 = deepcopy(net)
+
+        EnhancedBayesianNetworks._remove_node!(net1, 2)
+        EnhancedBayesianNetworks._remove_node!(net2, :s)
+        EnhancedBayesianNetworks._remove_node!(net3, sprinkler)
+
+        @test net1.adj_matrix == sparse([0 1.0 0; 0 0 1.0; 0 0 0])
+        @test net1.topology_dict == Dict(:w => 1, :g => 3, :r => 2)
+        @test issetequal(net1.nodes, [weather, grass, rain])
+
+        @test net2 == net1
+        @test net3 == net1
+    end
+
     @testset "Markov Envelopes" begin
         Y1 = DiscreteRootNode(:y1, Dict(:yy1 => 0.5, :yn1 => 0.5), Dict(:yy1 => [Parameter(0.5, :y1)], :yn1 => [Parameter(0.8, :y1)]))
         X1 = ContinuousRootNode(:x1, Normal())
@@ -328,7 +371,7 @@
         add_child!(ebn, :x3, :y5)
         add_child!(ebn, :y5, :x4)
         add_child!(ebn, :x4, :y6)
-        order_net!(ebn)
+        @suppress order_net!(ebn)
         gplot(ebn; nodesizefactor=0.06, arrowlengthfrac=0.1)
 
         @test issetequal(EnhancedBayesianNetworks._get_markov_group(ebn, Y5), [Y5, X4, X3])
