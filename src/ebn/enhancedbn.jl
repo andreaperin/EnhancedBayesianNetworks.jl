@@ -48,7 +48,7 @@ function add_child!(net::EnhancedBayesianNetwork, par::Symbol, ch::Symbol)
     ## Check parents is in the scenarios with all its states
     if isa(ch_node, ChildNode)
         par_states = _get_states(par_node)
-        scenarios = collect(keys(ch_node.states))
+        scenarios = _get_scenarios(ch_node)
         is_present = map(scenario -> any((par_states) .∈ [scenario]), scenarios)
         if !all(is_present)
             wrong_scenarios = scenarios[.!is_present]
@@ -178,6 +178,14 @@ end
 function _remove_node!(net::EnhancedBayesianNetwork, node::AbstractNode)
     index = net.topology_dict[node.name]
     _remove_node!(net, index)
+end
+
+function _add_node!(net::EnhancedBayesianNetwork, node::AbstractNode)
+    push!(net.nodes, node)
+    net.topology_dict[node.name] = length(net.nodes)
+    net.adj_matrix = hcat(net.adj_matrix, zeros(net.adj_matrix.m))
+    net.adj_matrix = vcat(net.adj_matrix, zeros(net.adj_matrix.n)')
+    return nothing
 end
 
 function markov_blanket(net::EnhancedBayesianNetwork, index::Int64)

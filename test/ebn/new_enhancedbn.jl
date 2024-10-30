@@ -310,12 +310,19 @@
         EnhancedBayesianNetworks._remove_node!(net2, :s)
         EnhancedBayesianNetworks._remove_node!(net3, sprinkler)
 
+
         @test net1.adj_matrix == sparse([0 1.0 0; 0 0 1.0; 0 0 0])
         @test net1.topology_dict == Dict(:w => 1, :g => 3, :r => 2)
         @test issetequal(net1.nodes, [weather, grass, rain])
 
         @test net2 == net1
         @test net3 == net1
+
+        EnhancedBayesianNetworks._add_node!(net3, sprinkler)
+
+        @test net3.adj_matrix == sparse([0 1.0 0 0; 0 0 1.0 0; 0 0 0 0; 0 0 0 0])
+        @test issetequal(net3.nodes, [weather, grass, rain, sprinkler])
+        @test net3.topology_dict == Dict(:w => 1, :s => 4, :g => 3, :r => 2)
     end
 
     @testset "Markov Envelopes" begin
