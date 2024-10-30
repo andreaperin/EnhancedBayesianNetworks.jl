@@ -1,26 +1,29 @@
-function _discretize!(nodes::AbstractVector{<:AbstractNode})
-    continuous_nodes = filter(n -> !isa(n, FunctionalNode), filter(n -> isa(n, ContinuousNode), nodes))
+function _discretize!(net::EnhancedBayesianNetwork)
+    continuous_nodes = filter(x -> isa(x, ContinuousNode) && !isa(x, FunctionalNode), net.nodes)
     evidence_nodes = filter(n -> !isempty(n.discretization.intervals), continuous_nodes)
-    for n in evidence_nodes
-        continuous_node, discretized_node = _discretize(n)
-        # remove original continuous nodes
-        index = findfirst(x -> isequal(x, n), nodes)
-        deleteat!(nodes, index)
-        # update child nodes
-        for node in nodes
-            if isa(node, RootNode)
-                continue
-            end
-            if n in node.parents
-                node.parents[:] = [filter(x -> !isequal(x, n), node.parents)..., continuous_node]
-            end
+    discretizations_tuples = map(n -> (n, get_parents(net, n)[3], get_children(net, n)[3], EnhancedBayesianNetworks._discretize(n)), evidence_nodes)
+    for tup in discretizations_tuples
+        node = tup[1]
+        parents = tup[2]
+        children = tup[3]
+        disc_new = tup[4][1]
+        cont_new = tup[4][2]
+        _remove_node!(net, node)
+        _add_node!(net, disc_new)
+        _add_node!(net, cont_new)
+        add_child!(net, disc_new, cont_new)
+        for par in parents
+            add_child!(net, par, disc_new)
         end
-        append!(nodes, [continuous_node, discretized_node])
+        for ch in children
+            add_child!(net, cont_new, ch)
+        end
+        order_net!(net)
     end
-    return nodes
+    return nothing
 end
 
-## Single Node Continuous
+## RootNode
 function _discretize(node::ContinuousRootNode)
     intervals = _format_interval(node)
     states_symbols = Symbol.(intervals)
@@ -29,22 +32,22 @@ function _discretize(node::ContinuousRootNode)
     ## Adding continuous node as parents of children of the discretized node
     distribution_symbols = [[i] for i in states_symbols]
     distribution = Dict(distribution_symbols .=> _truncate.(Ref(node.distribution), intervals))
-    continuous_node = ContinuousChildNode(node.name, [discrete_node], distribution)
-    return continuous_node, discrete_node
+    continuous_node = ContinuousChildNode(node.name, distribution)
+    return [discrete_node, continuous_node]
 end
 
-## Single Node Discrete
+# Child Node
 function _discretize(node::ContinuousChildNode)
     intervals = _format_interval(node)
     k = keys(node.distribution)
     dists = values(node.distribution)
     states = [(key, Dict(Symbol.(intervals) .=> _discretize(dist, intervals))) for (key, dist) in zip(k, dists)]
     states = Dict(states)
-    discrete_node = DiscreteChildNode(Symbol(string(node.name) * "_d"), node.parents, states)
+    discrete_node = DiscreteChildNode(Symbol(string(node.name) * "_d"), states)
     distribution_symbols = [[Symbol(i)] for i in intervals]
     distribution = Dict(distribution_symbols .=> _approximate(intervals, node.discretization.sigma))
-    continuous_node = ContinuousChildNode(node.name, [discrete_node], distribution)
-    return continuous_node, discrete_node
+    continuous_node = ContinuousChildNode(node.name, distribution)
+    return [discrete_node, continuous_node]
 end
 
 ## Auxiliary function
@@ -78,26 +81,26 @@ function _approximate(intervals::Vector, λ::Real)
 end
 
 function _format_interval(node::Union{ContinuousChildNode,ContinuousRootNode})
-    intervals = deepcopy(node.discretization.intervals)
+    intervals = node.discretization.intervals
     intervals = convert(Vector{Float64}, intervals)
     min = node.discretization.intervals[1]
     max = node.discretization.intervals[end]
     lower_bound, upper_bound = _get_node_distribution_bounds(node)
     if minimum(min) > lower_bound
-        @warn "Minimum intervals value $min > support lower bound $lower_bound. Lower bound will be used as intervals start."
+        @warn "node $(node.name) has minimum intervals value $min > support lower bound $lower_bound. Lower bound will be used as intervals start"
         insert!(intervals, 1, lower_bound)
     end
     if minimum(min) < lower_bound
-        @warn "Minimum intervals value $min < support lower bound $lower_bound. Lower bound will be used as intervals start."
+        @warn "node $(node.name) has minimum intervals value $min < support lower bound $lower_bound. Lower bound will be used as intervals start"
         deleteat!(intervals, intervals .<= lower_bound)
         insert!(intervals, 1, lower_bound)
     end
     if maximum(max) < upper_bound
-        @warn "Maximum intervals value $max < support upper bound $upper_bound. Upper bound will be used as intervals end."
+        @warn "node $(node.name) has maximum intervals value $max < support upper bound $upper_bound. Upper bound will be used as intervals end"
         push!(intervals, upper_bound)
     end
     if maximum(max) > upper_bound
-        @warn "Maximum intervals value $max > support upper bound $upper_bound. Upper bound will be used as intervals end."
+        @warn "node $(node.name) has maximum intervals value $max > support upper bound $upper_bound. Upper bound will be used as intervals end"
         deleteat!(intervals, intervals .>= upper_bound)
         push!(intervals, upper_bound)
     end
