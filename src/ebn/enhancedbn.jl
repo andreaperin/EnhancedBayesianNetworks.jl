@@ -1,4 +1,4 @@
-mutable struct EnhancedBayesianNetwork
+@auto_hash_equals mutable struct EnhancedBayesianNetwork
     nodes::AbstractVector{<:AbstractNode}
     topology_dict::Dict
     adj_matrix::SparseMatrixCSC
@@ -104,7 +104,7 @@ function order_net!(net::EnhancedBayesianNetwork)
     net.adj_matrix = ordered_matrix
     net.topology_dict = ordered_topology_dict
     net.nodes = root_nodes
-
+    _verify_net(net)
     return nothing
 end
 
@@ -148,6 +148,36 @@ end
 function get_children(net::EnhancedBayesianNetwork, node::AbstractNode)
     index = net.topology_dict[node.name]
     get_children(net, index)
+end
+
+function _remove_node!(net::EnhancedBayesianNetwork, index::Int64)
+    adj_matrix = net.adj_matrix[1:end.!=index, 1:end.!=index]
+    nodes = deleteat!(net.nodes, index)
+    topology_vec = collect(net.topology_dict)
+    function f(kv, i)
+        if kv[2] > i
+            return Pair(kv[1], kv[2] - 1)
+        elseif kv[2] != i
+            return kv
+        end
+    end
+    topology_vec = map(t -> f(t, index), topology_vec)
+    filter!(x -> !isnothing(x), topology_vec)
+    topology_dict = Dict(topology_vec)
+    net.adj_matrix = adj_matrix
+    net.topology_dict = topology_dict
+    net.nodes = nodes
+    return nothing
+end
+
+function _remove_node!(net::EnhancedBayesianNetwork, name::Symbol)
+    index = net.topology_dict[name]
+    _remove_node!(net, index)
+end
+
+function _remove_node!(net::EnhancedBayesianNetwork, node::AbstractNode)
+    index = net.topology_dict[node.name]
+    _remove_node!(net, index)
 end
 
 function markov_blanket(net::EnhancedBayesianNetwork, index::Int64)
