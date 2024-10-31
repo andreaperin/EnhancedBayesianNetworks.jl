@@ -118,6 +118,6 @@ add_child!(ebn, cont_functional3, discrete_functional)
 order_net!(ebn)
 gplot(ebn; nodesizefactor=0.1)
 
-EnhancedBayesianNetworks._discretize!(ebn)
-EnhancedBayesianNetworks._transfer_continuous!(ebn)
 gplot(ebn, nodesizefactor=0.1)
+
+EnhancedBayesianNetworks.evaluate!(ebn)
