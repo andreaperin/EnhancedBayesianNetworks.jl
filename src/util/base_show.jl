@@ -15,9 +15,9 @@ function print_object(io::IO, obj::DiscreteRootNode; multiline::Bool)
         _is_imprecise(obj) ? tp = "Imprecise" : tp = "Precise"
         print(io, "\n  ")
         print(io, "nature: $tp")
-        print(io, "\n  ")
-        isempty(obj.additional_info) ? info = nothing : info = obj.additional_info
-        print(io, "info: $info")
+        # print(io, "\n  ")
+        # isempty(obj.additional_info) ? info = nothing : info = obj.additional_info
+        # print(io, "info: $info")
         print(io, "\n  ")
         isempty(obj.parameters) ? param = nothing : param = obj.parameters
         print(io, "parameters: $param")
@@ -49,10 +49,14 @@ function print_object(io::IO, obj::ContinuousRootNode; multiline::Bool)
         isempty(obj.discretization.intervals) ? disc = nothing : disc = obj.discretization
         print(io, "discretization: $disc")
         print(io, "\n  ")
-        isempty(obj.additional_info) ? info = nothing : info = obj.additional_info
-        print(io, "info: $info")
-        print(io, "\n  ")
-        print(io, "\r  distribution: $(obj.distribution)")
+        # isempty(obj.additional_info) ? info = nothing : info = obj.additional_info
+        # print(io, "info: $info")
+        # print(io, "\n  ")
+        if isa(obj.distribution, EmpiricalDistribution)
+            print("distribution => EmpiricalDistribution")
+        else
+            print("distribution => $(obj.distribution)")
+        end
     else
         Base.show_default(io, obj)
     end

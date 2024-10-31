@@ -1,5 +1,5 @@
-function _evaluate_node!(net::EnhancedBayesianNetwork, node::ContinuousFunctionalNode)
-    if any(_is_imprecise.(node.parents))
+function _evaluate_node(net::EnhancedBayesianNetwork, node::ContinuousFunctionalNode)
+    if any(_is_imprecise.(get_parents(net, node)[3]))
         error("node $(node.name) is a continuousfunctionalnode with at least one parent with Interval or p-boxes in its distributions. No method for extracting failure probability p-box have been implemented yet")
     else
         discrete_parents = filter(x -> isa(x, DiscreteNode), get_parents(net, node)[3])
@@ -26,7 +26,7 @@ function _evaluate_node!(net::EnhancedBayesianNetwork, node::ContinuousFunctiona
     end
 end
 
-function _evaluate_node!(net::EnhancedBayesianNetwork, node::DiscreteFunctionalNode)
+function _evaluate_node(net::EnhancedBayesianNetwork, node::DiscreteFunctionalNode)
     discrete_parents = filter(x -> isa(x, DiscreteNode), get_parents(net, node)[3])
     continuous_parents = filter(x -> isa(x, ContinuousNode), get_parents(net, node)[3])
     ancestors = _get_discrete_ancestors(net, node)

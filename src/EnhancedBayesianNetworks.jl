@@ -51,6 +51,8 @@ export markov_blanket
 export markov_envelope
 export gplot
 export saveplot
+export evaluate!
+export reduce!
 
 include("util/wrap.jl")
 include("nodes/nodes.jl")
