@@ -274,7 +274,7 @@
         @test issetequal(markov_bl[3], [x3, x4, x5, x8, x9, x10])
     end
 
-    @testset "Remove Node" begin
+    @testset "Remove/Add Node" begin
         weather = DiscreteRootNode(:w, Dict(:sunny => 0.5, :cloudy => 0.5))
         sprinkler_states = Dict(
             [:sunny] => Dict(:on => 0.9, :off => 0.1),
@@ -323,6 +323,75 @@
         @test net3.adj_matrix == sparse([0 1.0 0 0; 0 0 1.0 0; 0 0 0 0; 0 0 0 0])
         @test issetequal(net3.nodes, [weather, grass, rain, sprinkler])
         @test net3.topology_dict == Dict(:w => 1, :s => 4, :g => 3, :r => 2)
+    end
+
+    @testset "Ancestors" begin
+        root1 = DiscreteRootNode(:X1, Dict(:y => 0.2, :n => 0.8))
+        root2 = DiscreteRootNode(:X2, Dict(:yes => 0.4, :no => 0.6), Dict(:yes => [Parameter(2.2, :X2)], :no => [Parameter(5.5, :X2)]))
+        root3 = ContinuousRootNode(:Y1, Normal(), ExactDiscretization([0, 0.2, 1]))
+
+        child1_states = Dict(
+            [:y] => Dict(:c1y => 0.3, :c1n => 0.7),
+            [:n] => Dict(:c1y => 0.4, :c1n => 0.6),)
+        child1 = DiscreteChildNode(:C1, child1_states, Dict(:c1y => [Parameter(1, :X1)], :c1n => [Parameter(0, :X1)]))
+
+        child2 = ContinuousChildNode(:C2, Dict([:yes] => Normal(), [:no] => Normal(1, 1)))
+
+        functional1_parents = [child1, child2]
+        disc_D = ApproximatedDiscretization([-1.1, 0, 0.11], 2)
+        model1 = [Model(df -> (df.X1 .^ 2) ./ 2 .- df.C2, :fun1)]
+        simulation1 = MonteCarlo(300)
+        functional1_node = ContinuousFunctionalNode(:F1, model1, simulation1, disc_D)
+
+        net = EnhancedBayesianNetwork([root1, root2, root3, child1, child2, functional1_node])
+        add_child!(net, root1, child1)
+        add_child!(net, root2, child2)
+        add_child!(net, child1, functional1_node)
+        add_child!(net, child2, functional1_node)
+        order_net!(net)
+
+        @test issetequal(EnhancedBayesianNetworks._get_discrete_ancestors(net, functional1_node), [root2, child1])
+        @test isempty(EnhancedBayesianNetworks._get_discrete_ancestors(net, root1))
+
+        @test issetequal([[:c1y, :yes], [:c1n, :yes], [:c1y, :no], [:c1n, :no]], EnhancedBayesianNetworks._get_node_theoretical_scenarios(net, functional1_node))
+        @test isempty(EnhancedBayesianNetworks._get_node_theoretical_scenarios(net, root1))
+
+        @testset "Extreme Points" begin
+            arg = DiscreteRootNode(:ARG, Dict(:y => [0.2, 0.3], :n => [0.4, 0.6], :m => [0.3, 0.6]))
+            probs = EnhancedBayesianNetworks._extreme_points_states_probabilities(arg.states)
+            @test isapprox(probs[1][:m], 0.3)
+            @test isapprox(probs[1][:n], 0.4)
+            @test isapprox(probs[1][:y], 0.3)
+            @test isapprox(probs[2][:m], 0.4)
+            @test isapprox(probs[2][:n], 0.4)
+            @test isapprox(probs[2][:y], 0.2)
+            @test isapprox(probs[3][:m], 0.3)
+            @test isapprox(probs[3][:n], 0.5)
+            @test isapprox(probs[3][:y], 0.2)
+        end
+    end
+    @testset "Cyclicity" begin
+        root = DiscreteRootNode(:A, Dict(:a1 => 0.5, :a2 => 0.5))
+        child1 = DiscreteChildNode(:B, Dict(
+            [:a1, :d1] => Dict(:b1 => 0.5, :b2 => 0.5),
+            [:a2, :d1] => Dict(:b1 => 0.5, :b2 => 0.5),
+            [:a1, :d2] => Dict(:b1 => 0.5, :b2 => 0.5),
+            [:a2, :d2] => Dict(:b1 => 0.5, :b2 => 0.5)
+        ))
+        child2 = DiscreteChildNode(:C, Dict(
+            [:b1] => Dict(:c1 => 0.5, :c2 => 0.5),
+            [:b2] => Dict(:c1 => 0.5, :c2 => 0.5),
+        ))
+        child3 = DiscreteChildNode(:D, Dict(
+            [:c1] => Dict(:d1 => 0.5, :d2 => 0.5),
+            [:c2] => Dict(:d1 => 0.5, :d2 => 0.5),
+        ))
+        net = EnhancedBayesianNetwork([root, child1, child2, child3])
+        add_child!(net, root, child1)
+        add_child!(net, child1, child2)
+        add_child!(net, child2, child3)
+        add_child!(net, child3, child1)
+        @test_throws ErrorException("network is cyclic!") order_net!(net)
     end
 
     @testset "Markov Envelopes" begin

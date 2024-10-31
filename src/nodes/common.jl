@@ -1,4 +1,4 @@
-function discrete_ancestors(node::AbstractNode)
+function discrete_ancestors(net::EnhancedBayesianNetwork, node::AbstractNode)
     discrete_parents = filter(x -> isa(x, DiscreteNode), node.parents)
     continuous_parents = filter(x -> isa(x, ContinuousNode), node.parents)
     if isempty(continuous_parents)

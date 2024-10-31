@@ -67,9 +67,9 @@ function print_object(io::IO, obj::DiscreteChildNode; multiline::Bool)
         print(io, "\n  ")
         print(io, "nature: $tp")
         print(io, "\n  ")
-        isempty(obj.additional_info) ? info = nothing : info = obj.additional_info
-        print(io, "info: $info")
-        print(io, "\n  ")
+        # isempty(obj.additional_info) ? info = nothing : info = obj.additional_info
+        # print(io, "info: $info")
+        # print(io, "\n  ")
         isempty(obj.parameters) ? param = nothing : param = obj.parameters
         print(io, "parameters: $param")
         print(io, "\n  ")
@@ -82,7 +82,11 @@ function print_object(io::IO, obj::DiscreteChildNode; multiline::Bool)
         p = map(s -> [s[1], s[2]], collect(obj.states))
         print(io, "\r  CPT:")
         for st in p
-            print("\r \r \r \r \r \r  \n  $(st[1]) => $(collect(st[2]))")
+            if isa(st[2], EmpiricalDistribution)
+                print("\r \r \r \r \r \r  \n  $(st[1]) => EmpiricalDistribution")
+            else
+                print("\r \r \r \r \r \r  \n  $(st[1]) => $(st[2])")
+            end
         end
     else
         Base.show_default(io, obj)
@@ -98,9 +102,9 @@ function print_object(io::IO, obj::ContinuousChildNode; multiline::Bool)
         print(io, "\n  ")
         print(io, "nature: $tp")
         print(io, "\n  ")
-        isempty(obj.additional_info) ? info = nothing : info = obj.additional_info
-        print(io, "info: $info")
-        print(io, "\n  ")
+        # isempty(obj.additional_info) ? info = nothing : info = obj.additional_info
+        # print(io, "info: $info")
+        # print(io, "\n  ")
         isempty(obj.discretization.intervals) ? disc = nothing : disc = obj.discretization
         print(io, "discretization: $disc")
         print(io, "\n  ")
@@ -110,7 +114,11 @@ function print_object(io::IO, obj::ContinuousChildNode; multiline::Bool)
         p = map(s -> [s[1], s[2]], collect(obj.distribution))
         print(io, "\r  CPT:")
         for st in p
-            print("\r \r \r \r \r \r  \n  $(st[1]) => $(st[2])")
+            if isa(st[2], EmpiricalDistribution)
+                print("\r \r \r \r \r \r  \n  $(st[1]) => EmpiricalDistribution")
+            else
+                print("\r \r \r \r \r \r  \n  $(st[1]) => $(st[2])")
+            end
         end
     else
         Base.show_default(io, obj)

@@ -73,6 +73,9 @@ function add_child!(net::EnhancedBayesianNetwork, par_node::AbstractNode, ch_nod
 end
 
 function order_net!(net::EnhancedBayesianNetwork)
+    if _is_cyclic_dfs(net.adj_matrix)
+        error("network is cyclic!")
+    end
     n = net.adj_matrix.n
     reverse_dict = Dict(value => key for (key, value) in net.topology_dict)
     all_nodes = range(1, n)
@@ -148,6 +151,32 @@ end
 function get_children(net::EnhancedBayesianNetwork, node::AbstractNode)
     index = net.topology_dict[node.name]
     get_children(net, index)
+end
+
+function _get_discrete_ancestors(net::EnhancedBayesianNetwork, node::AbstractNode)
+    discrete_parents = filter(x -> isa(x, DiscreteNode), get_parents(net, node)[3])
+    continuous_parents = filter(x -> isa(x, ContinuousNode), get_parents(net, node)[3])
+    if isempty(continuous_parents)
+        return discrete_parents
+    end
+    return unique([discrete_parents..., mapreduce(x -> _get_discrete_ancestors(net, x), vcat, continuous_parents)
+    ...])
+end
+
+function _get_discrete_ancestors(_::EnhancedBayesianNetwork, _::RootNode)
+    return AbstractNode[]
+end
+
+function _get_node_theoretical_scenarios(net::EnhancedBayesianNetwork, node::AbstractNode)
+    par = _get_discrete_ancestors(net, node)
+    discrete_parents = filter(x -> isa(x, DiscreteNode), par)
+    discrete_parents_combination = Iterators.product(_get_states.(discrete_parents)...)
+    discrete_parents_combination = map(t -> [t...], discrete_parents_combination)
+    return vec(discrete_parents_combination)
+end
+
+function _get_node_theoretical_scenarios(_::EnhancedBayesianNetwork, _::RootNode)
+    return AbstractNode[]
 end
 
 function _remove_node!(net::EnhancedBayesianNetwork, index::Int64)
