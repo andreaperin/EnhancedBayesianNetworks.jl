@@ -1,21 +1,21 @@
-function evaluate_with_envelope(ebn::EnhancedBayesianNetwork)
-    ebns = markov_envelope(ebn)
-    if length(ebns) > 1
-        ebns = _add_missing_nodes_to_envelope.(ebns)
-        eebns = map(ebn -> evaluate(EnhancedBayesianNetwork(ebn)), ebns)
-        final_nodes = unique(collect(Iterators.Flatten([i.nodes for i in eebns])))
-        return get_specific_network(final_nodes)
-    else
-        return evaluate(ebn)
-    end
-end
+# function evaluate_with_envelope(ebn::EnhancedBayesianNetwork)
+#     ebns = markov_envelope(ebn)
+#     if length(ebns) > 1
+#         ebns = _add_missing_nodes_to_envelope.(ebns)
+#         eebns = map(ebn -> evaluate(EnhancedBayesianNetwork(ebn)), ebns)
+#         final_nodes = unique(collect(Iterators.Flatten([i.nodes for i in eebns])))
+#         return get_specific_network(final_nodes)
+#     else
+#         return evaluate(ebn)
+#     end
+# end
 
-function evaluate(ebn::EnhancedBayesianNetwork)
-    while !isempty(filter(x -> isa(x, FunctionalNode), ebn.nodes))
-        ebn = _evaluate_routine(ebn)
-    end
-    return get_specific_network(ebn)
-end
+# function evaluate(ebn::EnhancedBayesianNetwork)
+#     while !isempty(filter(x -> isa(x, FunctionalNode), ebn.nodes))
+#         ebn = _evaluate_routine(ebn)
+#     end
+#     return get_specific_network(ebn)
+# end
 
 function _evaluate_routine(ebn::EnhancedBayesianNetwork)
     ## Discretize ebn
