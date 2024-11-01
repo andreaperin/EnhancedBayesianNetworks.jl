@@ -33,7 +33,6 @@
         net = EnhancedBayesianNetwork([root1, root2, cont_functional])
         add_child!(net, root2, cont_functional)
         order_net!(net)
-        gplot(net)
         evaluated = EnhancedBayesianNetworks._evaluate_node(net, cont_functional)
 
         @test isa(evaluated, ContinuousRootNode)
