@@ -5,12 +5,18 @@ using Graphs
 using Suppressor
 
 include("utils/probabilities_verification.jl")
-include("nodes/new_root.jl")
-include("nodes/new_child.jl")
-include("ebn/new_enhancedbn.jl")
+
+include("nodes/root.jl")
+include("nodes/child.jl")
+
+include("ebn/enhancedbn.jl")
+
 include("ebn/transmission/transmission.jl")
+
 include("ebn/discretization/discretize.jl")
+
 include("ebn/reduction/reduction.jl")
+
 include("ebn/evaluate/evaluate_node.jl")
 include("ebn/evaluate/evaluate_net.jl")
 
