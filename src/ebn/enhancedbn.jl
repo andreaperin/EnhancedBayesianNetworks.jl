@@ -254,7 +254,7 @@ function _get_markov_group(net::EnhancedBayesianNetwork, node::AbstractNode)
     return new_list
 end
 
-function markov_envelope(net)
+function markov_envelope(net::EnhancedBayesianNetwork)
     cont_nodes = filter(x -> isa(x, ContinuousNode), net.nodes)
     Xm_groups = map(x -> _get_markov_group(net, x), cont_nodes)
     markov_envelopes = unique.(mapreduce.(x -> push!(markov_blanket(net, x)[3], x), vcat, Xm_groups))

@@ -31,6 +31,14 @@ function evaluate!(net::EnhancedBayesianNetwork)
     end
 end
 
+function evaluate_with_envelopes(net::EnhancedBayesianNetwork)
+    envelopes = markov_envelope(net)
+    envelopes = map(x -> _add_root2envelope(net, x), envelopes)
+    ebns = map(x -> _build_envelope_edges(net, x), envelopes)
+    map(ebn -> evaluate!(ebn), ebns)
+    return ebns
+end
+
 function reduce!(net::EnhancedBayesianNetwork)
     if isempty(filter(x -> isa(x, FunctionalNode), net.nodes))
         cont_nodes = filter(x -> isa(x, ContinuousNode), net.nodes)
@@ -40,5 +48,33 @@ function reduce!(net::EnhancedBayesianNetwork)
         cont_nodes = filter(x -> isa(x, ContinuousNode), net.nodes)
         map(x -> _remove_node!(net, x), cont_nodes)
     end
+    ##! todo add mapping to correct BN or CN struct
     return nothing
+end
+
+function _add_root2envelope(net::EnhancedBayesianNetwork, envelope::AbstractVector{<:AbstractNode})
+    parents_vector = map(x -> get_parents(net, x)[3], envelope)
+    is_not_in = map(x -> [i ∉ envelope for i in x], parents_vector)
+    while any(collect(Iterators.Flatten(is_not_in)))
+        missing_nodes = map((x, y) -> x[y], parents_vector, is_not_in)
+        missing_nodes = unique(collect(Iterators.Flatten(missing_nodes)))
+        envelope = append!(envelope, missing_nodes)
+        parents_vector = map(x -> get_parents(net, x)[3], envelope)
+        is_not_in = map(x -> [i ∉ envelope for i in x], parents_vector)
+    end
+    return envelope
+end
+
+function _build_envelope_edges(net::EnhancedBayesianNetwork, envelope::AbstractVector{<:AbstractNode})
+    ebn = EnhancedBayesianNetwork(envelope)
+    for node in envelope
+        par = get_parents(net, node)[3]
+        for p in par
+            if p ∈ envelope
+                add_child!(ebn, p, node)
+            end
+        end
+    end
+    order_net!(ebn)
+    return ebn
 end

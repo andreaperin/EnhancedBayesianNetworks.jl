@@ -52,6 +52,7 @@ export markov_envelope
 export gplot
 export saveplot
 export evaluate!
+export evaluate_with_envelopes
 export reduce!
 
 include("util/wrap.jl")
