@@ -3,69 +3,87 @@
         r = ContinuousRootNode(:R, Normal())
         v = DiscreteRootNode(:V, Dict(:yesV => 0.01, :noV => 0.99), Dict(:yesV => [Parameter(0, :v1)], :noV => [Parameter(1, :v1)]))
         s = DiscreteRootNode(:S, Dict(:yesS => 0.5, :noS => 0.5))
-        t = DiscreteChildNode(:T, [v], Dict(
+        t = DiscreteChildNode(:T, Dict(
             [:yesV] => Dict(:yesT => 0.05, :noT => 0.95),
             [:noV] => Dict(:yesT => 0.01, :noT => 0.99))
         )
-        l = DiscreteChildNode(:L, [s], Dict(
+        l = DiscreteChildNode(:L, Dict(
             [:yesS] => Dict(:yesL => 0.1, :noL => 0.9),
             [:noS] => Dict(:yesL => 0.01, :noL => 0.99))
         )
         f1 = DiscreteFunctionalNode(
-            :F1, [r, v], [Model(df -> df.v1 .+ df.R, :f1)], df -> 0.8 .- df.f1, MonteCarlo(200)
+            :F1, [Model(df -> df.v1 .+ df.R, :f1)], df -> 0.8 .- df.f1, MonteCarlo(200)
         )
         nodes = [r, v, s, t, f1]
-        @test_throws ErrorException("Network needs to be evaluated first") BayesianNetwork(nodes)
+        @test_throws ErrorException("node/s [:R] are continuous. Use EnhancedBayesianNetwork structure!") BayesianNetwork(nodes)
 
-        nodes = [r, v, s, t]
-        @test_throws ErrorException("Bayesian Network allows discrete node only!") BayesianNetwork(nodes)
+        r = ContinuousRootNode(:V, Normal())
+        nodes = [r, v, s, t, f1]
+        @test_throws ErrorException("network nodes names must be unique") BayesianNetwork(nodes)
+
+        r = ContinuousRootNode(:R, Normal())
+        v = DiscreteRootNode(:V, Dict(:yesT => 0.01, :noV => 0.99), Dict(:yesT => [Parameter(0, :v1)], :noV => [Parameter(1, :v1)]))
+        nodes = [r, v, s, t, f1]
+        @test_throws ErrorException("network nodes states must be unique") BayesianNetwork(nodes)
 
         v_imp = DiscreteRootNode(:V, Dict(:yesV => [0.01, 0.3], :noV => [0.7, 0.99]), Dict(:yesV => [Parameter(0, :v1)], :noV => [Parameter(1, :v1)]))
         nodes = [v_imp, s, t]
-        @test_throws ErrorException("For Imprecise Discrete Nodes use CrealNetwork structure!") BayesianNetwork(nodes)
+        @test_throws ErrorException("node/s [:V] are imprecise. Use CrealNetwork structure!") BayesianNetwork(nodes)
 
-
-        bn = BayesianNetwork([v, s, t, l])
-        dag = SimpleDiGraph{Int64}(2, [[2], Int64[], [4], Int64[]], [Int64[], [1], Int64[], [3]])
-
-        @test bn.dag == dag
-        @test bn.name_to_index == Dict(:T => 4, :L => 2, :S => 1, :V => 3)
-        @test issetequal(bn.nodes, [v, s, t, l])
-
-        root2 = DiscreteRootNode(:y, Dict(:yes => 0.4, :no => 0.6), Dict(:yes => [Parameter(2.2, :y)], :no => [Parameter(5.5, :y)]))
-        root3 = ContinuousRootNode(:z, Normal())
-
-        functional_model = [Model(df -> (df.y .^ 2 + df.z .^ 2) ./ 2, :value1)]
-        functional_simulation = MonteCarlo(300)
-        functional_performance = df -> 1 .- 2 .* df.value1
-        functional = DiscreteFunctionalNode(:f1, [root2, root3], functional_model, functional_performance, functional_simulation)
-
-        ebn = EnhancedBayesianNetwork([root2, root3, functional])
-        bn = evaluate(ebn)
-
-        dag = SimpleDiGraph{Int64}(1, [[2], Int64[]], [Int64[], [1]])
-
-        @test bn.dag == dag
-        @test bn.name_to_index == Dict(:f1 => 2, :y => 1)
-    end
-
-    @testset "Additional CPDs" begin
-        v = DiscreteRootNode(:V, Dict(:yesV => 0.01, :noV => 0.99))
+        v = DiscreteRootNode(:V, Dict(:yesV => 0.01, :noV => 0.99), Dict(:yesV => [Parameter(0, :v1)], :noV => [Parameter(1, :v1)]))
         s = DiscreteRootNode(:S, Dict(:yesS => 0.5, :noS => 0.5))
-        t = DiscreteChildNode(:T, [v], Dict(
+        t = DiscreteChildNode(:T, Dict(
             [:yesV] => Dict(:yesT => 0.05, :noT => 0.95),
             [:noV] => Dict(:yesT => 0.01, :noT => 0.99))
         )
-        l = DiscreteChildNode(:L, [s], Dict(
+        l = DiscreteChildNode(:L, Dict(
             [:yesS] => Dict(:yesL => 0.1, :noL => 0.9),
             [:noS] => Dict(:yesL => 0.01, :noL => 0.99))
         )
         bn = BayesianNetwork([v, s, t, l])
+        add_child!(bn, v, t)
+        add_child!(bn, s, l)
+        order_net!(bn)
+
+        @test bn.adj_matrix == sparse([
+            0.0 0.0 1.0 0.0;
+            0.0 0.0 0.0 1.0;
+            0.0 0.0 0.0 0.0;
+            0.0 0.0 0.0 0.0])
+        @test bn.topology_dict == Dict(:T => 3, :L => 4, :V => 1, :S => 2,)
+        @test issetequal(bn.nodes, [v, s, t, l])
+
+
+        ebn = EnhancedBayesianNetwork([v, s, t, l])
+        add_child!(ebn, v, t)
+        add_child!(ebn, s, l)
+        order_net!(ebn)
+        reduce!(ebn)
+        bn2 = BayesianNetwork(ebn)
+
+        @test bn2 == bn
+    end
+
+    @testset "get_cpd" begin
+        v = DiscreteRootNode(:V, Dict(:yesV => 0.01, :noV => 0.99))
+        s = DiscreteRootNode(:S, Dict(:yesS => 0.5, :noS => 0.5))
+        t = DiscreteChildNode(:T, Dict(
+            [:yesV] => Dict(:yesT => 0.05, :noT => 0.95),
+            [:noV] => Dict(:yesT => 0.01, :noT => 0.99))
+        )
+        l = DiscreteChildNode(:L, Dict(
+            [:yesS] => Dict(:yesL => 0.1, :noL => 0.9),
+            [:noS] => Dict(:yesL => 0.01, :noL => 0.99))
+        )
+        bn = BayesianNetwork([v, s, t, l])
+        add_child!(bn, v, t)
+        add_child!(bn, s, l)
+        order_net!(bn)
         cpd_s = get_cpd(bn, :S)
         cpd_t = get_cpd(bn, :T)
 
-        @test cpd_s.distribution == Dict(Symbol[] => Dict(:noS => 0.5, :yesS => 0.5))
-        @test cpd_t.distribution == Dict([:yesV] => Dict(:noT => 0.95, :yesT => 0.05),
+        @test cpd_s.probabilities == Dict(Symbol[] => Dict(:noS => 0.5, :yesS => 0.5))
+        @test cpd_t.probabilities == Dict([:yesV] => Dict(:noT => 0.95, :yesT => 0.05),
             [:noV] => Dict(:noT => 0.99, :yesT => 0.01))
 
         @test isempty(cpd_s.parental_ncategories)
@@ -82,6 +100,9 @@
 
         @test cpd_s.target == :S
         @test cpd_t.target == :T
+
+        @test get_cpd(bn, 2) == cpd_s
+        @test get_cpd(bn, s) == cpd_s
     end
 end
 

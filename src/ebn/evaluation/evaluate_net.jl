@@ -5,7 +5,7 @@ function evaluate!(net::EnhancedBayesianNetwork)
     while !isempty(functional_nodes)
         first_node = first(functional_nodes)
         continuous_nodes_2_eliminate = filter(x -> isa(x, ContinuousNode), get_parents(net, first_node)[3])
-        eliminable_node = map(x -> EnhancedBayesianNetworks._is_eliminable(net, x),
+        eliminable_node = map(x -> _is_eliminable(net, x),
             continuous_nodes_2_eliminate)
         if any(.!eliminable_node)
             names = [i.name for i in continuous_nodes_2_eliminate[.!eliminable_node]]

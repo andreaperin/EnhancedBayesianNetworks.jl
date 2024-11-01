@@ -1,7 +1,7 @@
 function _transfer_continuous!(net::EnhancedBayesianNetwork)
     continuous_functional = filter(x -> isa(x, ContinuousFunctionalNode), net.nodes)
     for c in continuous_functional
-        EnhancedBayesianNetworks._transfer_single_continuous_functional!(net, c)
+        _transfer_single_continuous_functional!(net, c)
     end
     return nothing
 end
