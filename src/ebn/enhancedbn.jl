@@ -169,6 +169,15 @@ function _get_discrete_ancestors(_::EnhancedBayesianNetwork, _::RootNode)
     return AbstractNode[]
 end
 
+# function discrete_ancestors(net::EnhancedBayesianNetwork, node::AbstractNode)
+#     discrete_parents = filter(x -> isa(x, DiscreteNode), node.parents)
+#     continuous_parents = filter(x -> isa(x, ContinuousNode), node.parents)
+#     if isempty(continuous_parents)
+#         return discrete_parents
+#     end
+#     return unique([discrete_parents..., mapreduce(discrete_ancestors, vcat, continuous_parents)...])
+# end
+
 function _get_node_theoretical_scenarios(net::EnhancedBayesianNetwork, node::AbstractNode)
     par = _get_discrete_ancestors(net, node)
     discrete_parents = filter(x -> isa(x, DiscreteNode), par)
