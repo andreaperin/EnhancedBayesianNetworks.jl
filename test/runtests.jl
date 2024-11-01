@@ -20,6 +20,7 @@ include("ebn/reduction/reduction.jl")
 include("ebn/evaluate/evaluate_node.jl")
 include("ebn/evaluate/evaluate_net.jl")
 
+include("ebn/bayesnet.jl")
 
 
 # include("nodes/nodes.jl")

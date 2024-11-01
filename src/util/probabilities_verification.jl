@@ -70,6 +70,6 @@ function _check_child_states!(states)
         error("mixed interval and single value states probabilities are not allowed")
     end
     ## Normalize and Verigy single states
-    states = Dict(map((scenario, state) -> (scenario, EnhancedBayesianNetworks._check_root_states!(state)), keys(states), values(states)))
+    states = Dict(map((scenario, state) -> (scenario, _check_root_states!(state)), keys(states), values(states)))
     return states
 end

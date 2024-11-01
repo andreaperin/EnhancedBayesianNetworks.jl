@@ -30,7 +30,6 @@ export ContinuousRootNode
 export DiscreteChildNode
 export DiscreteFunctionalNode
 export DiscreteRootNode
-export AbstractNode
 export ApproximatedDiscretization
 export UnamedProbabilityBox
 export ContinuousNode
@@ -43,6 +42,10 @@ export DiscreteNode
 export RootNode
 export ChildNode
 export FunctionalNode
+export BayesianNetwork
+
+
+
 export add_child!
 export order_net!
 export get_parents
@@ -54,6 +57,7 @@ export saveplot
 export evaluate!
 export evaluate_with_envelopes
 export reduce!
+export get_cpd
 
 include("util/wrap.jl")
 include("nodes/nodes.jl")

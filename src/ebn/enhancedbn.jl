@@ -1,4 +1,4 @@
-@auto_hash_equals mutable struct EnhancedBayesianNetwork
+@auto_hash_equals mutable struct EnhancedBayesianNetwork <: AbstractNetwork
     nodes::AbstractVector{<:AbstractNode}
     topology_dict::Dict
     adj_matrix::SparseMatrixCSC
@@ -29,7 +29,7 @@ function EnhancedBayesianNetwork(nodes::AbstractVector{<:AbstractNode})
     return EnhancedBayesianNetwork(nodes, topology_dict, adj_matrix)
 end
 
-function add_child!(net::EnhancedBayesianNetwork, par::Symbol, ch::Symbol)
+function add_child!(net::AbstractNetwork, par::Symbol, ch::Symbol)
     index_par = net.topology_dict[par]
     index_ch = net.topology_dict[ch]
     nodes = net.nodes
@@ -61,20 +61,20 @@ function add_child!(net::EnhancedBayesianNetwork, par::Symbol, ch::Symbol)
     return nothing
 end
 
-function add_child!(net::EnhancedBayesianNetwork, par_index::Int64, ch_index::Int64)
+function add_child!(net::AbstractNetwork, par_index::Int64, ch_index::Int64)
     reverse_dict = Dict(value => key for (key, value) in net.topology_dict)
     par = reverse_dict[par_index]
     ch = reverse_dict[ch_index]
     add_child!(net, par, ch)
 end
 
-function add_child!(net::EnhancedBayesianNetwork, par_node::AbstractNode, ch_node::AbstractNode)
+function add_child!(net::AbstractNetwork, par_node::AbstractNode, ch_node::AbstractNode)
     par = par_node.name
     ch = ch_node.name
     add_child!(net, par, ch)
 end
 
-function order_net!(net::EnhancedBayesianNetwork)
+function order_net!(net::AbstractNetwork)
     if _is_cyclic_dfs(net.adj_matrix)
         error("network is cyclic!")
     end
@@ -113,13 +113,13 @@ function order_net!(net::EnhancedBayesianNetwork)
     return nothing
 end
 
-function _verify_net(net::EnhancedBayesianNetwork)
+function _verify_net(net::AbstractNetwork)
     nodes2check = filter(x -> !isa(x, RootNode), net.nodes)
     map(n -> _verify_node(n, get_parents(net, net.topology_dict[n.name])[3]), nodes2check)
     return nothing
 end
 
-function get_parents(net::EnhancedBayesianNetwork, index::Int64)
+function get_parents(net::AbstractNetwork, index::Int64)
     reverse_dict = Dict(value => key for (key, value) in net.topology_dict)
     indices = net.adj_matrix[:, index].nzind
     names = map(x -> reverse_dict[x], indices)
@@ -127,17 +127,17 @@ function get_parents(net::EnhancedBayesianNetwork, index::Int64)
     return indices, names, nodes
 end
 
-function get_parents(net::EnhancedBayesianNetwork, name::Symbol)
+function get_parents(net::AbstractNetwork, name::Symbol)
     index = net.topology_dict[name]
     get_parents(net, index)
 end
 
-function get_parents(net::EnhancedBayesianNetwork, node::AbstractNode)
+function get_parents(net::AbstractNetwork, node::AbstractNode)
     index = net.topology_dict[node.name]
     get_parents(net, index)
 end
 
-function get_children(net::EnhancedBayesianNetwork, index::Int64)
+function get_children(net::AbstractNetwork, index::Int64)
     reverse_dict = Dict(value => key for (key, value) in net.topology_dict)
     indices = net.adj_matrix[index, :].nzind
     names = map(x -> reverse_dict[x], indices)
@@ -145,12 +145,12 @@ function get_children(net::EnhancedBayesianNetwork, index::Int64)
     return indices, names, nodes
 end
 
-function get_children(net::EnhancedBayesianNetwork, name::Symbol)
+function get_children(net::AbstractNetwork, name::Symbol)
     index = net.topology_dict[name]
     get_children(net, index)
 end
 
-function get_children(net::EnhancedBayesianNetwork, node::AbstractNode)
+function get_children(net::AbstractNetwork, node::AbstractNode)
     index = net.topology_dict[node.name]
     get_children(net, index)
 end
@@ -169,15 +169,6 @@ function _get_discrete_ancestors(_::EnhancedBayesianNetwork, _::RootNode)
     return AbstractNode[]
 end
 
-# function discrete_ancestors(net::EnhancedBayesianNetwork, node::AbstractNode)
-#     discrete_parents = filter(x -> isa(x, DiscreteNode), node.parents)
-#     continuous_parents = filter(x -> isa(x, ContinuousNode), node.parents)
-#     if isempty(continuous_parents)
-#         return discrete_parents
-#     end
-#     return unique([discrete_parents..., mapreduce(discrete_ancestors, vcat, continuous_parents)...])
-# end
-
 function _get_node_theoretical_scenarios(net::EnhancedBayesianNetwork, node::AbstractNode)
     par = _get_discrete_ancestors(net, node)
     discrete_parents = filter(x -> isa(x, DiscreteNode), par)
@@ -190,7 +181,7 @@ function _get_node_theoretical_scenarios(_::EnhancedBayesianNetwork, _::RootNode
     return AbstractNode[]
 end
 
-function _remove_node!(net::EnhancedBayesianNetwork, index::Int64)
+function _remove_node!(net::AbstractNetwork, index::Int64)
     adj_matrix = net.adj_matrix[1:end.!=index, 1:end.!=index]
     nodes = deleteat!(net.nodes, index)
     topology_vec = collect(net.topology_dict)
@@ -210,17 +201,17 @@ function _remove_node!(net::EnhancedBayesianNetwork, index::Int64)
     return nothing
 end
 
-function _remove_node!(net::EnhancedBayesianNetwork, name::Symbol)
+function _remove_node!(net::AbstractNetwork, name::Symbol)
     index = net.topology_dict[name]
     _remove_node!(net, index)
 end
 
-function _remove_node!(net::EnhancedBayesianNetwork, node::AbstractNode)
+function _remove_node!(net::AbstractNetwork, node::AbstractNode)
     index = net.topology_dict[node.name]
     _remove_node!(net, index)
 end
 
-function _add_node!(net::EnhancedBayesianNetwork, node::AbstractNode)
+function _add_node!(net::AbstractNetwork, node::AbstractNode)
     push!(net.nodes, node)
     net.topology_dict[node.name] = length(net.nodes)
     net.adj_matrix = hcat(net.adj_matrix, zeros(net.adj_matrix.m))
