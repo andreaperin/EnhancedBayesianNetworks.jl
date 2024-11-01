@@ -9,9 +9,11 @@
             error("network nodes names must be unique")
         end
         discrete_nodes = filter(x -> isa(x, DiscreteNode) && !isa(x, FunctionalNode), nodes)
-        states_list = mapreduce(i -> EnhancedBayesianNetworks._get_states(i), vcat, discrete_nodes)
-        if states_list != unique(states_list)
-            error("network nodes states must be unique")
+        if !isempty(discrete_nodes)
+            states_list = mapreduce(i -> _get_states(i), vcat, discrete_nodes)
+            if states_list != unique(states_list)
+                error("network nodes states must be unique")
+            end
         end
         new(nodes, topology_dict, adj_matrix)
     end

@@ -12,6 +12,8 @@ include("ebn/transmission/transmission.jl")
 include("ebn/discretization/discretize.jl")
 include("ebn/reduction/reduction.jl")
 include("ebn/evaluate/evaluate_node.jl")
+include("ebn/evaluate/evaluate_net.jl")
+
 
 
 # include("nodes/nodes.jl")
