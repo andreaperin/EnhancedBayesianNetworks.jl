@@ -43,6 +43,7 @@ export RootNode
 export ChildNode
 export FunctionalNode
 export BayesianNetwork
+export CredalNetwork
 
 
 

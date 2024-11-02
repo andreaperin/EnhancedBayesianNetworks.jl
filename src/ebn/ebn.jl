@@ -10,3 +10,4 @@ include("evaluation/evaluate_net.jl")
 
 include("cpd/conditionalprobabilitydistribution.jl")
 include("bayesnet.jl")
+include("credalnet.jl")

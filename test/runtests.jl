@@ -21,7 +21,7 @@ include("ebn/evaluate/evaluate_node.jl")
 include("ebn/evaluate/evaluate_net.jl")
 
 include("ebn/bayesnet.jl")
-
+include("ebn/credalnet.jl")
 
 # include("nodes/nodes.jl")
 # include("nodes/root.jl")

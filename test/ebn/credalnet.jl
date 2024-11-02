@@ -4,53 +4,64 @@
 
     B = DiscreteRootNode(:B, Dict(:Bt => 0.5, :Bf => 0.5))
 
-    L = DiscreteChildNode(:L, [F], Dict(
+    L = DiscreteChildNode(:L, Dict(
         [:Ft] => Dict(:Lt => 0.3, :Lf => 0.4, :L2 => 0.3),
         [:Ff] => Dict(:Lt => 0.05, :Lf => 0.85, :L2 => 0.1)
     ))
-
-    D = DiscreteChildNode(:D, [F, B], Dict(
+    D = DiscreteChildNode(:D, Dict(
         [:Ft, :Bt] => Dict(:Dt => 0.8, :Df => 0.2),
         [:Ft, :Bf] => Dict(:Dt => 0.1, :Df => 0.9),
         [:Ff, :Bt] => Dict(:Dt => 0.1, :Df => 0.9),
         [:Ff, :Bf] => Dict(:Dt => 0.7, :Df => 0.3)
     ))
 
-    H = DiscreteChildNode(:H, [D], Dict(
+    H = DiscreteChildNode(:H, Dict(
         [:Dt] => Dict(:Ht => 0.6, :Hf => 0.4),
         [:Df] => Dict(:Ht => 0.3, :Hf => 0.7)
     ))
 
-    @test_throws ErrorException("When all nodes are precise use BayesNetwork structure") CredalNetwork([F, B, L, D, H])
+    @test_throws ErrorException("networks nodes are all precise. Use BayesianNetwork structure!") CredalNetwork([F, B, L, D, H])
 
-    H = DiscreteChildNode(:H, [D], Dict(
+    H = DiscreteChildNode(:H, Dict(
             [:Dt] => Dict(:Ht => 0.6, :Hf => 0.4),
             [:Df] => Dict(:Ht => 0.3, :Hf => 0.7)
         ), Dict(:Ht => [Parameter(1, :H)], :Hf => [Parameter(0, :H)]))
 
     I = ContinuousRootNode(:I, Normal())
 
-    @test_throws ErrorException("Credal Network allows discrete node only!") CredalNetwork([F, B, L, D, H, I])
+    @test_throws ErrorException("node/s [:I] are continuous. Use EnhancedBayesianNetwork structure!") CredalNetwork([F, B, L, D, H, I])
 
-    model = Model(df -> df.H .+ df.I, :out)
-    performance = df -> 1 .- df.out
-    sim = MonteCarlo(200)
-    N = DiscreteFunctionalNode(:N, [I, H], [model], performance, sim)
-
-    @test_throws ErrorException("Network needs to be evaluated first") CredalNetwork([F, B, L, D, H, I, N])
-
-    H = DiscreteChildNode(:H, [D], Dict(
+    H = DiscreteChildNode(:H, Dict(
         [:Dt] => Dict(:Ht => [0.6, 0.8], :Hf => [0.2, 0.4]),
         [:Df] => Dict(:Ht => [0.2, 0.3], :Hf => [0.7, 0.8])
     ))
 
     cn = CredalNetwork([F, B, L, D, H])
-    badj = [Int64[], Int64[], [2], [1, 2], [4]]
-    fadj = [[4], [3, 4], Int64[], [5], Int64[]]
-    ne = 4
-    dag = SimpleDiGraph{Int64}(ne, fadj, badj)
-    name_index = Dict(:F => 2, :H => 5, :D => 4, :B => 1, :L => 3)
-    @test isequal(cn.dag, dag)
-    @test isequal(cn.name_to_index, name_index)
+    @test cn.adj_matrix == sparse(zeros(5, 5))
+    @test cn.topology_dict == Dict(:F => 1, :H => 5, :D => 4, :B => 2, :L => 3)
     @test issetequal(cn.nodes, [F, B, L, D, H])
+
+    add_child!(cn, F, L)
+    add_child!(cn, F, D)
+    add_child!(cn, B, D)
+    add_child!(cn, D, H)
+    order_net!(cn)
+
+    @test cn.adj_matrix == sparse([
+        0.0 0.0 1.0 1.0 0.0;
+        0.0 0.0 0.0 1.0 0.0;
+        0.0 0.0 0.0 0.0 0.0;
+        0.0 0.0 0.0 0.0 1.0;
+        0.0 0.0 0.0 0.0 0.0])
+    @test cn.topology_dict == Dict(:F => 1, :H => 5, :D => 4, :B => 2, :L => 3)
+    @test issetequal(cn.nodes, [F, B, L, D, H])
+
+    ebn = EnhancedBayesianNetwork([F, B, L, D, H])
+    add_child!(ebn, F, L)
+    add_child!(ebn, F, D)
+    add_child!(ebn, B, D)
+    add_child!(ebn, D, H)
+    order_net!(ebn)
+
+    @test cn == CredalNetwork(ebn)
 end
