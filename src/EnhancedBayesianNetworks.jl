@@ -45,7 +45,8 @@ export FunctionalNode
 export BayesianNetwork
 export CredalNetwork
 
-
+const Evidence = Dict{Symbol,Symbol}
+export Evidence
 
 export add_child!
 export order_net!
@@ -63,6 +64,7 @@ export get_cpd
 include("util/wrap.jl")
 include("nodes/nodes.jl")
 include("ebn/ebn.jl")
+include("util/evidence_verification.jl")
 include("util/base_show.jl")
 include("util/plots.jl")
 

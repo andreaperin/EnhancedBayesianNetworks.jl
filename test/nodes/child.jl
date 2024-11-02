@@ -108,7 +108,7 @@
             [:yes] => Dict(:yes => 0.3, :no => 0.9),
             [:no] => Dict(:yes => 0.2, :no => 0.8)
         )
-        @test_throws ErrorException("states [:yes, :no] are exhaustives and mutually exclusive. Their probabilities [0.3, 0.9] does not sum up to 1") DiscreteChildNode(name, states)
+        @test_throws ErrorException("states [:yes, :no] are not exhaustives and mutually exclusive. Their probabilities [0.3, 0.9] does not sum up to 1") DiscreteChildNode(name, states)
 
         states = Dict(
             [:yes] => Dict(:yes => 0.4999, :no => 0.4999),

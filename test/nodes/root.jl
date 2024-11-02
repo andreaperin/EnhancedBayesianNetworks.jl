@@ -58,7 +58,7 @@
         @test_throws ErrorException("probabilities must be lower or equal than 1") DiscreteRootNode(name, states, parameters)
 
         states = Dict(:yes => 0.8, :no => 0.8)
-        @test_throws ErrorException("states [:yes, :no] are exhaustives and mutually exclusive. Their probabilities [0.8, 0.8] does not sum up to 1") DiscreteRootNode(name, states, parameters)
+        @test_throws ErrorException("states [:yes, :no] are not exhaustives and mutually exclusive. Their probabilities [0.8, 0.8] does not sum up to 1") DiscreteRootNode(name, states, parameters)
 
         states = Dict(:yes => 0.4999, :no => 0.4999)
         @test_logs (:warn, "total probaility should be one, but the evaluated value is 0.9998 , and will be normalized") DiscreteRootNode(name, states, parameters)

@@ -47,7 +47,6 @@ end
 
 Base.permutedims(ϕ::Factor, perm) = permutedims!(deepcopy(ϕ), perm)
 
-
 Base.broadcast(f, ϕ::Factor, dims::Union{Symbol,Vector{Symbol}}, values) = broadcast!(f, deepcopy(ϕ), dims, values)
 
 function Base.broadcast!(f, ϕ::Factor, dims::Union{Symbol,Vector{Symbol}}, values)

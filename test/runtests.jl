@@ -5,6 +5,9 @@ using Graphs
 using Suppressor
 
 include("utils/probabilities_verification.jl")
+include("utils/wrap.jl")
+include("utils/node_verification.jl")
+include("utils/evidence_verification.jl")
 
 include("nodes/root.jl")
 include("nodes/child.jl")
@@ -22,6 +25,8 @@ include("ebn/evaluate/evaluate_net.jl")
 
 include("ebn/bayesnet.jl")
 include("ebn/credalnet.jl")
+
+
 
 # include("nodes/nodes.jl")
 # include("nodes/root.jl")

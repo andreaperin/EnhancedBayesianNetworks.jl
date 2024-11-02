@@ -58,5 +58,3 @@ Base.convert(::Type{Factor}, cpd::ConditionalProbabilityDistribution) = factoriz
     end
     return inds
 end
-
-
