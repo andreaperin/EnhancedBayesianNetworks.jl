@@ -12,7 +12,7 @@ function _verify_probabilities(states::Dict{Symbol,<:Real})
         else
             sts = collect(keys(states))
             probs = collect(values(states))
-            error("states $sts are exhaustives and mutually exclusive. Their probabilities $probs does not sum up to 1")
+            error("states $sts are not exhaustives and mutually exclusive. Their probabilities $probs does not sum up to 1")
         end
     end
 end
