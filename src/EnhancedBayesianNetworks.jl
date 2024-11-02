@@ -44,6 +44,12 @@ export ChildNode
 export FunctionalNode
 export BayesianNetwork
 export CredalNetwork
+export Factor
+export AbstractInferenceState
+export PreciseInferenceState
+export ImpreciseInferenceState
+export ConditionalProbabilityDistribution
+
 
 const Evidence = Dict{Symbol,Symbol}
 export Evidence
@@ -60,11 +66,12 @@ export evaluate!
 export evaluate_with_envelopes
 export reduce!
 export get_cpd
+export infer
 
 include("util/wrap.jl")
 include("nodes/nodes.jl")
 include("ebn/ebn.jl")
-include("util/evidence_verification.jl")
+include("inference/inference.jl")
 include("util/base_show.jl")
 include("util/plots.jl")
 
