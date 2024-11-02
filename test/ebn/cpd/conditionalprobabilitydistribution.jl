@@ -21,6 +21,6 @@
     @test cpd.parents_states_mapping_dict == parents_states_mapping_dict
     @test cpd.parental_ncategories == parental_ncategories
     @test cpd.states == states
-    @test cpd.distribution == distribution
+    @test cpd.probabilities == distribution
 
 end
