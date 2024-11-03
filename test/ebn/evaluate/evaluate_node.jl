@@ -11,7 +11,7 @@
         net = EnhancedBayesianNetwork([root1, root2, cont_functional])
         add_child!(net, root1, cont_functional)
         add_child!(net, root2, cont_functional)
-        order_net!(net)
+        order!(net)
 
         evaluated = EnhancedBayesianNetworks._evaluate_node(net, cont_functional)
 
@@ -32,7 +32,7 @@
         cont_functional = ContinuousFunctionalNode(:C, [model], sim)
         net = EnhancedBayesianNetwork([root1, root2, cont_functional])
         add_child!(net, root2, cont_functional)
-        order_net!(net)
+        order!(net)
         evaluated = EnhancedBayesianNetworks._evaluate_node(net, cont_functional)
 
         @test isa(evaluated, ContinuousRootNode)
@@ -54,7 +54,7 @@
             add_child!(net, r1, cont_f)
             add_child!(net, r2, cont_f)
             add_child!(net, r3, cont_f)
-            order_net!(net)
+            order!(net)
 
             @test_throws ErrorException("node C is a continuousfunctionalnode with at least one parent with Interval or p-boxes in its distributions. No method for extracting failure probability p-box have been implemented yet") EnhancedBayesianNetworks._evaluate_node(net, cont_f)
         end
@@ -69,7 +69,7 @@
         net = EnhancedBayesianNetwork([root1, root2, disc_functional])
         add_child!(net, root1, disc_functional)
         add_child!(net, root2, disc_functional)
-        order_net!(net)
+        order!(net)
 
         evaluated = EnhancedBayesianNetworks._evaluate_node(net, disc_functional)
 
@@ -94,7 +94,7 @@
         nodes = [root1, root2, disc_functional]
         net = EnhancedBayesianNetwork(nodes)
         add_child!(net, root2, disc_functional)
-        order_net!(net)
+        order!(net)
 
         evaluated = EnhancedBayesianNetworks._evaluate_node(net, disc_functional)
 
@@ -112,7 +112,7 @@
         nodes = [root1, root2, disc_functional]
         net = EnhancedBayesianNetwork(nodes)
         add_child!(net, root2, disc_functional)
-        order_net!(net)
+        order!(net)
 
         evaluated = EnhancedBayesianNetworks._evaluate_node(net, disc_functional)
 
@@ -137,7 +137,7 @@
             add_child!(net, root1, disc_functional)
             add_child!(net, root2, disc_functional)
             add_child!(net, root3, disc_functional)
-            order_net!(net)
+            order!(net)
             evaluated = EnhancedBayesianNetworks._evaluate_node(net, disc_functional)
 
             @test evaluated.name == :C
@@ -164,7 +164,7 @@
             add_child!(net, root1, disc_functional)
             add_child!(net, root2, disc_functional)
             add_child!(net, root3, disc_functional)
-            order_net!(net)
+            order!(net)
 
             evaluated = EnhancedBayesianNetworks._evaluate_node(net, disc_functional)
 
@@ -205,7 +205,7 @@
             add_child!(net, root2, model_node)
             add_child!(net, root3, model_node)
             add_child!(net, child, model_node)
-            order_net!(net)
+            order!(net)
 
             evaluated = EnhancedBayesianNetworks._evaluate_node(net, model_node)
 

@@ -18,7 +18,7 @@ function _discretize!(net::EnhancedBayesianNetwork)
         for ch in children
             add_child!(net, cont_new, ch)
         end
-        order_net!(net)
+        order!(net)
     end
     return nothing
 end

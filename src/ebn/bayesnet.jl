@@ -40,7 +40,7 @@ function BayesianNetwork(nodes::AbstractVector{<:AbstractNode})
 end
 
 function BayesianNetwork(net::EnhancedBayesianNetwork)
-    order_net!(net)
+    order!(net)
     nodes = net.nodes
     topology_dict = net.topology_dict
     adj_matrix = net.adj_matrix

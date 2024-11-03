@@ -74,7 +74,7 @@ function add_child!(net::AbstractNetwork, par_node::AbstractNode, ch_node::Abstr
     add_child!(net, par, ch)
 end
 
-function order_net!(net::AbstractNetwork)
+function order!(net::AbstractNetwork)
     if _is_cyclic_dfs(net.adj_matrix)
         error("network is cyclic!")
     end

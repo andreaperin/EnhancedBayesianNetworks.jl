@@ -27,7 +27,7 @@
     add_child!(bn, v, t)
     add_child!(bn, s, l)
     add_child!(bn, v, l)
-    order_net!(bn)
+    order!(bn)
 
     cpd_l = get_cpd(bn, :L)
     ϕ_l = factorize_cpd(cpd_l)

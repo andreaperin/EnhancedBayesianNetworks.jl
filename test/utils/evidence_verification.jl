@@ -12,7 +12,7 @@
     bn = BayesianNetwork([v, s, t, l])
     add_child!(bn, v, t)
     add_child!(bn, s, l)
-    order_net!(bn)
+    order!(bn)
 
     a1 = Evidence(:O => :yesL)
     a2 = Evidence(:L => :yesO)

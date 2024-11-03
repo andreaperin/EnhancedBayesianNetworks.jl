@@ -35,7 +35,7 @@
         add_child!(ebn, cont_functional2, cont_functional3)
         add_child!(ebn, discrete_functional1, discrete_functional)
         add_child!(ebn, cont_functional3, discrete_functional)
-        order_net!(ebn)
+        order!(ebn)
         net1 = deepcopy(ebn)
 
         evaluate!(ebn)
@@ -59,7 +59,7 @@
         add_child!(ebn, root1, disc_functional)
         add_child!(ebn, root2, disc_functional)
         add_child!(ebn, root3, disc_functional)
-        order_net!(ebn)
+        order!(ebn)
         net2 = deepcopy(ebn)
 
         evaluate!(ebn)
@@ -145,7 +145,7 @@
         add_child!(ebn, M, L)
         add_child!(ebn, L, frame2)
         add_child!(ebn, r9, frame2)
-        order_net!(ebn)
+        order!(ebn)
         envelopes = markov_envelope(ebn)
 
         @test issetequal(EnhancedBayesianNetworks._add_root2envelope(ebn, envelopes[2]), [L, frame2, r9, M])
@@ -191,7 +191,7 @@
 
         ebn = EnhancedBayesianNetwork([root2, cont_functional])
         add_child!(ebn, root2, cont_functional)
-        order_net!(ebn)
+        order!(ebn)
         evaluate!(ebn)
 
         @test isa(ebn.nodes[end], ContinuousRootNode)
@@ -199,7 +199,7 @@
         disc_functional = DiscreteFunctionalNode(:C, [model], performance, sim)
         ebn = EnhancedBayesianNetwork([root2, disc_functional])
         add_child!(ebn, root2, disc_functional)
-        order_net!(ebn)
+        order!(ebn)
         evaluate!(ebn)
 
         @test isa(ebn.nodes[end], DiscreteRootNode)
@@ -219,7 +219,7 @@
         ebn = EnhancedBayesianNetwork([root1, root2, disc_functional])
         add_child!(ebn, root1, root2)
         add_child!(ebn, root2, disc_functional)
-        order_net!(ebn)
+        order!(ebn)
 
         @test_throws ErrorException("node C has as imprecise parents only one or more child nodes with a discretization srtucture defined. They are approximated with Uniform and Exponential assumption and they are no more imprecise. A prices simulation technique must be selected") @suppress evaluate!(ebn)
 
@@ -231,7 +231,7 @@
         disc_functional = DiscreteFunctionalNode(:C, [model], performance, sim)
         ebn = EnhancedBayesianNetwork([root2, disc_functional])
         add_child!(ebn, root2, disc_functional)
-        order_net!(ebn)
+        order!(ebn)
 
         @test_throws ErrorException("node C has MonteCarlo(100000) as simulation technique, but have [:B] as imprecise parent/s. DoubleLoop or RandomSlicing technique must be employeed instead") @suppress evaluate!(ebn)
     end

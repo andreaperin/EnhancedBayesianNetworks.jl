@@ -45,7 +45,7 @@
     add_child!(cn, F, D)
     add_child!(cn, B, D)
     add_child!(cn, D, H)
-    order_net!(cn)
+    order!(cn)
 
     @test cn.adj_matrix == sparse([
         0.0 0.0 1.0 1.0 0.0;
@@ -61,7 +61,7 @@
     add_child!(ebn, F, D)
     add_child!(ebn, B, D)
     add_child!(ebn, D, H)
-    order_net!(ebn)
+    order!(ebn)
 
     @test cn == CredalNetwork(ebn)
 end

@@ -24,6 +24,6 @@ function _transfer_single_continuous_functional!(net::EnhancedBayesianNetwork, n
         end
 
         map(par -> _add_all_children_single_parent(par, node_children), node_parents)
-        return order_net!(net)
+        return order!(net)
     end
 end
