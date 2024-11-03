@@ -448,7 +448,6 @@
         add_child!(ebn, :y5, :x4)
         add_child!(ebn, :x4, :y6)
         @suppress order!(ebn)
-        gplot(ebn; nodesizefactor=0.06, arrowlengthfrac=0.1)
 
         @test issetequal(EnhancedBayesianNetworks._get_markov_group(ebn, Y5), [Y5, X4, X3])
         envelopes = markov_envelope(ebn)
