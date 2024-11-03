@@ -22,5 +22,4 @@
     @test cpd.parental_ncategories == parental_ncategories
     @test cpd.states == states
     @test cpd.probabilities == distribution
-
 end

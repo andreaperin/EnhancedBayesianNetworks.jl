@@ -1,4 +1,4 @@
-function gplot(net::EnhancedBayesianNetwork;
+function gplot(net::AbstractNetwork;
     auto_node_size=false,
     nodesizefactor=0.1,
     arrowlengthfrac=0.1,
