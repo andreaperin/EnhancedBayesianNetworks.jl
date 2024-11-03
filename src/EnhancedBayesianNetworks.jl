@@ -1,7 +1,6 @@
 module EnhancedBayesianNetworks
 
 using AutoHashEquals
-using Compose
 using DataFrames
 using Distributed
 using Distributions
