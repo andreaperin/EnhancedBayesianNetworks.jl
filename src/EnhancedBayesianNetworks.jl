@@ -67,6 +67,7 @@ export evaluate_with_envelopes
 export reduce!
 export get_cpd
 export infer
+export factorize_cpd
 
 include("util/wrap.jl")
 include("nodes/nodes.jl")

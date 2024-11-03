@@ -7,8 +7,8 @@
     @test size(ϕ) == (2, 2)
     @test size(ϕ, :T) == 2
     @test names(ϕ) == dimensions
-    @test in(:V, ϕ) == true
-    @test in(:H, ϕ) == false
+    @test ∈(:V, ϕ) == true
+    @test ∈(:H, ϕ) == false
     @test indexin(:V, ϕ) == 2
     @test indexin([:V, :T], ϕ) == [2, 1]
     @test length(ϕ) == 4

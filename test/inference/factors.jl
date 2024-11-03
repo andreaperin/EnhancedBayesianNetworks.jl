@@ -9,12 +9,12 @@
 
     v = DiscreteRootNode(:V, Dict(:yesV => 0.01, :noV => 0.90, :maybe => 0.09))
     s = DiscreteRootNode(:S, Dict(:yesS => 0.5, :noS => 0.5))
-    t = DiscreteChildNode(:T, [v], Dict(
+    t = DiscreteChildNode(:T, Dict(
         [:yesV] => Dict(:yesT => 0.05, :noT => 0.95),
         [:noV] => Dict(:yesT => 0.01, :noT => 0.99),
         [:maybe] => Dict(:yesT => 0.01, :noT => 0.99)
     ))
-    l = DiscreteChildNode(:L, [s, v], Dict(
+    l = DiscreteChildNode(:L, Dict(
         [:yesS, :yesV] => Dict(:yesL => 0.1, :noL => 0.9),
         [:noS, :yesV] => Dict(:yesL => 0.5, :noL => 0.5),
         [:yesS, :noV] => Dict(:noL => 0.2, :yesL => 0.8),
@@ -24,26 +24,34 @@
     ))
 
     bn = BayesianNetwork([v, s, t, l])
+    add_child!(bn, v, t)
+    add_child!(bn, s, l)
+    add_child!(bn, v, l)
+    order_net!(bn)
 
     cpd_l = get_cpd(bn, :L)
     ϕ_l = factorize_cpd(cpd_l)
-    pot = stack([
-        [0.7 0.6; 0.3 0.4],
-        [0.5 0.9; 0.5 0.1],
-        [0.99 0.2; 0.01 0.8]
-    ])
+    # pot = stack([
+    #     [0.7 0.6; 0.3 0.4],
+    #     [0.5 0.9; 0.5 0.1],
+    #     [0.99 0.2; 0.01 0.8]
+    # ])
+
+    pot = zeros(2, 3, 2)
+    pot[:, :, 1] = [0.7 0.5 0.99; 0.3 0.5 0.01]
+    pot[:, :, 2] = [0.6 0.9 0.2; 0.4 0.1 0.8]
     states_mapping = Dict(
         :L => Dict(:noL => 1, :yesL => 2),
         :S => Dict(:noS => 1, :yesS => 2),
         :V => Dict(:maybe => 1, :noV => 3, :yesV => 2)
     )
 
-    @test ϕ_l.dimensions == [:L, :S, :V]
+    @test ϕ_l.dimensions == [:L, :V, :S]
     @test ϕ_l.potential == pot
     @test ϕ_l.states_mapping == states_mapping
 
     ϕ_l = convert(Factor, cpd_l)
-    @test ϕ_l.dimensions == [:L, :S, :V]
+    @test ϕ_l.dimensions == [:L, :V, :S]
     @test ϕ_l.potential == pot
     @test ϕ_l.states_mapping == states_mapping
 
@@ -60,5 +68,5 @@
     inds = Array{Any}(undef, length(ϕ_t.dimensions))
     inds[:] .= Colon()
     inds[1] = 2
-    EnhancedBayesianNetworks._translate_index(ϕ_t, Dict(:T => :yesT)) == inds
+    @test EnhancedBayesianNetworks._translate_index(ϕ_t, Dict(:T => :yesT)) == inds
 end
