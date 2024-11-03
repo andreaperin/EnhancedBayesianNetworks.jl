@@ -55,7 +55,7 @@ const Evidence = Dict{Symbol,Symbol}
 export Evidence
 
 export add_child!
-export order_net!
+export order!
 export get_parents
 export get_children
 export markov_blanket

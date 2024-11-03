@@ -165,7 +165,7 @@
 
         adj_matrix = sparse(Matrix([0 1.0 1.0 0; 0 0 0 1.0; 0 0 0 1.0; 0 0 0 0]))
 
-        order_net!(net)
+        order!(net)
 
         @test net.adj_matrix == adj_matrix
         @test net.topology_dict == Dict(:w => 1, :s => 2, :g => 4, :r => 3)
@@ -266,7 +266,7 @@
         add_child!(ebn, :x8, :x10)
         add_child!(ebn, :x9, :x12)
         add_child!(ebn, :x10, :x13)
-        order_net!(ebn)
+        order!(ebn)
 
         markov_bl = markov_blanket(ebn, 9)
         @test issetequal(markov_bl[1], [5 10 4 11 3 8])
@@ -300,7 +300,7 @@
         add_child!(net, :w, :r)
         add_child!(net, :s, :g)
         add_child!(net, :r, :g)
-        order_net!(net)
+        order!(net)
 
         net1 = deepcopy(net)
         net2 = deepcopy(net)
@@ -348,7 +348,7 @@
         add_child!(net, root2, child2)
         add_child!(net, child1, functional1_node)
         add_child!(net, child2, functional1_node)
-        order_net!(net)
+        order!(net)
 
         @test issetequal(EnhancedBayesianNetworks._get_discrete_ancestors(net, functional1_node), [root2, child1])
         @test isempty(EnhancedBayesianNetworks._get_discrete_ancestors(net, root1))
@@ -391,7 +391,7 @@
         add_child!(net, child1, child2)
         add_child!(net, child2, child3)
         add_child!(net, child3, child1)
-        @test_throws ErrorException("network is cyclic!") order_net!(net)
+        @test_throws ErrorException("network is cyclic!") order!(net)
     end
 
     @testset "Markov Envelopes" begin
@@ -447,7 +447,7 @@
         add_child!(ebn, :x3, :y5)
         add_child!(ebn, :y5, :x4)
         add_child!(ebn, :x4, :y6)
-        @suppress order_net!(ebn)
+        @suppress order!(ebn)
         gplot(ebn; nodesizefactor=0.06, arrowlengthfrac=0.1)
 
         @test issetequal(EnhancedBayesianNetworks._get_markov_group(ebn, Y5), [Y5, X4, X3])

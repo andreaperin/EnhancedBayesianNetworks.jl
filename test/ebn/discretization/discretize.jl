@@ -222,7 +222,7 @@
         add_child!(net, :x, :β)
         add_child!(net, :α, :f2)
         add_child!(net, :z1, :f2)
-        order_net!(net)
+        order!(net)
 
         EnhancedBayesianNetworks._discretize!(net)
         d1, c1 = EnhancedBayesianNetworks._discretize(root3)

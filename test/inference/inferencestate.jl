@@ -12,7 +12,7 @@
     bn = BayesianNetwork([v, s, t, l])
     add_child!(bn, v, t)
     add_child!(bn, s, l)
-    order_net!(bn)
+    order!(bn)
 
     @test_throws ErrorException("Query O is not in reduced bayesian network") PreciseInferenceState(bn, :O, Evidence())
 
@@ -52,7 +52,7 @@
     add_child!(cn, F, D)
     add_child!(cn, B, D)
     add_child!(cn, D, H)
-    order_net!(cn)
+    order!(cn)
 
     a = ImpreciseInferenceState(cn, :D, Evidence())
     @test a.cn == cn

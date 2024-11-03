@@ -32,7 +32,7 @@
     add_child!(ebn, cont_functional2, cont_functional3)
     add_child!(ebn, discrete_functional1, discrete_functional)
     add_child!(ebn, cont_functional3, discrete_functional)
-    order_net!(ebn)
+    order!(ebn)
 
     @test_throws ErrorException("node elimination algorithm is for continuous nodes and x is discrete") EnhancedBayesianNetworks._is_eliminable(ebn, root1)
 

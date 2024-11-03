@@ -75,6 +75,6 @@ function _build_envelope_edges(net::EnhancedBayesianNetwork, envelope::AbstractV
             end
         end
     end
-    order_net!(ebn)
+    order!(ebn)
     return ebn
 end

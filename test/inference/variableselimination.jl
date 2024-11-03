@@ -44,7 +44,7 @@
     add_child!(bn, b, d)
     add_child!(bn, e, d)
     add_child!(bn, e, x)
-    order_net!(bn)
+    order!(bn)
     evidence = Evidence()
     factors = map(n -> Factor(bn, n.name, evidence), bn.nodes)
     dimensions = map(f -> f.dimensions, factors)
@@ -87,7 +87,7 @@
         bn = BayesianNetwork([a, b, c])
         add_child!(bn, a, c)
         add_child!(bn, b, c)
-        order_net!(bn)
+        order!(bn)
 
         ϕ = infer(bn, :a)
         @test length(ϕ) == 2
@@ -131,7 +131,7 @@
         add_child!(bn, i, g)
         add_child!(bn, g, l)
         add_child!(bn, i, s)
-        order_net!(bn)
+        order!(bn)
 
         inf = PreciseInferenceState(bn, [:G], Evidence(:D => :yesD, :I => :yesI))
         ϕ = infer(bn, :G, Evidence(:D => :yesD, :I => :yesI))
@@ -162,7 +162,7 @@
         add_child!(cn, F, D)
         add_child!(cn, B, D)
         add_child!(cn, D, H)
-        order_net!(cn)
+        order!(cn)
 
         evidence = Dict(
             :D => :Dt,

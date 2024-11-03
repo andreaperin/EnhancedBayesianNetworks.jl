@@ -33,8 +33,3 @@ include("inference/factors.jl")
 include("inference/factor_methods.jl")
 include("inference/factor_algebra.jl")
 include("inference/variableselimination.jl")
-
-# include("utils/evidence_verification.jl")
-# include("utils/node_verification.jl")
-# include("utils/plots.jl")
-# include("utils/wrap.jl")

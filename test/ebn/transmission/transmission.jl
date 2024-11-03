@@ -18,7 +18,7 @@
         add_child!(net, root1, cont_functional)
         add_child!(net, root2, cont_functional)
         add_child!(net, cont_functional, discrete_functional)
-        order_net!(net)
+        order!(net)
 
         new_discrete_functional = DiscreteFunctionalNode(:fd, [model1, model2], performance, MonteCarlo(300))
         EnhancedBayesianNetworks._transfer_single_continuous_functional!(net, cont_functional)
@@ -36,7 +36,7 @@
         add_child!(net, root1, cont_functional)
         add_child!(net, root2, cont_functional)
         add_child!(net, cont_functional, discrete_functional)
-        order_net!(net)
+        order!(net)
         net1 = deepcopy(net)
 
         EnhancedBayesianNetworks._transfer_single_continuous_functional!(net1, cont_functional)
@@ -52,7 +52,7 @@
         add_child!(net, root1, cont_functional)
         add_child!(net, root2, cont_functional)
         add_child!(net, cont_functional, discrete_functional)
-        order_net!(net)
+        order!(net)
 
         @test_throws ErrorException("node fc cannot be transferred into his children => [:fd], because its simulation type: MonteCarlo is non coherent with children simulation types: DataType[SubSetSimulation]") EnhancedBayesianNetworks._transfer_single_continuous_functional!(net, cont_functional)
     end
@@ -93,7 +93,7 @@
         add_child!(net, discrete_functional1, discrete_functional)
         add_child!(net, cont_functional3, discrete_functional)
 
-        order_net!(net)
+        order!(net)
 
         EnhancedBayesianNetworks._transfer_continuous!(net)
 

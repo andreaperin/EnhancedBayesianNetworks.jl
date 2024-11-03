@@ -39,7 +39,7 @@ function CredalNetwork(nodes::AbstractVector{<:AbstractNode})
 end
 
 function CredalNetwork(net::EnhancedBayesianNetwork)
-    order_net!(net)
+    order!(net)
     nodes = net.nodes
     topology_dict = net.topology_dict
     adj_matrix = net.adj_matrix

@@ -43,7 +43,7 @@
         bn = BayesianNetwork([v, s, t, l])
         add_child!(bn, v, t)
         add_child!(bn, s, l)
-        order_net!(bn)
+        order!(bn)
 
         @test bn.adj_matrix == sparse([
             0.0 0.0 1.0 0.0;
@@ -57,7 +57,7 @@
         ebn = EnhancedBayesianNetwork([v, s, t, l])
         add_child!(ebn, v, t)
         add_child!(ebn, s, l)
-        order_net!(ebn)
+        order!(ebn)
         reduce!(ebn)
         bn2 = BayesianNetwork(ebn)
 
@@ -78,7 +78,7 @@
         bn = BayesianNetwork([v, s, t, l])
         add_child!(bn, v, t)
         add_child!(bn, s, l)
-        order_net!(bn)
+        order!(bn)
         cpd_s = get_cpd(bn, :S)
         cpd_t = get_cpd(bn, :T)
 
