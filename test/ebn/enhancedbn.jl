@@ -163,11 +163,9 @@
         add_child!(net, :s, :g)
         add_child!(net, :r, :g)
 
-        adj_matrix = sparse(Matrix([0 1.0 1.0 0; 0 0 0 1.0; 0 0 0 1.0; 0 0 0 0]))
-
         order!(net)
 
-        @test net.adj_matrix == adj_matrix
+        @test net.adj_matrix == sparse(Matrix([0 1.0 1.0 0; 0 0 0 1.0; 0 0 0 1.0; 0 0 0 0]))
         @test net.topology_dict == Dict(:w => 1, :s => 2, :g => 4, :r => 3)
         @test net.nodes == [weather, sprinkler, rain, grass]
 
@@ -180,6 +178,12 @@
         @test get_parents(net, 4) == grass_parents
         @test get_parents(net, :g) == grass_parents
         @test get_parents(net, grass) == grass_parents
+
+        weather_childern = ([2, 3], [:s, :r], [sprinkler, rain])
+
+        @test get_children(net, 1) == weather_childern
+        @test get_children(net, :w) == weather_childern
+        @test get_children(net, weather) == weather_childern
 
         rain_state = Dict(
             [:sunny] => Dict(:sunny => 0.9, :rain => 0.1),
@@ -272,6 +276,7 @@
         @test issetequal(markov_bl[1], [5 10 4 11 3 8])
         @test issetequal(markov_bl[2], [:x3, :x4, :x5, :x8, :x9, :x10])
         @test issetequal(markov_bl[3], [x3, x4, x5, x8, x9, x10])
+        @test markov_blanket(ebn, :x6) == markov_bl
     end
 
     @testset "Remove/Add Node" begin

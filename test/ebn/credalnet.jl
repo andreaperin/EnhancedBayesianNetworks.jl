@@ -15,6 +15,20 @@
         [:Ff, :Bf] => Dict(:Dt => 0.7, :Df => 0.3)
     ))
 
+    H = DiscreteChildNode(:D, Dict(
+        [:Dt] => Dict(:Ht => 0.6, :Hf => 0.4),
+        [:Df] => Dict(:Ht => 0.3, :Hf => 0.7)
+    ))
+
+    @test_throws ErrorException("network nodes names must be unique") CredalNetwork([F, B, L, D, H])
+
+    H = DiscreteChildNode(:H, Dict(
+        [:Dt] => Dict(:Lt => 0.6, :Hf => 0.4),
+        [:Df] => Dict(:Lt => 0.3, :Hf => 0.7)
+    ))
+
+    @test_throws ErrorException("network nodes states must be unique") CredalNetwork([F, B, L, D, H])
+
     H = DiscreteChildNode(:H, Dict(
         [:Dt] => Dict(:Ht => 0.6, :Hf => 0.4),
         [:Df] => Dict(:Ht => 0.3, :Hf => 0.7)
