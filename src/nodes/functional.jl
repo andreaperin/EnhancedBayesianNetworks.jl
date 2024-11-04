@@ -14,6 +14,9 @@ function ContinuousFunctionalNode(
     ContinuousFunctionalNode(name, models, simulation, discretization)
 end
 
+ContinuousFunctionalNode(name::Symbol, models::UQModel, simulation::AbstractMonteCarlo) = ContinuousFunctionalNode(name, wrap(models), simulation)
+ContinuousFunctionalNode(name::Symbol, models::UQModel, simulation::AbstractMonteCarlo, discretization::ApproximatedDiscretization) = ContinuousFunctionalNode(name, wrap(models), simulation, discretization)
+
 @auto_hash_equals struct DiscreteFunctionalNode <: DiscreteNode
     name::Symbol
     models::Vector{<:UQModel}
@@ -31,5 +34,9 @@ function DiscreteFunctionalNode(
     parameters = Dict{Symbol,Vector{Parameter}}()
     DiscreteFunctionalNode(name, models, performance, simulation, parameters)
 end
+
+DiscreteFunctionalNode(name::Symbol, models::UQModel, performance::Function, simulation::AbstractMonteCarlo) = DiscreteFunctionalNode(name, wrap(models), performance, simulation)
+DiscreteFunctionalNode(name::Symbol, models::UQModel, performance::Function, simulation::AbstractMonteCarlo, parameters::Dict{Symbol,Vector{Parameter}}) = DiscreteFunctionalNode(name, wrap(models), performance, simulation, parameters)
+
 
 const global FunctionalNode = Union{DiscreteFunctionalNode,ContinuousFunctionalNode}
