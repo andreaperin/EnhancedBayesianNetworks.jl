@@ -22,7 +22,7 @@
         @test DiscreteFunctionalNode(name, models, performances, simulation) == DiscreteFunctionalNode(name, models, performances, simulation, parameters)
     end
 
-    @testet "Wrap Model" begin
+    @testset "Wrap Model" begin
         name = :functional
         model = Model(df -> sqrt.(df.z .^ 2 + df.z .^ 2), :value1)
         simulation = MonteCarlo(200)
