@@ -2,8 +2,10 @@ using EnhancedBayesianNetworks
 using Distributions
 # using Plots
 using .MathConstants: γ
-using UncertaintyQuantification
+# using UncertaintyQuantification
 
+
+n = 10^6
 Uᵣ = ContinuousRootNode(:Uᵣ, Normal())
 μ_gamma = 60
 cov_gamma = 0.2
@@ -27,19 +29,11 @@ function plastic_moment_capacities(uᵣ)
     exp(rand(Normal(normal_μ, normal_std)))
 end
 
-parents = [Uᵣ]
 model1 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r1)
 model2 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r2)
 model3 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r3)
 model4 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r4)
 model5 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r5)
-
-R1 = ContinuousFunctionalNode(:R1, parents, [model1], MonteCarlo(10^6))
-R2 = ContinuousFunctionalNode(:R2, parents, [model2], MonteCarlo(10^6))
-R3 = ContinuousFunctionalNode(:R3, parents, [model3], MonteCarlo(10^6))
-R4 = ContinuousFunctionalNode(:R4, parents, [model4], MonteCarlo(10^6))
-R5 = ContinuousFunctionalNode(:R5, parents, [model5], MonteCarlo(10^6))
-
 
 function frame_model(r1, r2, r3, r4, r5, v, h)
     g1 = r1 + r2 + r4 + r5 - 5 * h
@@ -48,22 +42,39 @@ function frame_model(r1, r2, r3, r4, r5, v, h)
     return minimum([g1, g2, g3])
 end
 
-model = Model(df -> frame_model.(df.r1, df.r2, df.r3, df.r4, df.r5, df.V, df.H), :G)
-performance = df -> df.G
-simulation = MonteCarlo(10^6)
-frame = DiscreteFunctionalNode(:E, [R1, R2, R3, R4, R5, V, H], [model], performance, simulation)
+R1 = ContinuousFunctionalNode(:R1, [model1], MonteCarlo(n))
+R2 = ContinuousFunctionalNode(:R2, [model2], MonteCarlo(n))
+R3 = ContinuousFunctionalNode(:R3, [model3], MonteCarlo(n))
 
+n2 = 1000
+discretization1 = ApproximatedDiscretization(collect(range(50, 250, 21)), 1)
+discretization2 = ApproximatedDiscretization(collect(range(50.01, 250.01, 21)), 1)
+R4 = ContinuousFunctionalNode(:R4, [model4], MonteCarlo(n2), discretization1)
+R5 = ContinuousFunctionalNode(:R5, [model5], MonteCarlo(n2), discretization2)
+
+model = Model(df -> frame_model.(df.r1, df.r2, df.r3, df.R4, df.R5, df.V, df.H), :G)
+performance = df -> df.G
+simulation = MonteCarlo(n2)
+frame = DiscreteFunctionalNode(:E, [model], performance, simulation)
 
 nodes = [Uᵣ, V, H, R1, R2, R3, R4, R5, frame]
-ebn = EnhancedBayesianNetwork(nodes)
 
-eebn = EnhancedBayesianNetworks.evaluate(ebn)
+net = EnhancedBayesianNetwork(nodes)
 
-plt1 = EnhancedBayesianNetworks.plot(ebn, :circular)
-savefig(plt1, "/Users/andreaperin_macos/Documents/PhD/3_Academic/Papers_Presentations/Papers/elsarticle-template/imgs/fig6_example_straub.png")
-
-
-eebn.nodes[end].states
+add_child!(net, Uᵣ, R1)
+add_child!(net, Uᵣ, R2)
+add_child!(net, Uᵣ, R3)
+add_child!(net, Uᵣ, R4)
+add_child!(net, Uᵣ, R5)
+add_child!(net, R1, frame)
+add_child!(net, R2, frame)
+add_child!(net, R3, frame)
+add_child!(net, R4, frame)
+add_child!(net, R5, frame)
+add_child!(net, V, frame)
+add_child!(net, H, frame)
+order!(net)
+EnhancedBayesianNetworks.evaluate!(net)
 
 # evidence1 = Dict(
 #     :R5_d => Symbol([94.45444444444445, 116.67666666666666]),
