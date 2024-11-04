@@ -13,7 +13,14 @@ function _discretize!(net::EnhancedBayesianNetwork)
         _add_node!(net, cont_new)
         add_child!(net, disc_new, cont_new)
         for par in parents
-            add_child!(net, par, disc_new)
+            try
+                add_child!(net, par, disc_new)
+            catch e
+                @warn "node $(disc_new.name) is a root node and will be added as a child of of $(par.name). This is allowed only for network evaluation."
+                index_par = net.topology_dict[par.name]
+                index_ch = net.topology_dict[disc_new.name]
+                net.adj_matrix[index_par, index_ch] = 1
+            end
         end
         for ch in children
             add_child!(net, cont_new, ch)
