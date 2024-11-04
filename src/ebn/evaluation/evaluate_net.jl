@@ -42,15 +42,23 @@ end
 function reduce!(net::EnhancedBayesianNetwork)
     if isempty(filter(x -> isa(x, FunctionalNode), net.nodes))
         cont_nodes = filter(x -> isa(x, ContinuousNode), net.nodes)
-        map(x -> _remove_node!(net, x), cont_nodes)
+        map(x -> _eliminate_continuous_node!(net, x), cont_nodes)
     else
         evaluate!(net)
         cont_nodes = filter(x -> isa(x, ContinuousNode), net.nodes)
-        map(x -> _remove_node!(net, x), cont_nodes)
+        map(x -> _eliminate_continuous_node!(net, x), cont_nodes)
     end
     ##! todo add mapping to correct BN or CN struct
     return nothing
 end
+
+function _eliminate_continuous_node!(net::EnhancedBayesianNetwork, node::ContinuousNode)
+    parents_indices = get_parents(net, node)[1]
+    children_indices = get_children(net, node)[1]
+    map((i, j) -> net.adj_matrix[i, j] = 1, parents_indices, children_indices)
+    _remove_node!(net, node)
+end
+
 
 function _add_root2envelope(net::EnhancedBayesianNetwork, envelope::AbstractVector{<:AbstractNode})
     parents_vector = map(x -> get_parents(net, x)[3], envelope)
