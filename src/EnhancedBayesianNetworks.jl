@@ -15,6 +15,7 @@ using Polyhedra: HalfSpace, doubledescription
 @reexport using UncertaintyQuantification
 @reexport using DataFrames
 @reexport using SparseArrays
+@reexport using Compose
 
 
 import Base: *, sum, reduce
