@@ -9,7 +9,7 @@ ContinuousRootNode(name::Symbol, distribution::AbstractContinuousInput, discrete
 
 ContinuousRootNode(name::Symbol, distribution::AbstractContinuousInput) = ContinuousRootNode(name, distribution, Dict(), ExactDiscretization())
 
-function _get_continuous_input(node::ContinuousRootNode, ::Vector{Symbol})
+function _get_continuous_input(node::ContinuousRootNode, ::Vector)
     if isa(node.distribution, UnivariateDistribution)
         return RandomVariable(node.distribution, node.name)
     elseif isa(node.distribution, Tuple{Real,Real})
@@ -19,8 +19,7 @@ function _get_continuous_input(node::ContinuousRootNode, ::Vector{Symbol})
     end
 end
 
-_get_continuous_input(node::ContinuousRootNode) = _get_continuous_input(node, Vector{Symbol}())
-_get_continuous_input(node::ContinuousRootNode, ::Vector{Any}) = _get_continuous_input(node)
+_get_continuous_input(node::ContinuousRootNode) = _get_continuous_input(node, [])
 
 function _get_node_distribution_bounds(node::ContinuousRootNode)
     if isa(node.distribution, UnivariateDistribution)
@@ -50,7 +49,7 @@ function _truncate(dist::UnamedProbabilityBox, i::AbstractVector)
     return UnamedProbabilityBox{first(typeof(dist).parameters)}(dist.parameters, i[1], i[2])
 end
 
-function _truncate(dist::Tuple{T,T}, i::AbstractVector) where {T<:Real}
+function _truncate(_::Tuple{T,T}, i::AbstractVector) where {T<:Real}
     return (i[1], i[2])
 end
 
