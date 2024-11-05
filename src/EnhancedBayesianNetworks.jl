@@ -68,6 +68,7 @@ export reduce!
 export get_cpd
 export infer
 export factorize_cpd
+export dispatch_network
 
 include("util/wrap.jl")
 include("nodes/nodes.jl")

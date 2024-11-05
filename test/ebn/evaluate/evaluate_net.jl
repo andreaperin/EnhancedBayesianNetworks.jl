@@ -183,6 +183,65 @@
         @test any(isa.(eebns[2].nodes, FunctionalNode)) == false
     end
 
+    @testset "Dispatch network" begin
+
+        @testset "Dispatch Network" begin
+
+            F = DiscreteRootNode(:F, Dict(:Ft => 0.5, :Ff => 0.5))
+
+            B = DiscreteRootNode(:B, Dict(:Bt => 0.5, :Bf => 0.5))
+
+            L = DiscreteChildNode(:L, Dict(
+                [:Ft] => Dict(:Lt => 0.3, :Lf => 0.4, :L2 => 0.3),
+                [:Ff] => Dict(:Lt => 0.05, :Lf => 0.85, :L2 => 0.1)
+            ))
+            D = DiscreteChildNode(:D, Dict(
+                [:Ft, :Bt] => Dict(:Dt => 0.8, :Df => 0.2),
+                [:Ft, :Bf] => Dict(:Dt => 0.1, :Df => 0.9),
+                [:Ff, :Bt] => Dict(:Dt => 0.1, :Df => 0.9),
+                [:Ff, :Bf] => Dict(:Dt => 0.7, :Df => 0.3)
+            ))
+            H = DiscreteChildNode(:H, Dict(
+                [:Dt] => Dict(:Ht => [0.6, 0.8], :Hf => [0.2, 0.4]),
+                [:Df] => Dict(:Ht => [0.2, 0.3], :Hf => [0.7, 0.8])
+            ))
+
+            ebn = EnhancedBayesianNetwork([F, B, L, D, H])
+            add_child!(ebn, F, L)
+            add_child!(ebn, F, D)
+            add_child!(ebn, B, D)
+            add_child!(ebn, D, H)
+            order!(ebn)
+            cn = dispatch_network(ebn)
+
+            @test isa(cn, CredalNetwork)
+
+            ebn = EnhancedBayesianNetwork([F, B, L, D])
+            add_child!(ebn, F, L)
+            add_child!(ebn, F, D)
+            add_child!(ebn, B, D)
+            order!(ebn)
+            bn = dispatch_network(ebn)
+
+            @test isa(bn, BayesianNetwork)
+
+            H = ContinuousChildNode(:H, Dict(
+                [:Dt] => Normal(),
+                [:Df] => Normal()
+            ))
+
+            ebn = EnhancedBayesianNetwork([F, B, L, D, H])
+            add_child!(ebn, F, L)
+            add_child!(ebn, F, D)
+            add_child!(ebn, B, D)
+            add_child!(ebn, D, H)
+            order!(ebn)
+            net = dispatch_network(ebn)
+
+            @test isa(net, EnhancedBayesianNetwork)
+        end
+    end
+
     @testset "No Ancestors case" begin
         root2 = ContinuousRootNode(:B, Normal())
         model = Model(df -> df.B .+ 1, :C)

@@ -4,7 +4,6 @@ using Distributions
 using .MathConstants: γ
 # using UncertaintyQuantification
 
-
 n = 10^6
 Uᵣ = ContinuousRootNode(:Uᵣ, Normal())
 μ_gamma = 60
