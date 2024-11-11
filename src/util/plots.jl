@@ -1,6 +1,6 @@
 function gplot(net::AbstractNetwork;
     auto_node_size=false,
-    nodesizefactor=0.3,
+    nodesizefactor=0.1,
     arrowlengthfrac=0.1,
     discretization_thickness=0.2,
     title="",
@@ -31,8 +31,8 @@ function gplot(net::AbstractNetwork;
     max_edgelinewidth = EDGELINEWIDTH / maximum(edgelinewidth)
     edgelinewidth *= max_edgelinewidth
 
-    node_list = _order_node(net.nodes)
-    pos = _get_position(node_list)
+    node_list = net.nodes
+    pos = _get_position(net.adj_matrix)
     locs_x = map(p -> p[1], pos)
     locs_y = map(p -> p[2], pos)
     min_x, max_x = extrema(locs_x)
@@ -68,7 +68,7 @@ function gplot(net::AbstractNetwork;
     max_nodelabelsize = NODELABELSIZE / maximum(nodelabelsize)
     nodelabelsize *= max_nodelabelsize
 
-    edges_list = _get_edges(get_adj_matrix(node_list))
+    edges_list = _get_edges(net.adj_matrix)
     lines, larrows = _build_straight_edges(edges_list, locs_x, locs_y, nodesize, arrowlengthfrac, arrowangleoffset)
 
     function _is2discretize(n)
@@ -108,6 +108,25 @@ function gplot(net::AbstractNetwork;
         # compose(context(), curves, stroke(edgestrokec), linewidth(edgelinewidth)),
         compose(context(units=UnitBox(plot_area...)), rectangle(plot_area...), fill(background_color))
     )
+end
+
+
+function _get_position(adj_matrix::SparseMatrixCSC)
+    pos = spring(adj_matrix; iterations=1000)
+    return pos
+end
+
+function _get_edges(adj_matrix::SparseMatrixCSC)
+    n = size(adj_matrix)
+    edge_list = Vector{Tuple{Int64,Int64}}()
+    for i in range(1, n[1])
+        for j in range(1, n[2])
+            if adj_matrix[i, j] != 0
+                push!(edge_list, (i, j))
+            end
+        end
+    end
+    return edge_list
 end
 
 function _build_straight_edges(edge_list, locs_x, locs_y, nodesize, arrowlengthfrac, arrowangleoffset)
@@ -176,13 +195,13 @@ function _node_color(n::AbstractNode)
             return "red1"
         end
     elseif isa(n, ContinuousNode)
-        if EnhancedBayesianNetworks._is_imprecise(n)
+        if _is_imprecise(n)
             return "cyan1"
         else
             return "paleturquoise"
         end
     elseif isa(n, DiscreteNode)
-        if EnhancedBayesianNetworks._is_imprecise(n)
+        if _is_imprecise(n)
             return "green1"
         else
             return "palegreen"
@@ -204,75 +223,7 @@ function _midpoint(pt1, pt2)
     return x, y
 end
 
-function saveplot(gplot::Compose.Context, filename::String)
+function saveplot(gplot, filename::String)
     draw(SVG(filename), gplot)
     return nothing
 end
-
-# ```
-# List of available methods:
-
-# `:spectral`, `:sfdp`, `:circular`, `:shell`, `:stress`, `:spring`, `:tree`, `:buchheim`, `:arcdiagram` or `:chorddiagram`
-
-# ```
-
-# function plot(bn::AbstractNetwork, layout=:spring, nodesize=0.1, fontsize=13)
-#     if length(bn.nodes) > 1
-#         graphplot(
-#             bn.dag,
-#             names=[i.name for i in bn.nodes],
-#             # nodesize=map(x -> isa(x, ContinuousNode) ? Float64(0.2) : Float64(0.1), bn.nodes),
-#             method=layout,
-#             nodesize=nodesize,
-#             fontsize=fontsize,
-#             node_shape=map(x -> isa(x, ContinuousNode) ? :circle : :rect, bn.nodes),
-#             markercolor=_marker_color.(bn.nodes),
-#             linecolor=:darkgrey,
-#         )
-#     elseif length(bn.nodes) == 1
-#         @warn ("Network is collapsed to a single node $(bn.nodes[1].name). Its probability table will be shown instead")
-#         if isa(bn.nodes[1], DiscreteNode)
-#             @show bn.nodes[1].states
-#         else
-#             @show bn.nodes[1].distribution
-#         end
-#     end
-# end
-
-# function _marker_color(node::AbstractNode)
-#     if isa(node, FunctionalNode)
-#         mc = "lightblue"
-
-#     elseif isa(node, RootNode)
-#         if isa(node, ContinuousNode)
-#             if isa(node.distribution, UnivariateDistribution)
-#                 mc = "orange"
-#             else
-#                 mc = "red"
-#             end
-
-#         elseif isa(node, DiscreteNode)
-#             if isa(collect(values(node.states))[1], Real)
-#                 mc = "orange"
-#             else
-#                 mc = "red"
-#             end
-#         end
-
-#     elseif isa(node, ChildNode)
-#         if isa(node, ContinuousNode)
-#             if isa(collect(values(node.distribution))[1], UnivariateDistribution)
-#                 mc = "orange"
-#             else
-#                 mc = "red"
-#             end
-#         elseif isa(node, DiscreteNode)
-#             if isa(collect(values(collect(values(node.states))[1]))[1], Real)
-#                 mc = "orange"
-#             else
-#                 mc = "red"
-#             end
-#         end
-#     end
-#     return mc
-# end

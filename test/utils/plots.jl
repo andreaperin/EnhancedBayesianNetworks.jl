@@ -1,4 +1,22 @@
-@testset "Plots Auxiliary" begin
+@testset "Plots" begin
+
+    adj_matrix = sparse([
+        0.0 1.0 1.0 0.0;
+        0.0 0.0 0.0 1.0;
+        0.0 0.0 0.0 1.0;
+        0.0 0.0 0.0 0.0])
+    pos = EnhancedBayesianNetworks._get_position(adj_matrix)
+
+    @test collect(Iterators.flatten(pos)) == [
+        -0.526454202489129
+        1.8691337724237627
+        -0.6634447665752976
+        -0.41578455096125316
+        1.7584643962567073
+        1.732147801263917
+        1.6214411597014606
+        -0.5527336821563081]
+
     pt1 = (0, 0)
     pt2 = (1, 1)
     _midpoint = (0.5, 0.5)
@@ -10,17 +28,28 @@
     arrowlength = 0.1
     @test EnhancedBayesianNetworks._arrowcoords(θ, endx, endy, arrowlength) == ((0.9577381738259301, 0.909369221296335), (0.909369221296335, 0.9577381738259301))
 
-    a_p = DiscreteRootNode(:Ap, Dict(:a1 => 0.5, :a2 => 0.5))
+    a_p = DiscreteRootNode(:Ap, Dict(:a1p => 0.5, :a2p => 0.5))
     a_i = DiscreteRootNode(:Ai, Dict(:a1 => [0.2, 0.4], :a2 => [0.6, 0.8]))
     b_p = ContinuousRootNode(:Bp, Normal())
-    b_i = ContinuousRootNode(:Bp, UnamedProbabilityBox{Normal}(Interval[Interval(-0.5, 0.5, :μ), Interval(1, 2, :σ)]))
+    b_i = ContinuousRootNode(:Bi, UnamedProbabilityBox{Normal}(Interval[Interval(-0.5, 0.5, :μ), Interval(1, 2, :σ)]))
     model = Model(df -> df.Bp, :C)
     performance = df -> df.C
     simulation = MonteCarlo(2)
-    c = DiscreteFunctionalNode(:C, [b_p], [model], performance, simulation)
-    d = ContinuousFunctionalNode(:D, [b_p], [model], simulation)
+    c = DiscreteFunctionalNode(:C, [model], performance, simulation)
+    d = ContinuousFunctionalNode(:D, [model], simulation)
 
-    @test EnhancedBayesianNetworks._node_color.([a_p, a_i, b_p, b_i, c, d]) == ["palegreen", "green1", "paleturquoise", "cyan1", "lightsalmon", "red1"]
+    nodes = [a_p, a_i, b_p, b_i, c, d]
+    net = EnhancedBayesianNetwork(nodes)
+    add_child!(net, b_p, c)
+    add_child!(net, b_p, d)
+    order!(net)
+
+    @test EnhancedBayesianNetworks._node_color.(net.nodes) == ["palegreen",
+        "green1",
+        "paleturquoise",
+        "cyan1",
+        "lightsalmon",
+        "red1"]
 
     locs_x = [0.537392329950904, -1.0, 0.16878664898018236, 1.0, -0.48776316663034747, 0.16714316400701024, 0.7680868152581759, 0.4231089813619797]
 

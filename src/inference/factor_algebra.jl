@@ -13,11 +13,9 @@ function Base.join(op, ϕ1::Factor, ϕ2::Factor)
     if [size(ϕ1)[index_common1]...] != [size(ϕ2)[index_common2]...]
         error("Common dimensions must have same size")
     end
-
     # the first dimensions are all from ϕ1
     new_dims = union(ϕ1.dimensions, ϕ2.dimensions)
     new_states_mapping = merge(ϕ1.states_mapping, ϕ2.states_mapping)
-
     # permute the common dimensions in ϕ2 to the beginning,
     #  in the order that they appear in ϕ1 (and therefore new_dims)            
     unique1 = setdiff(ϕ1.dimensions, common)
