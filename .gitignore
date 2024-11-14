@@ -54,3 +54,4 @@ demo/jasper_example_math.jl
 demo/vehicle_suspension.jl
 demo/vehicle_suspension_imprecise.jl
 demo/adiajency.jl
+demo/HC_ebn_surrogate.jl

@@ -24,12 +24,8 @@ import Base: *, sum, reduce
 export AbstractContinuousInput
 export AbstractDiscreteProbability
 export AbstractDiscretization
-export ContinuousChildNode
 export ContinuousFunctionalNode
-export ContinuousRootNode
-export DiscreteChildNode
 export DiscreteFunctionalNode
-export DiscreteRootNode
 export ApproximatedDiscretization
 export UnamedProbabilityBox
 export ContinuousNode
@@ -38,10 +34,6 @@ export ExactDiscretization
 export EnhancedBayesianNetwork
 export AbstractNode
 export ContinuousNode
-export DiscreteNode
-export RootNode
-export ChildNode
-export FunctionalNode
 export BayesianNetwork
 export CredalNetwork
 export Factor
@@ -54,27 +46,27 @@ export ConditionalProbabilityDistribution
 const Evidence = Dict{Symbol,Symbol}
 export Evidence
 
-export add_child!
-export order!
-export get_parents
-export get_children
-export markov_blanket
-export markov_envelope
-export gplot
-export saveplot
-export evaluate!
-export evaluate_with_envelopes
-export reduce!
-export get_cpd
-export infer
-export factorize_cpd
-export dispatch_network
+
+# export add_child!
+# export order!
+# export get_parents
+# export get_children
+# export markov_blanket
+# export markov_envelope
+# export gplot
+# export saveplot
+# export evaluate!
+# export evaluate_with_envelopes
+# export reduce!
+# export get_cpd
+# export infer
+# export factorize_cpd
+# export dispatch_network
 
 include("util/wrap.jl")
 include("nodes/nodes.jl")
-include("ebn/ebn.jl")
-include("inference/inference.jl")
-include("util/base_show.jl")
-include("util/plots.jl")
-
+# include("ebn/ebn.jl")
+# include("inference/inference.jl")
+# include("util/base_show.jl")
+# include("util/plots.jl")
 end
