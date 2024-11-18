@@ -1,6 +1,6 @@
-@auto_hash_equals struct ContinuousFunctionalNode <: ContinuousNode
+@auto_hash_equals struct ContinuousFunctionalNode <: AbstractNode
     name::Symbol
-    models::Vector{<:UQModel}
+    models::AbstractVector{<:UQModel}
     simulation::AbstractMonteCarlo
     discretization::ApproximatedDiscretization
 
@@ -10,8 +10,7 @@
         simulation::AbstractMonteCarlo,
         discretization::ApproximatedDiscretization
     )
-        models = wrap(models)
-        new(name, models, simulation, discretization)
+        new(name, wrap(models), simulation, discretization)
     end
 end
 
@@ -20,11 +19,10 @@ function ContinuousFunctionalNode(
     models::Union{Vector{<:UQModel},<:UQModel},
     simulation::AbstractMonteCarlo
 )
-    discretization = ApproximatedDiscretization()
-    ContinuousFunctionalNode(name, models, simulation, discretization)
+    ContinuousFunctionalNode(name, models, simulation, ApproximatedDiscretization())
 end
 
-@auto_hash_equals struct DiscreteFunctionalNode <: DiscreteNode
+@auto_hash_equals struct DiscreteFunctionalNode <: AbstractNode
     name::Symbol
     models::Vector{<:UQModel}
     performance::Function
@@ -38,8 +36,7 @@ end
         simulation::Union{AbstractSimulation,DoubleLoop,RandomSlicing},
         parameters::Dict{Symbol,Vector{Parameter}}
     )
-        models = wrap(models)
-        new(name, models, performance, simulation, parameters)
+        new(name, wrap(models), performance, simulation, parameters)
     end
 end
 
@@ -49,8 +46,7 @@ function DiscreteFunctionalNode(
     performance::Function,
     simulation::Union{AbstractSimulation,DoubleLoop,RandomSlicing}
 )
-    parameters = Dict{Symbol,Vector{Parameter}}()
-    DiscreteFunctionalNode(name, models, performance, simulation, parameters)
+    DiscreteFunctionalNode(name, models, performance, simulation, Dict{Symbol,Vector{Parameter}}())
 end
 
 const global FunctionalNode = Union{DiscreteFunctionalNode,ContinuousFunctionalNode}

@@ -19,7 +19,8 @@ function _distributions(node::ContinuousNode)
 end
 
 function _scenarios(node::ContinuousNode)
-    return copy.(eachrow(node.cpt[!, Not(:Prob)]))
+    scenarios = copy.(eachrow(node.cpt[!, Not(:Prob)]))
+    return map(s -> Dict(pairs(s)), scenarios)
 end
 
 function _continuous_input(node::ContinuousNode{UnivariateDistribution}, evidence::Evidence)
@@ -43,12 +44,6 @@ function _continuous_input(node::ContinuousNode{UnamedProbabilityBox}, evidence:
 end
 
 _continuous_input(node::ContinuousNode) = _continuous_input(node, Evidence())
-
-function _byrow(evidence::Evidence)
-    k = collect(keys(evidence))
-    v = collect(values(evidence))
-    return map((n, s) -> n => ByRow(x -> x == s), k, v)
-end
 
 function _truncate(dist::UnivariateDistribution, i::AbstractVector)
     return truncated(dist, i[1], i[2])
