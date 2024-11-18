@@ -1,3 +1,40 @@
+function _byrow(evidence::Evidence)
+    k = collect(keys(evidence))
+    v = collect(values(evidence))
+    return map((n, s) -> n => ByRow(x -> x == s), k, v)
+end
+
+function _verify_parameters(node::DiscreteNode)
+    if !isempty(parameters)
+        states_id = collect(keys(states))
+        parameters_id = collect(keys(parameters))
+        if keys(states) != keys(parameters)
+            error("parameters keys $parameters_id must be coherent with states $states_id")
+        end
+    end
+end
+
+function _check_root_states!(states::Dict{Symbol,<:AbstractDiscreteProbability})
+    _verify_probabilities(states)
+    _normalize_states!(states)
+end
+
+## Child Discrete
+function _check_child_states!(states)
+    ## check states coherency over scenarios
+    defined_states = map(s -> (collect(keys(s)), collect(values(s))), values(states))
+    if !allequal([s[1] for s in defined_states])
+        error("non coherent definition of states over scenarios: $defined_states")
+    end
+    ## check states values coherency over scenarios
+    if !allequal(typeof.([s[2] for s in defined_states]))
+        error("mixed interval and single value states probabilities are not allowed")
+    end
+    ## Normalize and Verigy single states
+    states = Dict(map((scenario, state) -> (scenario, _check_root_states!(state)), keys(states), values(states)))
+    return states
+end
+
 function _verify_node(node::ChildNode, parents::AbstractVector{<:AbstractNode})
     ## Check scenarios coherence for non functional nodes
     discrete_parents = filter(x -> isa(x, DiscreteNode), parents)

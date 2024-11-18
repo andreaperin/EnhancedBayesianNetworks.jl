@@ -64,8 +64,9 @@ export Evidence
 # export dispatch_network
 
 include("util/wrap.jl")
+include("util/verifications_discrete.jl")
 include("nodes/nodes.jl")
-# include("ebn/ebn.jl")
+include("ebn/ebn.jl")
 # include("inference/inference.jl")
 # include("util/base_show.jl")
 # include("util/plots.jl")

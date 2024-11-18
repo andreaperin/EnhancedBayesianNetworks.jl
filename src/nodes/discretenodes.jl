@@ -2,32 +2,77 @@
     name::Symbol
     cpt::DataFrame
     parameters::Dict{Symbol,Vector{Parameter}}
-    additional_info::Dict{Vector{Symbol},Dict}
+    additional_info::Dict{AbstractVector{Symbol},Dict}
 
-    function DiscreteNode(name::Symbol, cpt, parameters::Dict{Symbol,Vector{Parameter}}, additional_info::Dict{Vector{Symbol},Dict})
+    function DiscreteNode(name::Symbol, cpt, parameters::Dict{Symbol,Vector{Parameter}}, additional_info::Dict{AbstractVector{Symbol},Dict})
+        cpt = _verify_cpt_and_normalize!(cpt, name)
+        _verify_parameters(cpt, parameters, name)
         new(name, _cpt(cpt), parameters, additional_info)
     end
 end
 
 function DiscreteNode(name::Symbol, cpt::DataFrame)
-    DiscreteNode(name, cpt, Dict{Symbol,Vector{Parameter}}(), Dict{Vector{Symbol},Dict}())
+    DiscreteNode(name, cpt, Dict{Symbol,Vector{Parameter}}(), Dict{AbstractVector{Symbol},Dict}())
 end
 
 function DiscreteNode(name::Symbol, cpt::DataFrame, parameters::Dict{Symbol,Vector{Parameter}})
-    DiscreteNode(name, cpt, parameters, Dict{Vector{Symbol},Dict}())
+    DiscreteNode(name, cpt, parameters, Dict{AbstractVector{Symbol},Dict}())
 end
 
-function DiscreteNode(name::Symbol, cpt::Dict{Vector{Symbol},<:AbstractDiscreteProbability}, indices::AbstractVector{Symbol})
+function DiscreteNode(name::Symbol, cpt::Dict{AbstractVector{Symbol},<:AbstractDiscreteProbability}, indices::AbstractVector{Symbol})
     cpt = _cpt(cpt, indices)
-    DiscreteNode(name, cpt, Dict{Symbol,Vector{Parameter}}(), Dict{Vector{Symbol},Dict}())
+    DiscreteNode(name, cpt, Dict{Symbol,Vector{Parameter}}(), Dict{AbstractVector{Symbol},Dict}())
 end
 
-function DiscreteNode(name::Symbol, cpt::Dict{Vector{Symbol},<:AbstractDiscreteProbability}, indices::AbstractVector{Symbol}, parameters::Dict{Symbol,Vector{Parameter}})
+function DiscreteNode(name::Symbol, cpt::Dict{AbstractVector{Symbol},<:AbstractDiscreteProbability}, indices::AbstractVector{Symbol}, parameters::Dict{Symbol,Vector{Parameter}})
     cpt = _cpt(cpt, indices)
-    DiscreteNode(name, cpt, parameters, Dict{Vector{Symbol},Dict}())
+    DiscreteNode(name, cpt, parameters, Dict{AbstractVector{Symbol},Dict}())
 end
 
-function _cpt(x::Dict{Vector{Symbol},<:AbstractDiscreteProbability}, indices::AbstractVector{Symbol})
+function _verify_cpt_and_normalize!(cpt::DataFrame, name::Symbol)
+    _verify_cpt_coherence(cpt)
+    if ncol(cpt) == 2     ## Root Nodes
+        sub_cpts = [cpt]
+    else    ## Child Nodes
+        scenarios = unique!(map(s -> _by_row(s), _scenarios(cpt, name)))
+        sub_cpts = map(e -> subset(cpt, e), scenarios)
+    end
+    _verify_precise_probabilities_values(cpt)
+    _verify_imprecise_probabilities_values(cpt)
+    map(sc -> _verify_imprecise_exhaustiveness(sc), sub_cpts)
+    return mapreduce(sc -> _verify_precise_exhaustiveness_and_normalize!(sc), vcat, sub_cpts)
+end
+
+function _verify_parameters(cpt::DataFrame, parameters::Dict{Symbol,Vector{Parameter}}, name::Symbol)
+    if !isempty(parameters)
+        if !issetequal(_states(cpt, name), keys(parameters))
+            error("parameters keys $(keys(parameters)) must be coherent with states $(_states(cpt, name))")
+        end
+    end
+end
+
+_verify_parameters(node::DiscreteNode) = _verify_parameters(node.cpt, node.parameters, node.name)
+
+function _states(cpt::DataFrame, name::Symbol)
+    unique(cpt[!, name])
+end
+
+_states(node::DiscreteNode) = _states(node.cpt, node.name)
+
+function _scenarios(cpt::DataFrame, name::Symbol)
+    scenarios = copy.(eachrow(cpt[!, Not(name, :Prob)]))
+    return map(s -> Dict(pairs(s)), scenarios)
+end
+
+_scenarios(node::DiscreteNode) = _scenarios(node.cpt, node.name)
+
+function _by_row(evidence::Evidence)
+    k = collect(keys(evidence))
+    v = collect(values(evidence))
+    return map((n, s) -> n => ByRow(x -> x == s), k, v)
+end
+
+function _cpt(x::Dict{AbstractVector{Symbol},<:AbstractDiscreteProbability}, indices::AbstractVector{Symbol})
     cpt = DataFrame()
     for (i, name) in enumerate(indices)
         cpt[!, name] = map(x -> x[i], collect(keys(x)))
@@ -37,14 +82,6 @@ function _cpt(x::Dict{Vector{Symbol},<:AbstractDiscreteProbability}, indices::Ab
 end
 
 _cpt(x::DataFrame) = x
-
-function _states(node::DiscreteNode)
-    return unique(node.cpt[!, node.name])
-end
-
-function _scenarios(node::DiscreteNode)
-    return copy.(eachrow(node.cpt[!, Not(node.name, :Prob)]))
-end
 
 function _parameters_with_evidence(node::DiscreteNode; evidence::Evidence)
     if node.name ∉ keys(evidence)
