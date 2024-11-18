@@ -11,7 +11,7 @@ using Suppressor
 # include("utils/plots.jl")
 
 # include("nodes/nodes.jl")
-# include("nodes/root.jl")
+include("nodes/discretenodes.jl")
 # include("nodes/child.jl")
 # include("nodes/functional.jl")
 

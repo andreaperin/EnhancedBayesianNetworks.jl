@@ -5,6 +5,9 @@
     additional_info::Dict{AbstractVector{Symbol},Dict}
 
     function DiscreteNode(name::Symbol, cpt, parameters::Dict{Symbol,Vector{Parameter}}, additional_info::Dict{AbstractVector{Symbol},Dict})
+        if String(name) ∉ names(cpt)
+            error("defined cpt does not contain a column refered to node name $name: $cpt")
+        end
         cpt = _verify_cpt_and_normalize!(cpt, name)
         _verify_parameters(cpt, parameters, name)
         new(name, _cpt(cpt), parameters, additional_info)
@@ -51,8 +54,6 @@ function _verify_parameters(cpt::DataFrame, parameters::Dict{Symbol,Vector{Param
     end
 end
 
-_verify_parameters(node::DiscreteNode) = _verify_parameters(node.cpt, node.parameters, node.name)
-
 function _states(cpt::DataFrame, name::Symbol)
     unique(cpt[!, name])
 end
@@ -61,16 +62,10 @@ _states(node::DiscreteNode) = _states(node.cpt, node.name)
 
 function _scenarios(cpt::DataFrame, name::Symbol)
     scenarios = copy.(eachrow(cpt[!, Not(name, :Prob)]))
-    return map(s -> Dict(pairs(s)), scenarios)
+    return unique(map(s -> Dict(pairs(s)), scenarios))
 end
 
 _scenarios(node::DiscreteNode) = _scenarios(node.cpt, node.name)
-
-function _by_row(evidence::Evidence)
-    k = collect(keys(evidence))
-    v = collect(values(evidence))
-    return map((n, s) -> n => ByRow(x -> x == s), k, v)
-end
 
 function _cpt(x::Dict{AbstractVector{Symbol},<:AbstractDiscreteProbability}, indices::AbstractVector{Symbol})
     cpt = DataFrame()
