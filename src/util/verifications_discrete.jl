@@ -1,3 +1,9 @@
+function _by_row(evidence::Dict{Symbol,Symbol})
+    k = collect(keys(evidence))
+    v = collect(values(evidence))
+    return map((n, s) -> n => ByRow(x -> x == s), k, v)
+end
+
 function _verify_cpt_coherence(cpt::DataFrame)
     if !all(isa.(cpt[!, :Prob], Vector{<:Real})) && !all(isa.(cpt[!, :Prob], Real))
         error("Mixed precise and imprecise probabilities values $cpt")
@@ -7,9 +13,9 @@ end
 function _verify_precise_probabilities_values(cpt::DataFrame)
     probabilities = vcat(cpt[!, :Prob]...)
     if any(probabilities .< 0)
-        error("probabilities must be non-negative")
+        error("probabilities must be non-negative: $cpt")
     elseif any(probabilities .> 1)
-        error("probabilities must be lower or equal than 1")
+        error("probabilities must be lower or equal than 1: $cpt")
     end
 end
 
@@ -30,10 +36,10 @@ function _verify_precise_exhaustiveness_and_normalize!(sub_cpt::DataFrame)
         total_probability = sum(sub_cpt[!, :Prob])
         if total_probability != 1
             if isapprox(total_probability, 1; atol=0.05)
-                @warn "total probaility should be one, but the evaluated value is $total_probability , and will be normalized"
+                @warn "total probability should be one, but the evaluated value is $total_probability, and will be normalized"
                 _normalize!(sub_cpt)
             else
-                error("States are not exhaustive and mutually exclusives for the following cpt: $sub_cpt")
+                error("states are not exhaustive and mutually exclusives for the following cpt: $sub_cpt")
             end
         end
     end

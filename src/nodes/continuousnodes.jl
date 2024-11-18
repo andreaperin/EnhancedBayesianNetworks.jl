@@ -14,14 +14,18 @@ function ContinuousNode{T}(name::Symbol, cpt::DataFrame, discretization::Abstrac
     ContinuousNode{T}(name, cpt, discretization, Dict{Vector{Symbol},Dict}())
 end
 
-function _distributions(node::ContinuousNode)
-    return unique(node.cpt[!, :Prob])
+function _distributions(cpt::DataFrame)
+    unique(cpt[!, :Prob])
 end
 
-function _scenarios(node::ContinuousNode)
-    scenarios = copy.(eachrow(node.cpt[!, Not(:Prob)]))
-    return map(s -> Dict(pairs(s)), scenarios)
+_distributions(node::ContinuousNode) = _distributions(node.cpt)
+
+function _scenarios(cpt::DataFrame)
+    scenarios = copy.(eachrow(cpt[!, Not(:Prob)]))
+    return unique(map(s -> Dict(pairs(s)), scenarios))
 end
+
+_scenarios(node::ContinuousNode) = _scenarios(node.cpt)
 
 function _continuous_input(node::ContinuousNode{UnivariateDistribution}, evidence::Evidence)
     df_row = subset(node.cpt, _byrow(evidence))
