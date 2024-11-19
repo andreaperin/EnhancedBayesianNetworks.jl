@@ -10,7 +10,7 @@
         end
         cpt = _verify_cpt_and_normalize!(cpt, name)
         _verify_parameters(cpt, parameters, name)
-        new(name, _cpt(cpt), parameters, additional_info)
+        new(name, cpt, parameters, additional_info)
     end
 end
 
@@ -19,16 +19,6 @@ function DiscreteNode(name::Symbol, cpt::DataFrame)
 end
 
 function DiscreteNode(name::Symbol, cpt::DataFrame, parameters::Dict{Symbol,Vector{Parameter}})
-    DiscreteNode(name, cpt, parameters, Dict{AbstractVector{Symbol},Dict}())
-end
-
-function DiscreteNode(name::Symbol, cpt::Dict{AbstractVector{Symbol},<:AbstractDiscreteProbability}, indices::AbstractVector{Symbol})
-    cpt = _cpt(cpt, indices)
-    DiscreteNode(name, cpt, Dict{Symbol,Vector{Parameter}}(), Dict{AbstractVector{Symbol},Dict}())
-end
-
-function DiscreteNode(name::Symbol, cpt::Dict{AbstractVector{Symbol},<:AbstractDiscreteProbability}, indices::AbstractVector{Symbol}, parameters::Dict{Symbol,Vector{Parameter}})
-    cpt = _cpt(cpt, indices)
     DiscreteNode(name, cpt, parameters, Dict{AbstractVector{Symbol},Dict}())
 end
 
@@ -73,24 +63,6 @@ function _scenarios_cpt(cpt::DataFrame, name::Symbol)
 end
 
 _scenarios_cpt(node::DiscreteNode) = _scenarios_cpt(node.cpt, node.name)
-
-function _cpt(x::Dict{Vector{Symbol},<:AbstractDiscreteProbability}, names::AbstractVector{Symbol})
-    cpt = DataFrame()
-    for (i, name) in enumerate(names)
-        cpt[!, name] = map(x -> x[i], collect(keys(x)))
-    end
-    cpt[!, :Prob] = collect(values(x))
-    return cpt
-end
-
-function _cpt(x::Dict{Symbol,<:AbstractDiscreteProbability}, name::Symbol)
-    cpt = DataFrame()
-    cpt[!, name] = collect(keys(x))
-    cpt[!, :Prob] = collect(values(x))
-    return cpt
-end
-
-_cpt(x::DataFrame) = x
 
 function _parameters_with_evidence(node::DiscreteNode, evidence::Evidence)
     if node.name ∉ keys(evidence)
