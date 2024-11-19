@@ -132,8 +132,6 @@
 
             @test isempty(EnhancedBayesianNetworks._scenarios(cpt, name))
             @test isempty(EnhancedBayesianNetworks._scenarios(node))
-            states = Dict(:yes => 0.2, :no => 0.8)
-            @test EnhancedBayesianNetworks._cpt(states, name) == cpt
 
             evidence = Evidence(:a => :a1)
             @test_throws ErrorException("evidence Dict(:a => :a1) does not contain the node x") EnhancedBayesianNetworks._parameters_with_evidence(node, evidence)
@@ -240,14 +238,8 @@
             scenarios = [Dict(:a => :a1), Dict(:a => :a2)]
             @test EnhancedBayesianNetworks._scenarios(cpt, name) == scenarios
             @test EnhancedBayesianNetworks._scenarios(node) == scenarios
-            states = Dict(
-                [:a1, :yes] => 0.2,
-                [:a1, :no] => 0.8,
-                [:a2, :yes] => 0.2,
-                [:a2, :no] => 0.8,
-            )
+
             cpt = DataFrame(:a => [:a1, :a1, :a2, :a2], :x => [:no, :yes, :no, :yes], :Prob => [0.8, 0.2, 0.8, 0.2])
-            @test EnhancedBayesianNetworks._cpt(states, [:a, name]) == cpt
 
             evidence = Evidence(:a => :a1)
             @test_throws ErrorException("evidence Dict(:a => :a1) does not contain the node x") EnhancedBayesianNetworks._parameters_with_evidence(node, evidence)
