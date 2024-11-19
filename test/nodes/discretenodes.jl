@@ -279,6 +279,34 @@
             node4 = DiscreteNode(:x, df4)
 
             @test issetequal(extreme_point_dfs, [node1, node2, node3, node4])
+
+            cpt3 = DataFrame(:b => [:b1, :b1, :b1, :b1, :b2, :b2, :b2, :b2], :a => [:a1, :a1, :a2, :a2, :a1, :a1, :a2, :a2], :x => [:yes, :no, :yes, :no, :yes, :no, :yes, :no], :Prob => [[0.2, 0.3], [0.7, 0.8], [0.4, 0.6], [0.4, 0.6], [0.2, 0.3], [0.7, 0.8], [0.4, 0.6], [0.4, 0.6]])
+            node = DiscreteNode(:x, cpt3)
+            sub_cpts = EnhancedBayesianNetworks._scenarios_cpt(node.cpt, node.name)
+            res = map(sc -> EnhancedBayesianNetworks._extreme_points_dfs(sc), sub_cpts)
+
+            @test isapprox(res[1][1][!, :Prob][1], 0.2, atol=0.05)
+            @test isapprox(res[1][1][!, :Prob][2], 0.8, atol=0.05)
+            @test isapprox(res[1][2][!, :Prob][1], 0.3, atol=0.05)
+            @test isapprox(res[1][2][!, :Prob][2], 0.7, atol=0.05)
+
+            @test isapprox(res[2][1][!, :Prob][1], 0.4, atol=0.05)
+            @test isapprox(res[2][1][!, :Prob][2], 0.6, atol=0.05)
+            @test isapprox(res[2][2][!, :Prob][1], 0.6, atol=0.05)
+            @test isapprox(res[2][2][!, :Prob][2], 0.4, atol=0.05)
+
+            @test isapprox(res[3][1][!, :Prob][1], 0.2, atol=0.05)
+            @test isapprox(res[3][1][!, :Prob][2], 0.8, atol=0.05)
+            @test isapprox(res[3][2][!, :Prob][1], 0.3, atol=0.05)
+            @test isapprox(res[3][2][!, :Prob][2], 0.7, atol=0.05)
+
+            @test isapprox(res[4][1][!, :Prob][1], 0.4, atol=0.05)
+            @test isapprox(res[4][1][!, :Prob][2], 0.6, atol=0.05)
+            @test isapprox(res[4][2][!, :Prob][1], 0.6, atol=0.05)
+            @test isapprox(res[4][2][!, :Prob][2], 0.4, atol=0.05)
+
+            extreme_point_dfs = EnhancedBayesianNetworks._extreme_points(node)
+            @test length(extreme_point_dfs) == 16
         end
     end
 end
