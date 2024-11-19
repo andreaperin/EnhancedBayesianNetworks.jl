@@ -144,6 +144,8 @@
             cpt = DataFrame(:x => [:yes, :no], :Prob => [[0.1, 0.2], [0.8, 0.9]])
             node = DiscreteNode(name, cpt, parameters)
             @test EnhancedBayesianNetworks._is_precise(node) == false
+            @test EnhancedBayesianNetworks._is_discrete_root(cpt)
+            @test EnhancedBayesianNetworks._is_root(node)
 
             cpt1 = DataFrame(:x => [:yes, :no], :Prob => [0.2, 0.8])
             cpt2 = DataFrame(:x => [:yes, :no], :Prob => [[0.1, 0.2], [0.8, 0.9]])
@@ -250,6 +252,8 @@
 
             @test EnhancedBayesianNetworks._is_precise(node) == false
             node2 = DiscreteNode(name, cpt)
+            @test EnhancedBayesianNetworks._is_discrete_root(cpt) == false
+            @test EnhancedBayesianNetworks._is_root(node2) == false
 
             cpt1 = DataFrame(:a => [:a1, :a1, :a2, :a2], :x => [:no, :yes, :no, :yes], :Prob => [0.8, 0.2, 0.8, 0.2])
             cpt2 = DataFrame(:a => [:a1, :a1, :a2, :a2], :x => [:yes, :no, :yes, :no], :Prob => [[0.2, 0.3], [0.7, 0.8], [0.4, 0.6], [0.4, 0.6]])

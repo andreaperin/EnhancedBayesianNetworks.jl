@@ -64,3 +64,9 @@ end
 function _is_precise(node::ContinuousNode)
     all(isa.(node.cpt[!, :Prob], UnivariateDistribution))
 end
+
+function _is_continuous_root(cpt::DataFrame)
+    ncol(cpt) == 1
+end
+
+_is_root(node::ContinuousNode) = _is_continuous_root(node.cpt)
