@@ -76,6 +76,12 @@ function _is_precise(node::DiscreteNode)
     all(isa.(node.cpt[!, :Prob], Real))
 end
 
+function _is_discrete_root(cpt::DataFrame)
+    ncol(cpt) == 2
+end
+
+_is_root(node::DiscreteNode) = _is_discrete_root(node.cpt)
+
 function _extreme_points(node::DiscreteNode)
     if _is_precise(node)
         return [node]

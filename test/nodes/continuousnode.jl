@@ -33,6 +33,10 @@
 
     end
     @testset "Child Node" begin
+        name = :B
+        cpt_b = DataFrame(:G => [:g1, :g2], :Prob => [Normal(0, 1), Normal(1, 1)])
+        node1 = ContinuousNode{UnivariateDistribution}(name, cpt_b)
+        node2 = ContinuousNode{UnivariateDistribution}(name, cpt_b, ExactDiscretization([-1, 0, 1]))
 
     end
     # name = :B
