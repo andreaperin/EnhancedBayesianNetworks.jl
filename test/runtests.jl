@@ -12,6 +12,8 @@ using Suppressor
 
 # include("nodes/nodes.jl")
 include("nodes/discretenodes.jl")
+include("nodes/continuousnode.jl")
+
 # include("nodes/child.jl")
 # include("nodes/functional.jl")
 
