@@ -125,15 +125,49 @@
         @testset "node functions" begin
             name = :x
             cpt = DataFrame(:x => [:yes, :no], :Prob => [0.2, 0.8])
-            node = DiscreteNode(name, cpt)
+            parameters = Dict(:yes => [Parameter(1, :X)], :no => [Parameter(2, :X)])
+            node = DiscreteNode(name, cpt, parameters)
             @test issetequal(EnhancedBayesianNetworks._states(cpt, name), [:yes, :no])
             @test issetequal(EnhancedBayesianNetworks._states(node), [:yes, :no])
 
             @test isempty(EnhancedBayesianNetworks._scenarios(cpt, name))
             @test isempty(EnhancedBayesianNetworks._scenarios(node))
+            states = Dict(:yes => 0.2, :no => 0.8)
+            @test EnhancedBayesianNetworks._cpt(states, name) == cpt
 
+            evidence = Evidence(:a => :a1)
+            @test_throws ErrorException("evidence Dict(:a => :a1) does not contain the node x") EnhancedBayesianNetworks._parameters_with_evidence(node, evidence)
+            evidence = Evidence(:x => :yes)
+            @test EnhancedBayesianNetworks._parameters_with_evidence(node, evidence) == parameters[:yes]
+
+            @test EnhancedBayesianNetworks._is_precise(node)
+            cpt = DataFrame(:x => [:yes, :no], :Prob => [[0.1, 0.2], [0.8, 0.9]])
+            node = DiscreteNode(name, cpt, parameters)
+            @test EnhancedBayesianNetworks._is_precise(node) == false
+
+            cpt1 = DataFrame(:x => [:yes, :no], :Prob => [0.2, 0.8])
+            cpt2 = DataFrame(:x => [:yes, :no], :Prob => [[0.1, 0.2], [0.8, 0.9]])
+
+            @test_throws ErrorException("Precise conditional probability table does not have extreme points: $cpt1") EnhancedBayesianNetworks._extreme_points_probabilities(cpt1)
+            extreme_point_probabilities = EnhancedBayesianNetworks._extreme_points_probabilities(cpt2)
+            @test all(isapprox.(extreme_point_probabilities[1], [0.099999, 0.9], atol=0.001))
+            @test all(isapprox.(extreme_point_probabilities[2], [0.19999, 0.8], atol=0.001))
+
+            extreme_point_dfs = EnhancedBayesianNetworks._extreme_points_dfs(cpt2)
+            @test isapprox(extreme_point_dfs[1][!, :Prob][1], 0.1, atol=0.05)
+            @test isapprox(extreme_point_dfs[1][!, :Prob][2], 0.9, atol=0.05)
+            @test isapprox(extreme_point_dfs[2][!, :Prob][1], 0.2, atol=0.05)
+            @test isapprox(extreme_point_dfs[2][!, :Prob][2], 0.8, atol=0.05)
+
+            node = DiscreteNode(:x, cpt2)
+            ext_nodes = EnhancedBayesianNetworks._extreme_points(node)
+            node1 = DiscreteNode(:x, extreme_point_dfs[1])
+            node2 = DiscreteNode(:x, extreme_point_dfs[2])
+            @test ext_nodes[1] == node1
+            @test ext_nodes[2] == node2
         end
     end
+
     @testset "Child Nodes" begin
 
         @testset "node verification" begin
@@ -198,13 +232,59 @@
         @testset "node functions" begin
             name = :x
             cpt = DataFrame(:a => [:a1, :a1, :a2, :a2], :x => [:yes, :no, :yes, :no], :Prob => [[0.2, 0.3], [0.7, 0.8], [0.4, 0.6], [0.4, 0.6]])
-            node = DiscreteNode(name, cpt)
+            parameters = Dict(:yes => [Parameter(1, :X)], :no => [Parameter(2, :X)])
+            node = DiscreteNode(name, cpt, parameters)
             @test issetequal(EnhancedBayesianNetworks._states(cpt, name), [:yes, :no])
             @test issetequal(EnhancedBayesianNetworks._states(node), [:yes, :no])
 
             scenarios = [Dict(:a => :a1), Dict(:a => :a2)]
             @test EnhancedBayesianNetworks._scenarios(cpt, name) == scenarios
             @test EnhancedBayesianNetworks._scenarios(node) == scenarios
+            states = Dict(
+                [:a1, :yes] => 0.2,
+                [:a1, :no] => 0.8,
+                [:a2, :yes] => 0.2,
+                [:a2, :no] => 0.8,
+            )
+            cpt = DataFrame(:a => [:a1, :a1, :a2, :a2], :x => [:no, :yes, :no, :yes], :Prob => [0.8, 0.2, 0.8, 0.2])
+            @test EnhancedBayesianNetworks._cpt(states, [:a, name]) == cpt
+
+            evidence = Evidence(:a => :a1)
+            @test_throws ErrorException("evidence Dict(:a => :a1) does not contain the node x") EnhancedBayesianNetworks._parameters_with_evidence(node, evidence)
+            evidence = Evidence(:a => :a1, :x => :yes)
+            @test EnhancedBayesianNetworks._parameters_with_evidence(node, evidence) == parameters[:yes]
+
+            @test EnhancedBayesianNetworks._is_precise(node) == false
+            node2 = DiscreteNode(name, cpt)
+
+            cpt1 = DataFrame(:a => [:a1, :a1, :a2, :a2], :x => [:no, :yes, :no, :yes], :Prob => [0.8, 0.2, 0.8, 0.2])
+            cpt2 = DataFrame(:a => [:a1, :a1, :a2, :a2], :x => [:yes, :no, :yes, :no], :Prob => [[0.2, 0.3], [0.7, 0.8], [0.4, 0.6], [0.4, 0.6]])
+            node = DiscreteNode(:x, cpt2)
+
+            sub_cpts = EnhancedBayesianNetworks._scenarios_cpt(node.cpt, node.name)
+            res = map(sc -> EnhancedBayesianNetworks._extreme_points_dfs(sc), sub_cpts)
+
+            @test isapprox(res[1][1][!, :Prob][1], 0.2, atol=0.05)
+            @test isapprox(res[1][1][!, :Prob][2], 0.8, atol=0.05)
+            @test isapprox(res[1][2][!, :Prob][1], 0.3, atol=0.05)
+            @test isapprox(res[1][2][!, :Prob][2], 0.7, atol=0.05)
+
+            @test isapprox(res[2][1][!, :Prob][1], 0.4, atol=0.05)
+            @test isapprox(res[2][1][!, :Prob][2], 0.6, atol=0.05)
+            @test isapprox(res[2][2][!, :Prob][1], 0.6, atol=0.05)
+            @test isapprox(res[2][2][!, :Prob][2], 0.4, atol=0.05)
+
+            extreme_point_dfs = EnhancedBayesianNetworks._extreme_points(node)
+            df1 = vcat(res[1][1], res[2][1])
+            df2 = vcat(res[1][1], res[2][2])
+            df3 = vcat(res[1][2], res[2][1])
+            df4 = vcat(res[1][2], res[2][2])
+            node1 = DiscreteNode(:x, df1)
+            node2 = DiscreteNode(:x, df2)
+            node3 = DiscreteNode(:x, df3)
+            node4 = DiscreteNode(:x, df4)
+
+            @test issetequal(extreme_point_dfs, [node1, node2, node3, node4])
         end
     end
 end
