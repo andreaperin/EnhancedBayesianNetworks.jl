@@ -4,12 +4,14 @@
 
         @testset "cpt verification" begin
             name = :a
+            cpt0 = DataFrame(:x => [:yes, :no], :P => [0.5, 0.5])
             cpt1 = DataFrame(:x => [:yes, :no], :Prob => [0.5, 0.5])
             cpt2 = DataFrame(:x => [:yes, :no], :Prob => [0.5, [0.4, 0.3]])
             cpt3 = DataFrame(:x => [:yes, :no], :Prob => [[0.3, 0.4], [0.6, 0.7]])
             @test isnothing(EnhancedBayesianNetworks._verify_cpt_coherence(cpt1))
             @test isnothing(EnhancedBayesianNetworks._verify_cpt_coherence(cpt3))
             @test_throws ErrorException("Mixed precise and imprecise probabilities values $cpt2") isnothing(EnhancedBayesianNetworks._verify_cpt_coherence(cpt2))
+            @test_throws ErrorException("cpt must contain a column named :Prob where probabilities are collected: $cpt0") EnhancedBayesianNetworks._verify_cpt_coherence(cpt0)
 
             cpt4 = DataFrame(:x => [:yes, :no], :Prob => [-0.5, 0.5])
             cpt5 = DataFrame(:x => [:yes, :no], :Prob => [1.5, 0.5])

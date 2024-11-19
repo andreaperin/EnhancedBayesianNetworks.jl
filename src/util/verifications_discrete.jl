@@ -5,6 +5,9 @@ function _by_row(evidence::Dict{Symbol,Symbol})
 end
 
 function _verify_cpt_coherence(cpt::DataFrame)
+    if "Prob" ∉ names(cpt)
+        error("cpt must contain a column named :Prob where probabilities are collected: $cpt")
+    end
     if !all(isa.(cpt[!, :Prob], Vector{<:Real})) && !all(isa.(cpt[!, :Prob], Real))
         error("Mixed precise and imprecise probabilities values $cpt")
     end
