@@ -65,8 +65,6 @@ export Evidence
 
 include("util/wrap.jl")
 include("util/common_verification.jl")
-include("util/verifications_discrete.jl")
-include("util/verification_continuous.jl")
 include("nodes/nodes.jl")
 include("ebn/ebn.jl")
 # include("inference/inference.jl")
