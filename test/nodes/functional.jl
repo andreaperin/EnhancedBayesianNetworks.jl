@@ -7,7 +7,9 @@
         simulation = MonteCarlo(200)
         discretization = ApproximatedDiscretization()
 
-        @test ContinuousFunctionalNode(name, models, simulation, discretization) == ContinuousFunctionalNode(name, models, simulation)
+        node = ContinuousFunctionalNode(name, models, simulation)
+        @test ContinuousFunctionalNode(name, models, simulation, discretization) == node
+        @test EnhancedBayesianNetworks._is_root(node) == false
     end
 
     @testset "DiscreteFunctionalNode" begin
@@ -19,7 +21,9 @@
         performances = df -> 1 .- 2 .* df.value1
         parameters = Dict{Symbol,Vector{Parameter}}()
 
-        @test DiscreteFunctionalNode(name, models, performances, simulation) == DiscreteFunctionalNode(name, models, performances, simulation, parameters)
+        node = DiscreteFunctionalNode(name, models, performances, simulation, parameters)
+        @test DiscreteFunctionalNode(name, models, performances, simulation) == node
+        @test EnhancedBayesianNetworks._is_root(node) == false
     end
 
     @testset "Wrap Model" begin

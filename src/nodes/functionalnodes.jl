@@ -22,6 +22,8 @@ function ContinuousFunctionalNode(
     ContinuousFunctionalNode(name, models, simulation, ApproximatedDiscretization())
 end
 
+_is_root(node::ContinuousFunctionalNode) = false
+
 @auto_hash_equals struct DiscreteFunctionalNode <: AbstractNode
     name::Symbol
     models::Vector{<:UQModel}
@@ -48,5 +50,7 @@ function DiscreteFunctionalNode(
 )
     DiscreteFunctionalNode(name, models, performance, simulation, Dict{Symbol,Vector{Parameter}}())
 end
+
+_is_root(node::DiscreteFunctionalNode) = false
 
 const global FunctionalNode = Union{DiscreteFunctionalNode,ContinuousFunctionalNode}
