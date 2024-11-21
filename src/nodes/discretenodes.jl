@@ -4,7 +4,12 @@
     parameters::Dict{Symbol,Vector{Parameter}}
     additional_info::Dict{AbstractVector{Symbol},Dict}
 
-    function DiscreteNode(name::Symbol, cpt, parameters::Dict{Symbol,Vector{Parameter}}, additional_info::Dict{AbstractVector{Symbol},Dict})
+    function DiscreteNode(
+        name::Symbol,
+        cpt::DataFrame,
+        parameters::Dict{Symbol,Vector{Parameter}},
+        additional_info::Dict{AbstractVector{Symbol},Dict}
+    )
         if String(name) ∉ names(cpt)
             error("defined cpt does not contain a column refered to node name $name: $cpt")
         end

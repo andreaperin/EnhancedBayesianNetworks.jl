@@ -3,10 +3,21 @@
     cpt::DataFrame
     discretization::AbstractDiscretization
     additional_info::Dict{Vector{Symbol},Dict}
+
+    function ContinuousNode{T}(
+        name::Symbol,
+        cpt::DataFrame,
+        discretization::AbstractDiscretization,
+        additional_info::Dict{Vector{Symbol},Dict}
+    ) where {T<:AbstractContinuousInput}
+        ## Check appropriate Discretization struct
+        _verify_discretization(cpt, discretization)
+        new{T}(name, cpt, discretization, additional_info)
+    end
 end
 
 function ContinuousNode{T}(name::Symbol, cpt::DataFrame) where {T<:AbstractContinuousInput}
-    ncol(cpt) > 2 ? d = ApproximatedDiscretization() : d = ExactDiscretization()
+    _is_continuous_root(cpt) ? d = ExactDiscretization() : d = ApproximatedDiscretization()
     ContinuousNode{T}(name, cpt, d, Dict{Vector{Symbol},Dict}())
 end
 
@@ -28,21 +39,17 @@ end
 _scenarios(node::ContinuousNode) = _scenarios(node.cpt)
 
 function _continuous_input(node::ContinuousNode{UnivariateDistribution}, evidence::Evidence)
-    df_row = subset(node.cpt, _byrow(evidence))
-    if nrow(df_row) == 1
-        return RandomVariable(node.cpt[!, :Prob][1], node.name)
-    elseif nrow(df_row) > 1
-        return map(dist -> RandomVariable(dist, node.name), node.cpt[!, :Prob])
-    end
+    df_row = subset(node.cpt, _by_row(evidence))
+    return map(dist -> RandomVariable(dist, node.name), df_row[!, :Prob])
 end
 
 function _continuous_input(node::ContinuousNode{Tuple{Real,Real}}, evidence::Evidence)
-    df_row = subset(node.cpt, _byrow(evidence))
+    df_row = subset(node.cpt, _by_row(evidence))
     return map(tup -> Interval(tup..., node.name), df_row[!, :Prob])
 end
 
 function _continuous_input(node::ContinuousNode{UnamedProbabilityBox}, evidence::Evidence)
-    df_row = subset(node.cpt, _byrow(evidence))
+    df_row = subset(node.cpt, _by_row(evidence))
     dists = map(r -> first(typeof(r).parameters), df_row[!, :Prob])
     return map((upb, dist) -> ProbabilityBox{dist}(upb.parameters, node.name, upb.lb, upb.ub), df_row[!, :Prob], dists)
 end
@@ -53,12 +60,12 @@ function _truncate(dist::UnivariateDistribution, i::AbstractVector)
     return truncated(dist, i[1], i[2])
 end
 
-function _truncate(dist::UnamedProbabilityBox, i::AbstractVector)
-    return UnamedProbabilityBox{first(typeof(dist).parameters)}(dist.parameters, i[1], i[2])
-end
-
 function _truncate(_::Tuple{T,T}, i::AbstractVector) where {T<:Real}
     return (i[1], i[2])
+end
+
+function _truncate(dist::UnamedProbabilityBox, i::AbstractVector)
+    return UnamedProbabilityBox{first(typeof(dist).parameters)}(dist.parameters, i[1], i[2])
 end
 
 function _is_precise(node::ContinuousNode)
