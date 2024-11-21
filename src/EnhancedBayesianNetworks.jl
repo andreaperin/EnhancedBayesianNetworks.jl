@@ -30,6 +30,7 @@ export ApproximatedDiscretization
 export UnamedProbabilityBox
 export ContinuousNode
 export DiscreteNode
+export FunctionalNode
 export ExactDiscretization
 export EnhancedBayesianNetwork
 export AbstractNode
@@ -47,7 +48,7 @@ const Evidence = Dict{Symbol,Symbol}
 export Evidence
 
 
-# export add_child!
+export add_child!
 # export order!
 # export get_parents
 # export get_children
