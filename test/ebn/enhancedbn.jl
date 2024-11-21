@@ -33,10 +33,14 @@
 
         nodes = [weather, grass, rain, sprinkler]
         net = EnhancedBayesianNetwork(nodes)
+        topology_dict = Dict(:w => 1, :s => 4, :g => 2, :r => 3)
+        adj_matrix = spzeros(4, 4)
+        @test net.topology_dict == topology_dict
+        @test issetequal(net.nodes, nodes)
+        @test net.adj_matrix == adj_matrix
 
         @test_throws ErrorException("Recursion on the same node 'w' is not allowed in EnhancedBayesianNetworks") add_child!(net, :w, :w)
         @test_throws ErrorException("node 'w' is a root node and cannot have parents") add_child!(net, :s, :w)
-
         rain_state1 = DataFrame(:a => [:sunny, :sunny, :cloudy, :cloudy], :r => [:no_rain, :rain, :no_rain, :rain], :Prob => [0.9, 0.1, 0.2, 0.8])
         rain1 = DiscreteNode(:r, rain_state1)
         nodes1 = [weather, grass, rain1, sprinkler]
@@ -55,35 +59,22 @@
         nodes4 = [weather, rain, sprinkler, grass1]
         net4 = EnhancedBayesianNetwork(nodes4)
         @test_throws ErrorException("functional node 'g' can have only functional children. 'r' is not a functional node") add_child!(net4, :g, :r)
-
-        # rain_state = Dict(
-        #     [:sunny] => Dict(:no_rain => 0.9, :rain => 0.1),
-        #     [:cloudy] => Dict(:no_rain => 0.2, :rain => 0.8)
-        # )
-        # rain = DiscreteChildNode(:r, rain_state)
-        # nodes = [weather, grass, rain, sprinkler]
-        # net = EnhancedBayesianNetwork(nodes)
-        # add_child!(net, :w, :r)
-
-        # r = net.topology_dict[:w]
-        # c = net.topology_dict[:r]
-        # @test net.adj_matrix[r, c] == 1
-
-        # net = EnhancedBayesianNetwork(nodes)
-        # add_child!(net, weather, rain)
-
-        # r = net.topology_dict[:w]
-        # c = net.topology_dict[:r]
-        # @test net.adj_matrix[r, c] == 1
-
-        # net = EnhancedBayesianNetwork(nodes)
-        # add_child!(net, 1, 3)
-
-        # r = net.topology_dict[:w]
-        # c = net.topology_dict[:r]
-        # @test net.adj_matrix[r, c] == 1
-
-
+        net_new1 = deepcopy(net)
+        net_new2 = deepcopy(net)
+        add_child!(net, weather, rain)
+        adj_matrix_net = sparse([
+            0.0 0.0 1.0 0.0;
+            0.0 0.0 0.0 0.0;
+            0.0 0.0 0.0 0.0;
+            0.0 0.0 0.0 0.0
+        ])
+        @test net.topology_dict == topology_dict
+        @test net.nodes == nodes
+        @test net.adj_matrix == adj_matrix_net
+        add_child!(net_new1, :w, :r)
+        @test net_new1 == net
+        add_child!(net_new2, 1, 3)
+        add_child!(net_new2, :w, :r)
     end
 
     # @testset "verify nodes" begin
