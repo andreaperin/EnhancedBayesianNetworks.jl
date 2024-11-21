@@ -10,7 +10,7 @@ using Suppressor
 # include("utils/evidence_verification.jl")
 # include("utils/plots.jl")
 
-# include("nodes/nodes.jl")
+include("nodes/nodes.jl")
 include("nodes/discretenodes.jl")
 include("nodes/continuousnode.jl")
 include("nodes/functional.jl")
