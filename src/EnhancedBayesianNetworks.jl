@@ -50,8 +50,9 @@ export Evidence
 
 export add_child!
 # export order!
-# export get_parents
-# export get_children
+export parents
+export children
+export discrete_ancestors
 # export markov_blanket
 # export markov_envelope
 # export gplot
@@ -64,11 +65,12 @@ export add_child!
 # export factorize_cpd
 # export dispatch_network
 
+
 include("util/wrap.jl")
 include("util/verification_common.jl")
 include("nodes/nodes.jl")
 include("ebn/ebn.jl")
 # include("inference/inference.jl")
-# include("util/base_show.jl")
+include("util/base_show.jl")
 # include("util/plots.jl")
 end
