@@ -17,47 +17,44 @@ using Polyhedra: HalfSpace, doubledescription
 @reexport using SparseArrays
 @reexport using Compose
 
-
 import Base: *, sum, reduce
 
 # Types
 export AbstractContinuousInput
 export AbstractDiscreteProbability
 export AbstractDiscretization
-export ContinuousFunctionalNode
-export DiscreteFunctionalNode
+export AbstractInferenceState
+export AbstractNode
 export ApproximatedDiscretization
-export UnamedProbabilityBox
+# export BayesianNetwork
+export ConditionalProbabilityDistribution
+export ContinuousFunctionalNode
 export ContinuousNode
+# export CredalNetwork
+export DiscreteFunctionalNode
 export DiscreteNode
-export FunctionalNode
 export ExactDiscretization
 export EnhancedBayesianNetwork
-export AbstractNode
-export ContinuousNode
-export BayesianNetwork
-export CredalNetwork
-export Factor
-export AbstractInferenceState
-export PreciseInferenceState
-export ImpreciseInferenceState
-export ConditionalProbabilityDistribution
-
-
-const Evidence = Dict{Symbol,Symbol}
 export Evidence
+export FunctionalNode
+export ImpreciseInferenceState
+export PreciseInferenceState
+export UnamedProbabilityBox
+# export Factor
 
+## Constants
+const Evidence = Dict{Symbol,Symbol}
 
+## Functions
 export add_child!
-# export order!
-export parents
 export children
 export discrete_ancestors
 export gplot
-# export markov_blanket
-# export markov_envelope
-# export gplot
-# export saveplot
+export markov_blanket
+export markov_envelope
+export order!
+export parents
+export saveplot
 # export evaluate!
 # export evaluate_with_envelopes
 # export reduce!
@@ -65,7 +62,6 @@ export gplot
 # export infer
 # export factorize_cpd
 # export dispatch_network
-
 
 include("util/wrap.jl")
 include("util/verification_common.jl")
