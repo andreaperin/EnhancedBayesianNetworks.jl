@@ -53,6 +53,7 @@ export add_child!
 export parents
 export children
 export discrete_ancestors
+export gplot
 # export markov_blanket
 # export markov_envelope
 # export gplot
@@ -72,5 +73,5 @@ include("nodes/nodes.jl")
 include("ebn/ebn.jl")
 # include("inference/inference.jl")
 include("util/base_show.jl")
-# include("util/plots.jl")
+include("util/plots.jl")
 end
