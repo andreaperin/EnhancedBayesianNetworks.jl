@@ -211,7 +211,7 @@
         @test_throws ErrorException("node 's' has defined cpt scenarios $(sprinkler4.cpt) not coherent with the theoretical one [Dict(:w => :sunny), Dict(:w => :cloudy)]") EnhancedBayesianNetworks._verify_child_node(net5, sprinkler4)
 
         #! todo check if all cases are coverd!!!!!!!
-        @test_throws ErrorException("node 'r''s cpt requires exctly the nodes '[:w]' to be its parents, but provided parents are 'Symbol[]") EnhancedBayesianNetworks._verify_net(net)
-        @test_throws ErrorException("node 'r' is a discrete parent of a functional node and cannot have an empty parameters vector") EnhancedBayesianNetworks._verify_net(net2)
+        @test_throws ErrorException("node 'r''s cpt requires exctly the nodes '[:w]' to be its parents, but provided parents are 'Symbol[]'") EnhancedBayesianNetworks._verify_net(net)
+        @suppress @test_throws ErrorException("node 'r' is a discrete parent of a functional node and cannot have an empty parameters vector") EnhancedBayesianNetworks._verify_net(net2)
     end
 end
