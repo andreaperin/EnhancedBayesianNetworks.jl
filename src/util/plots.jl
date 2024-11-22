@@ -195,13 +195,13 @@ function _node_color(n::AbstractNode)
             return "red1"
         end
     elseif isa(n, ContinuousNode)
-        if _is_imprecise(n)
+        if !_is_precise(n)
             return "cyan1"
         else
             return "paleturquoise"
         end
     elseif isa(n, DiscreteNode)
-        if _is_imprecise(n)
+        if !_is_precise(n)
             return "green1"
         else
             return "palegreen"
