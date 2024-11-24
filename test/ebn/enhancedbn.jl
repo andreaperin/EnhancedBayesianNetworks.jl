@@ -2,9 +2,7 @@
 
     @testset "Structure" begin
         weather = DiscreteNode(:w, DataFrame(:w => [:sunny, :cloudy], :Prob => [0.5, 0.5]))
-        sprinkler_states = DataFrame(
-            :w => [:sunny, :sunny, :cloudy, :cloudy], :s => [:on, :off, :on, :off], :Prob => [0.9, 0.1, 0.2, 0.8]
-        )
+        sprinkler_states = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :s => [:on, :off, :on, :off], :Prob => [0.9, 0.1, 0.2, 0.8])
         sprinkler = DiscreteNode(:s, sprinkler_states)
         rain_state = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :r => [:no_rain, :rain, :no_rain, :rain], :Prob => [0.9, 0.1, 0.2, 0.8])
         rain = DiscreteNode(:r, rain_state)
@@ -160,11 +158,11 @@
         grass = DiscreteFunctionalNode(:g, [grass_model], grass_performance, grass_simulation)
         nodes = [weather, rain, sprinkler, grass]
         net = EnhancedBayesianNetwork(nodes)
-        add_child!(net, :w, :r)
         @test isnothing(EnhancedBayesianNetworks._verify_child_node(net, weather))
-        @test_throws ErrorException("node 's''s cpt requires exctly the nodes '[:w]' to be its parents, but provided parents are 'Symbol[]'") EnhancedBayesianNetworks._verify_child_node(net, sprinkler)
-        @test_throws ErrorException("node 's''s cpt requires exctly the nodes '[:w]' to be its parents, but provided parents are 'Symbol[]'") EnhancedBayesianNetworks._verify_net(net)
+        @test_throws ErrorException("node 'r''s cpt requires exctly the nodes '[:w]' to be its parents, but provided parents are 'Symbol[]'") EnhancedBayesianNetworks._verify_child_node(net, rain)
+        @test_throws ErrorException("node 'r''s cpt requires exctly the nodes '[:w]' to be its parents, but provided parents are 'Symbol[]'") EnhancedBayesianNetworks._verify_net(net)
 
+        add_child!(net, :w, :r)
         add_child!(net, :w, :s)
 
         @test_throws ErrorException("functional node 'g' must have at least one parent") EnhancedBayesianNetworks._verify_functional_node(net, grass)
@@ -222,5 +220,24 @@
         add_child!(net, :D, :B)
         @test EnhancedBayesianNetworks._is_cyclic_dfs(net.adj_matrix)
         @test_throws ErrorException("network is cyclic!") order!(net)
+
+        weather = DiscreteNode(:w, DataFrame(:w => [:sunny, :cloudy], :Prob => [0.5, 0.5]))
+        sprinkler_states = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :s => [:on, :off, :on, :off], :Prob => [0.9, 0.1, 0.2, 0.8])
+        sprinkler = DiscreteNode(:s, sprinkler_states)
+        rain_state = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :r => [:no_rain, :rain, :no_rain, :rain], :Prob => [0.9, 0.1, 0.2, 0.8])
+        rain = DiscreteNode(:r, rain_state)
+        grass_states = DataFrame(:s => [:on, :on, :on, :on, :off, :off, :off, :off], :r => [:no_rain, :no_rain, :rain, :rain, :no_rain, :no_rain, :rain, :rain], :g => [:dry, :wet, :dry, :wet, :dry, :wet, :dry, :wet], :Prob => [0.9, 0.1, 0.9, 0.1, 0.9, 0.1, 0.9, 0.1])
+        grass = DiscreteNode(:g, grass_states)
+        nodes = [weather, sprinkler, rain, grass]
+        net = EnhancedBayesianNetwork(nodes)
+        add_child!(net, :w, :s)
+        add_child!(net, :w, :r)
+        add_child!(net, :s, :g)
+        add_child!(net, :r, :g)
+
+        order!(net)
+        @test net.adj_matrix == sparse(Matrix([0 1.0 1.0 0; 0 0 0 1.0; 0 0 0 1.0; 0 0 0 0]))
+        @test net.topology_dict == Dict(:w => 1, :s => 2, :g => 4, :r => 3)
+        @test net.nodes == [weather, sprinkler, rain, grass]
     end
 end
