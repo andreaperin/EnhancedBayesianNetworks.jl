@@ -112,7 +112,6 @@
         @test children(net, :g) == (Int64[], Symbol[], AbstractNode[])
         @test children(net, 4) == (Int64[], Symbol[], AbstractNode[])
         @test children(net, grass) == (Int64[], Symbol[], AbstractNode[])
-
     end
     @testset "discrete_ancestors" begin
         root1 = DiscreteNode(:X1, DataFrame(:X1 => [:y, :n], :Prob => [0.2, 0.8]))
@@ -161,14 +160,34 @@
         grass = DiscreteFunctionalNode(:g, [grass_model], grass_performance, grass_simulation)
         nodes = [weather, rain, sprinkler, grass]
         net = EnhancedBayesianNetwork(nodes)
-        add_child!(net, sprinkler, grass)
+        add_child!(net, :w, :r)
+        @test isnothing(EnhancedBayesianNetworks._verify_child_node(net, weather))
+        @test_throws ErrorException("node 's''s cpt requires exctly the nodes '[:w]' to be its parents, but provided parents are 'Symbol[]'") EnhancedBayesianNetworks._verify_child_node(net, sprinkler)
+        @test_throws ErrorException("node 's''s cpt requires exctly the nodes '[:w]' to be its parents, but provided parents are 'Symbol[]'") EnhancedBayesianNetworks._verify_net(net)
+
+        add_child!(net, :w, :s)
+
+        @test_throws ErrorException("functional node 'g' must have at least one parent") EnhancedBayesianNetworks._verify_functional_node(net, grass)
+        @test_throws ErrorException("functional node 'g' must have at least one parent") EnhancedBayesianNetworks._verify_net(net)
+
+        add_child!(net, :s, :g)
+        add_child!(net, :r, :g)
+
         @test_throws ErrorException("node 's' is a discrete parent of a functional node and cannot have an empty parameters vector") EnhancedBayesianNetworks._non_empty_parameters_vector(net, sprinkler)
+        @test_throws ErrorException("node 'r' is a discrete parent of a functional node and cannot have an empty parameters vector") EnhancedBayesianNetworks._non_empty_parameters_vector(net, rain)
+        @suppress @test_throws ErrorException("node 'r' is a discrete parent of a functional node and cannot have an empty parameters vector") EnhancedBayesianNetworks._verify_net(net)
 
         sprinkler2 = DiscreteNode(:s, sprinkler_states, Dict(:on => [Parameter(1, :S)], :off => [Parameter(2, :S)]))
         nodes2 = [weather, rain, sprinkler2, grass]
         net2 = EnhancedBayesianNetwork(nodes2)
-        add_child!(net, sprinkler2, grass)
+        add_child!(net2, weather, sprinkler2)
+        add_child!(net2, weather, rain)
+        add_child!(net2, sprinkler2, grass)
         @test isnothing(EnhancedBayesianNetworks._non_empty_parameters_vector(net, sprinkler2))
+        @test_logs (:warn, "functional node 'g' have no continuous parents. All the simulations will return the same output") EnhancedBayesianNetworks._verify_functional_node(net2, grass)
+        @test_logs (:warn, "functional node 'g' have no continuous parents. All the simulations will return the same output") EnhancedBayesianNetworks._verify_net(net2)
+        @suppress isnothing(EnhancedBayesianNetworks._verify_functional_node(net2, grass))
+        @suppress isnothing(EnhancedBayesianNetworks._verify_net(net2))
 
         nodes3 = [weather, rain, sprinkler, grass]
         net3 = EnhancedBayesianNetwork(nodes3)
@@ -178,40 +197,16 @@
         @suppress isnothing(EnhancedBayesianNetworks._verify_functional_node(net2, grass)
         )
 
-        add_child!(net2, :w, :r)
-        add_child!(net2, :w, :s)
-        add_child!(net2, :s, :g)
-        add_child!(net2, :r, :g)
-
-        @test isnothing(EnhancedBayesianNetworks._verify_child_node(net2, weather))
-        @test isnothing(EnhancedBayesianNetworks._verify_child_node(net2, grass))
-        @test isnothing(EnhancedBayesianNetworks._verify_child_node(net2, sprinkler))
-
         sprinkler_states3 = DataFrame(
-            :p => [:yes, :yes, :yes, :yes, :no, :no, :no, :no], :w => [:sunny, :sunny, :cloudy, :cloudy, :sunny, :sunny, :cloudy, :cloudy], :s => [:on, :off, :on, :on, :on, :off, :on, :on], :Prob => [0.9, 0.1, 0.2, 0.8, 0.9, 0.1, 0.2, 0.8]
-        )
-        sprinkler3 = DiscreteNode(:s, sprinkler_states3)
-        net4 = EnhancedBayesianNetwork([weather, rain, sprinkler3, grass])
-        add_child!(net4, :w, :r)
-        add_child!(net4, :w, :s)
-        add_child!(net4, :s, :g)
-        add_child!(net4, :r, :g)
-
-        @test_throws ErrorException("node 's''s cpt requires exctly the nodes '[:p, :w]' to be its parents, but provided parents are '[:w]'") EnhancedBayesianNetworks._verify_child_node(net4, sprinkler3)
-
-        sprinkler_states4 = DataFrame(
             :w => [:sunny, :sunny, :cloudy, :cloudy, :t, :t, :not_t, :not_t], :s => [:on, :off, :on, :off, :on, :off, :on, :off], :Prob => [0.9, 0.1, 0.2, 0.8, 0.1, 0.9, 0.4, 0.6]
         )
-        sprinkler4 = DiscreteNode(:s, sprinkler_states4)
-        net5 = EnhancedBayesianNetwork([weather, rain, sprinkler3, grass])
-        add_child!(net5, :w, :r)
-        add_child!(net5, :w, :s)
-        add_child!(net5, :s, :g)
-        add_child!(net5, :r, :g)
-        @test_throws ErrorException("node 's' has defined cpt scenarios $(sprinkler4.cpt) not coherent with the theoretical one [Dict(:w => :sunny), Dict(:w => :cloudy)]") EnhancedBayesianNetworks._verify_child_node(net5, sprinkler4)
-
-        #! todo check if all cases are coverd!!!!!!!
-        @test_throws ErrorException("node 'r''s cpt requires exctly the nodes '[:w]' to be its parents, but provided parents are 'Symbol[]'") EnhancedBayesianNetworks._verify_net(net)
-        @suppress @test_throws ErrorException("node 'r' is a discrete parent of a functional node and cannot have an empty parameters vector") EnhancedBayesianNetworks._verify_net(net2)
+        sprinkler3 = DiscreteNode(:s, sprinkler_states3)
+        net3 = EnhancedBayesianNetwork([weather, rain, sprinkler3, grass])
+        add_child!(net3, :w, :r)
+        add_child!(net3, :w, :s)
+        add_child!(net3, :s, :g)
+        add_child!(net3, :r, :g)
+        @test_throws ErrorException("node 's' has defined cpt scenarios $(sprinkler3.cpt) not coherent with the theoretical one [Dict(:w => :sunny), Dict(:w => :cloudy)]") EnhancedBayesianNetworks._verify_child_node(net3, sprinkler3)
+        @test_throws ErrorException("node 's' has defined cpt scenarios $(sprinkler3.cpt) not coherent with the theoretical one [Dict(:w => :sunny), Dict(:w => :cloudy)]") EnhancedBayesianNetworks._verify_net(net3)
     end
 end
