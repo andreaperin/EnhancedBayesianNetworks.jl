@@ -209,4 +209,18 @@
         @test_throws ErrorException("node 's' has defined cpt scenarios $(sprinkler3.cpt) not coherent with the theoretical one [Dict(:w => :sunny), Dict(:w => :cloudy)]") EnhancedBayesianNetworks._verify_child_node(net3, sprinkler3)
         @test_throws ErrorException("node 's' has defined cpt scenarios $(sprinkler3.cpt) not coherent with the theoretical one [Dict(:w => :sunny), Dict(:w => :cloudy)]") EnhancedBayesianNetworks._verify_net(net3)
     end
+
+    @testset "order network" begin
+        root = DiscreteNode(:A, DataFrame(:A => [:a1, :a2], :Prob => [0.5, 0.5]))
+        child1 = DiscreteNode(:B, DataFrame(:D => [:d1, :d2, :d1, :d2, :d1, :d2, :d1, :d2], :A => [:a1, :a1, :a2, :a2, :a1, :a1, :a2, :a2], :B => [:b1, :b2, :b1, :b2, :b1, :b2, :b1, :b2], :Prob => [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]))
+        child2 = DiscreteNode(:C, DataFrame(:B => [:b1, :b1, :b2, :b2], :C => [:c1, :c2, :c1, :c2], :Prob => [0.5, 0.5, 0.5, 0.5]))
+        child3 = DiscreteNode(:D, DataFrame(:C => [:c1, :c1, :c2, :c2], :D => [:d1, :d2, :d1, :d2], :Prob => [0.5, 0.5, 0.5, 0.5]))
+        net = EnhancedBayesianNetwork([root, child1, child2, child3])
+        add_child!(net, :A, :B)
+        add_child!(net, :B, :C)
+        add_child!(net, :C, :D)
+        add_child!(net, :D, :B)
+        @test EnhancedBayesianNetworks._is_cyclic_dfs(net.adj_matrix)
+        @test_throws ErrorException("network is cyclic!") order!(net)
+    end
 end

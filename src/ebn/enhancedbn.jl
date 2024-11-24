@@ -141,6 +141,37 @@ function discrete_ancestors(net::EnhancedBayesianNetwork, node::AbstractNode)
     ...])
 end
 
+function _is_cyclic_dfs(adj_matrix)
+    n = size(adj_matrix, 1)  # Number of nodes
+    visited = fill(false, n)
+    recStack = fill(false, n)
+    function dfs(v)
+        visited[v] = true
+        recStack[v] = true
+        for neighbor in 1:n
+            if adj_matrix[v, neighbor] != 0  # there's an edge from v to neighbor
+                if !visited[neighbor]  # If neighbor hasn't been visited, visit it
+                    if dfs(neighbor)
+                        return true  # Cycle detected
+                    end
+                elseif recStack[neighbor]  # If neighbor is in recStack, cycle detected
+                    return true
+                end
+            end
+        end
+        recStack[v] = false
+        return false
+    end
+    for node in 1:n
+        if !visited[node]  # Only visit unvisited nodes
+            if dfs(node)  # Cycle detected
+                return true
+            end
+        end
+    end
+    return false  # No cycle found
+end
+
 function _verify_net(net::AbstractNetwork)
     map(n -> _verify_child_node(net, n), net.nodes)
     functional_nodes = filter(x -> isa(x, FunctionalNode), net.nodes)
