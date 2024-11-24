@@ -77,7 +77,6 @@ function order!(net::AbstractNetwork)
     end
 
     ordered_topology_dict = Dict(map(i -> (reverse_dict[i[2]], i[1]), enumerate(root_indices)))
-
     conversion = Dict(map(i -> (i[2], i[1]), enumerate(root_indices)))
     ordered_matrix = sparse(zeros(n, n))
     for i in range(1, n)
@@ -201,7 +200,7 @@ function _verify_child_node(net::EnhancedBayesianNetwork, node::AbstractNode)
         end
         th_scenarios = _theoretical_scenarios(net, node)
         cpt_scenarios = _scenarios(node)
-        if cpt_scenarios != th_scenarios
+        if !issetequal(cpt_scenarios, th_scenarios)
             error("node '$(node.name)' has defined cpt scenarios $(node.cpt) not coherent with the theoretical one $th_scenarios")
         end
     end
