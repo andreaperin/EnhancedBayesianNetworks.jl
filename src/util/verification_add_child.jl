@@ -18,7 +18,7 @@ function _verify_child(par::AbstractNode, ch::AbstractNode)
         end
         par_states = _states(par)
         scenario2check = unique(ch.cpt[!, par.name])
-        if !issetequal(par_states, scenario2check)
+        if any(par_states .∉ [scenario2check])
             error("child node '$(ch.name)' has scenarios $scenario2check, that is not coherent with its parent node '$(par.name)' with states $par_states")
         end
     end
