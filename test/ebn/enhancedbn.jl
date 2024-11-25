@@ -239,5 +239,15 @@
         @test net.adj_matrix == sparse(Matrix([0 1.0 1.0 0; 0 0 0 1.0; 0 0 0 1.0; 0 0 0 0]))
         @test net.topology_dict == Dict(:w => 1, :s => 2, :g => 4, :r => 3)
         @test net.nodes == [weather, sprinkler, rain, grass]
+
+        @test isnothing(EnhancedBayesianNetworks._verify_net(net))
+        rain_state = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :g => [:no_rain, :rain, :no_rain, :rain], :Prob => [0.9, 0.1, 0.2, 0.8])
+        rain = DiscreteNode(:g, rain_state)
+        nodes = [weather, sprinkler, rain, grass]
+        @test_throws ErrorException("network nodes names must be unique") EnhancedBayesianNetwork(nodes)
+        rain_state = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :r => [:on, :off, :on, :off], :Prob => [0.9, 0.1, 0.2, 0.8])
+        rain = DiscreteNode(:r, rain_state)
+        nodes = [weather, sprinkler, rain, grass]
+        @test_throws ErrorException("network nodes states must be unique") EnhancedBayesianNetwork(nodes)
     end
 end
