@@ -250,4 +250,63 @@
         nodes = [weather, sprinkler, rain, grass]
         @test_throws ErrorException("network nodes states must be unique") EnhancedBayesianNetwork(nodes)
     end
+
+    @testset "add & remove nodes" begin
+
+        weather = DiscreteNode(:w, DataFrame(:w => [:sunny, :cloudy], :Prob => [0.5, 0.5]))
+        sprinkler_states = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :s => [:on, :off, :on, :off], :Prob => [0.9, 0.1, 0.2, 0.8])
+        sprinkler = DiscreteNode(:s, sprinkler_states)
+        rain_state = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :r => [:no_rain, :rain, :no_rain, :rain], :Prob => [0.9, 0.1, 0.2, 0.8])
+        rain = DiscreteNode(:r, rain_state)
+        grass_states = DataFrame(:s => [:on, :on, :on, :on, :off, :off, :off, :off], :r => [:no_rain, :no_rain, :rain, :rain, :no_rain, :no_rain, :rain, :rain], :g => [:dry, :wet, :dry, :wet, :dry, :wet, :dry, :wet], :Prob => [0.9, 0.1, 0.9, 0.1, 0.9, 0.1, 0.9, 0.1])
+        grass = DiscreteNode(:g, grass_states)
+        nodes = [weather, sprinkler, rain, grass]
+        net = EnhancedBayesianNetwork(nodes)
+        add_child!(net, :w, :s)
+        add_child!(net, :w, :r)
+        add_child!(net, :s, :g)
+        add_child!(net, :r, :g)
+        order!(net)
+        net1 = deepcopy(net)
+        net2 = deepcopy(net)
+        net3 = deepcopy(net)
+
+        EnhancedBayesianNetworks._remove_node!(net1, grass)
+        EnhancedBayesianNetworks._remove_node!(net2, :g)
+        EnhancedBayesianNetworks._remove_node!(net3, 4)
+
+
+        @test issetequal(net1.nodes, [weather, sprinkler, rain])
+        adj = [
+            0.0 1.0 1.0;
+            0.0 0.0 0.0;
+            0.0 0.0 0.0
+        ]
+        @test net1.adj_matrix == adj
+        @test net1.topology_dict == Dict(:w => 1, :r => 3, :s => 2)
+        @test net2 == net1
+        @test net3 == net1
+
+        net4 = deepcopy(net1)
+        net5 = deepcopy(net1)
+        net6 = deepcopy(net1)
+
+        EnhancedBayesianNetworks._add_node!(net4, grass)
+        EnhancedBayesianNetworks._add_node!(net5, grass)
+        EnhancedBayesianNetworks._add_node!(net6, grass)
+
+        add_child!(net4, :s, :g)
+        add_child!(net4, :r, :g)
+        order!(net4)
+        add_child!(net5, :s, :g)
+        add_child!(net5, :r, :g)
+        order!(net5)
+        add_child!(net6, :s, :g)
+        add_child!(net6, :r, :g)
+        order!(net6)
+
+        @test net4 == net
+        @test net5 == net
+        @test net6 == net
+    end
 end
