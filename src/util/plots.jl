@@ -110,7 +110,6 @@ function gplot(net::AbstractNetwork;
     )
 end
 
-
 function _get_position(adj_matrix::SparseMatrixCSC)
     pos = spring(adj_matrix; iterations=1000)
     return pos

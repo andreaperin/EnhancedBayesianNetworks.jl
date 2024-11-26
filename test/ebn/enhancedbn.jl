@@ -309,4 +309,152 @@
         @test net5 == net
         @test net6 == net
     end
+
+    @testset "Markov Blankets" begin
+        x1 = DiscreteNode(:x1, DataFrame(:x1 => [:x1y, :x1n], :Prob => [0.5, 0.5]))
+        x2 = DiscreteNode(:x2, DataFrame(:x2 => [:x2y, :x2n], :Prob => [0.5, 0.5]))
+        x4 = DiscreteNode(:x4, DataFrame(:x4 => [:x4y, :x4n], :Prob => [0.5, 0.5]))
+        x8 = DiscreteNode(:x8, DataFrame(:x8 => [:x8y, :x8n], :Prob => [0.5, 0.5]))
+        x3_states = DataFrame(
+            :x1 => [:x1y, :x1y, :x1n, :x1n],
+            :x3 => [:x3y, :x3n, :x3y, :x3n],
+            :Prob => [0.5, 0.5, 0.5, 0.5]
+        )
+
+        x3 = DiscreteNode(:x3, x3_states)
+        x5_states = DataFrame(
+            :x2 => [:x2y, :x2y, :x2n, :x2n],
+            :x5 => [:x5y, :x5n, :x5y, :x5n],
+            :Prob => [0.5, 0.5, 0.5, 0.5]
+        )
+        x5 = DiscreteNode(:x5, x5_states)
+        x7_states = DataFrame(
+            :x4 => [:x4y, :x4y, :x4n, :x4n],
+            :x7 => [:x7y, :x7n, :x7y, :x7n],
+            :Prob => [0.5, 0.5, 0.5, 0.5]
+        )
+        x7 = DiscreteNode(:x7, x7_states)
+        x11_states = DataFrame(
+            :x8 => [:x8y, :x8y, :x8n, :x8n],
+            :x11 => [:x11y, :x11n, :x11y, :x11n],
+            :Prob => [0.5, 0.5, 0.5, 0.5]
+        )
+        x11 = DiscreteNode(:x11, x11_states)
+        x6_states = DataFrame(
+            :x4 => [:x4y, :x4y, :x4y, :x4y, :x4n, :x4n, :x4n, :x4n],
+            :x3 => [:x3y, :x3y, :x3n, :x3n, :x3y, :x3y, :x3n, :x3n],
+            :x6 => [:x6y, :x6n, :x6y, :x6n, :x6y, :x6n, :x6y, :x6n],
+            :Prob => [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+        )
+        x6 = DiscreteNode(:x6, x6_states)
+        x9_states = DataFrame(
+            :x6 => [:x6y, :x6y, :x6y, :x6y, :x6n, :x6n, :x6n, :x6n],
+            :x5 => [:x5y, :x5y, :x5n, :x5n, :x5y, :x5y, :x5n, :x5n],
+            :x9 => [:x9y, :x9n, :x9y, :x9n, :x9y, :x9n, :x9y, :x9n],
+            :Prob => [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+        )
+        x9 = DiscreteNode(:x9, x9_states)
+        x10_states = DataFrame(
+            :x6 => [:x6y, :x6y, :x6y, :x6y, :x6n, :x6n, :x6n, :x6n],
+            :x8 => [:x8y, :x8y, :x8n, :x8n, :x8y, :x8y, :x8n, :x8n],
+            :x10 => [:x10y, :x10n, :x10y, :x10n, :x10y, :x10n, :x10y, :x10n],
+            :Prob => [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+        )
+        x10 = DiscreteNode(:x10, x10_states)
+        x12_states = DataFrame(
+            :x9 => [:x9y, :x9y, :x9n, :x9n],
+            :x12 => [:x12y, :x12n, :x12y, :x12n],
+            :Prob => [0.5, 0.5, 0.5, 0.5]
+        )
+        x12 = DiscreteNode(:x12, x12_states)
+        x13_states = DataFrame(
+            :x10 => [:x10y, :x10y, :x10n, :x10n],
+            :x13 => [:x13y, :x13n, :x13y, :x13n],
+            :Prob => [0.5, 0.5, 0.5, 0.5]
+        )
+        x13 = DiscreteNode(:x13, x13_states)
+        nodes = [x1, x2, x4, x8, x5, x7, x11, x3, x6, x9, x10, x12, x13]
+        ebn = EnhancedBayesianNetwork(nodes)
+        add_child!(ebn, :x1, :x3)
+        add_child!(ebn, :x2, :x5)
+        add_child!(ebn, :x4, :x7)
+        add_child!(ebn, :x8, :x11)
+        add_child!(ebn, :x3, :x6)
+        add_child!(ebn, :x4, :x6)
+        add_child!(ebn, :x5, :x9)
+        add_child!(ebn, :x6, :x9)
+        add_child!(ebn, :x6, :x10)
+        add_child!(ebn, :x8, :x10)
+        add_child!(ebn, :x9, :x12)
+        add_child!(ebn, :x10, :x13)
+        order!(ebn)
+
+        markov_bl = markov_blanket(ebn, 9)
+        @test issetequal(markov_bl[1], [5 10 4 11 3 8])
+        @test issetequal(markov_bl[2], [:x3, :x4, :x5, :x8, :x9, :x10])
+        @test issetequal(markov_bl[3], [x3, x4, x5, x8, x9, x10])
+        @test markov_blanket(ebn, :x6) == markov_bl
+        @test markov_blanket(ebn, x6) == markov_bl
+    end
+
+    @testset "Markov Envelopes" begin
+        Y1 = DiscreteNode(:y1, DataFrame(:y1 => [:yy1, :yn1], :Prob => [0.5, 0.5]), Dict(:yy1 => [Parameter(0.5, :y1)], :yn1 => [Parameter(0.8, :y1)]))
+        X1 = ContinuousNode{UnivariateDistribution}(:x1, DataFrame(:Prob => Normal()))
+        X2 = ContinuousNode{UnivariateDistribution}(:x2, DataFrame(:Prob => Normal()))
+        X3 = ContinuousNode{UnivariateDistribution}(:x3, DataFrame(:Prob => Normal()))
+
+        model = Model(df -> df.y1 .+ df.x1, :y2)
+        models = [model]
+        simulation = MonteCarlo(200)
+        performance = df -> df.y2
+        Y2 = DiscreteFunctionalNode(:y2, models, performance, simulation)
+
+        model = Model(df -> df.x1 .+ df.x2, :y3)
+        models = [model]
+        simulation = MonteCarlo(200)
+        performance = df -> df.y3
+        Y3 = DiscreteFunctionalNode(:y3, models, performance, simulation)
+
+        model = Model(df -> df.x3 .+ df.x2, :y4)
+        models = [model]
+        simulation = MonteCarlo(200)
+        performance = df -> df.y4
+        Y4 = DiscreteFunctionalNode(:y4, models, performance, simulation)
+
+        model = Model(df -> df.x3, :y5)
+        models = [model]
+        simulation = MonteCarlo(200)
+        performance = df -> df.y5
+        parameter = Dict(:fail_y5 => [Parameter(1, :y5)], :fail_y5 => [Parameter(0, :y5)])
+        Y5 = DiscreteFunctionalNode(:y5, models, performance, simulation, parameter)
+
+        model = Model(df -> df.y3, :x4)
+        models = [model]
+        simulation = MonteCarlo(200)
+        X4 = ContinuousFunctionalNode(:x4, models, simulation)
+
+        model = Model(df -> df.x4, :y6)
+        models = [model]
+        simulation = MonteCarlo(200)
+        performance = df -> df.y6
+        Y6 = DiscreteFunctionalNode(:y6, models, performance, simulation)
+        nodes = [X1, X2, X3, Y1, Y2, Y3, Y4, Y5, X4, Y6]
+        ebn = EnhancedBayesianNetwork(nodes)
+
+        add_child!(ebn, :y1, :y2)
+        add_child!(ebn, :x1, :y2)
+        add_child!(ebn, :x1, :y3)
+        add_child!(ebn, :x2, :y3)
+        add_child!(ebn, :x2, :y4)
+        add_child!(ebn, :x3, :y4)
+        add_child!(ebn, :x3, :y5)
+        add_child!(ebn, :y5, :x4)
+        add_child!(ebn, :x4, :y6)
+        @suppress order!(ebn)
+
+        @test issetequal(EnhancedBayesianNetworks._get_markov_group(ebn, Y5), [Y5, X4, X3])
+        envelopes = markov_envelope(ebn)
+        @test issetequal(envelopes[1], [X1, X2, X3, Y1, Y2, Y3, Y4, Y5])
+        @test issetequal(envelopes[2], [Y6, Y5, X4])
+    end
 end

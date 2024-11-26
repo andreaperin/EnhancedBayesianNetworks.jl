@@ -1,4 +1,4 @@
-@auto_hash_equals struct ContinuousNode{T<:AbstractContinuousInput} <: AbstractNode
+@auto_hash_equals struct ContinuousNode{T<:AbstractContinuousInput} <: AbstractContinuousNode
     name::Symbol
     cpt::DataFrame
     discretization::AbstractDiscretization

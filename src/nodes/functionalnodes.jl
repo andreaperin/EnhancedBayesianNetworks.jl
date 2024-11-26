@@ -1,4 +1,4 @@
-@auto_hash_equals struct ContinuousFunctionalNode <: AbstractNode
+@auto_hash_equals struct ContinuousFunctionalNode <: AbstractContinuousNode
     name::Symbol
     models::AbstractVector{<:UQModel}
     simulation::AbstractMonteCarlo
@@ -24,7 +24,7 @@ end
 
 _is_root(node::ContinuousFunctionalNode) = false
 
-@auto_hash_equals struct DiscreteFunctionalNode <: AbstractNode
+@auto_hash_equals struct DiscreteFunctionalNode <: AbstractDiscreteNode
     name::Symbol
     models::Vector{<:UQModel}
     performance::Function
