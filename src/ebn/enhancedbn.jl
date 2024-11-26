@@ -8,7 +8,7 @@
         if !allunique(nodes_names)
             error("network nodes names must be unique")
         end
-        discrete_nodes = filter(x -> isa(x, DiscreteNode) && !isa(x, FunctionalNode), nodes)
+        discrete_nodes = filter(x -> isa(x, DiscreteNode), nodes)
         if !isempty(discrete_nodes)
             states_list = mapreduce(i -> _states(i), vcat, discrete_nodes)
             if !allunique(states_list)
@@ -131,8 +131,8 @@ function children(net::AbstractNetwork, node::AbstractNode)
 end
 
 function discrete_ancestors(net::EnhancedBayesianNetwork, node::AbstractNode)
-    discrete_parents = filter(x -> isa(x, DiscreteNode), parents(net, node)[3])
-    continuous_parents = filter(x -> isa(x, ContinuousNode), parents(net, node)[3])
+    discrete_parents = filter(x -> isa(x, AbstractDiscreteNode), parents(net, node)[3])
+    continuous_parents = filter(x -> isa(x, AbstractContinuousNode), parents(net, node)[3])
     if isempty(continuous_parents)
         return discrete_parents
     end
@@ -183,7 +183,7 @@ function _verify_functional_node(net::EnhancedBayesianNetwork, node::FunctionalN
     if isempty(pars)
         error("functional node '$(node.name)' must have at least one parent")
     end
-    cont_pars = filter(x -> isa(x, ContinuousNode), pars)
+    cont_pars = filter(x -> isa(x, AbstractContinuousNode), pars)
     if isempty(cont_pars)
         @warn "functional node '$(node.name)' have no continuous parents. All the simulations will return the same output"
     end
@@ -217,9 +217,9 @@ end
 
 function _theoretical_scenarios(net::EnhancedBayesianNetwork, node::AbstractNode)
     par = discrete_ancestors(net, node)
-    discrete_parents = filter(x -> isa(x, DiscreteNode), par)
+    discrete_parents = filter(x -> isa(x, AbstractDiscreteNode), par)
     function f(par)
-        return map(st -> (par.name => st), EnhancedBayesianNetworks._states(par))
+        return map(st -> (par.name => st), _states(par))
     end
     discrete_parents_combination = Iterators.product(f.(discrete_parents)...)
     discrete_parents_combination = map(t -> [t...], discrete_parents_combination)
@@ -267,11 +267,11 @@ end
 function markov_blanket(net::EnhancedBayesianNetwork, index::Int64)
     blanket = []
     reverse_dict = Dict(value => key for (key, value) in net.topology_dict)
-    for child in get_children(net, index)[1]
-        append!(blanket, get_parents(net, child)[1])
+    for child in children(net, index)[1]
+        append!(blanket, parents(net, child)[1])
         push!(blanket, child)
     end
-    append!(blanket, get_parents(net, index)[1])
+    append!(blanket, parents(net, index)[1])
     indices = unique(setdiff(blanket, [index]))
     names = map(x -> reverse_dict[x], indices)
     nodes = filter(x -> x.name ∈ names, net.nodes)
@@ -289,7 +289,7 @@ function markov_blanket(net::EnhancedBayesianNetwork, node::AbstractNode)
 end
 
 function _get_markov_group(net::EnhancedBayesianNetwork, node::AbstractNode)
-    fun = (a, b) -> unique(vcat(b, mapreduce(x -> filter(x -> isa(x, ContinuousNode), markov_blanket(a, node)[3]), vcat, b)))
+    fun = (ebn, n) -> unique(vcat(n, mapreduce(x -> filter(x -> isa(x, AbstractContinuousNode), markov_blanket(ebn, node)[3]), vcat, n)))
     list = [node]
     new_list = fun(net, list)
     while !issetequal(list, new_list)
@@ -300,7 +300,7 @@ function _get_markov_group(net::EnhancedBayesianNetwork, node::AbstractNode)
 end
 
 function markov_envelope(net::EnhancedBayesianNetwork)
-    cont_nodes = filter(x -> isa(x, ContinuousNode), net.nodes)
+    cont_nodes = filter(x -> isa(x, AbstractContinuousNode), net.nodes)
     Xm_groups = map(x -> _get_markov_group(net, x), cont_nodes)
     markov_envelopes = unique.(mapreduce.(x -> push!(markov_blanket(net, x)[3], x), vcat, Xm_groups))
     # check when a vector is included into another

@@ -1,5 +1,9 @@
 abstract type AbstractNode end
 
+abstract type AbstractContinuousNode <: AbstractNode end
+abstract type AbstractDiscreteNode <: AbstractNode end
+
+
 @auto_hash_equals struct UnamedProbabilityBox{T<:UnivariateDistribution}
     parameters::Vector{Interval}
     lb::Real

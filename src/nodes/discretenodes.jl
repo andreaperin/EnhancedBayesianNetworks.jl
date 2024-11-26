@@ -1,4 +1,4 @@
-@auto_hash_equals struct DiscreteNode <: AbstractNode
+@auto_hash_equals struct DiscreteNode <: AbstractDiscreteNode
     name::Symbol
     cpt::DataFrame
     parameters::Dict{Symbol,Vector{Parameter}}

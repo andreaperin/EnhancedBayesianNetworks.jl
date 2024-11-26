@@ -25,6 +25,8 @@ export AbstractDiscreteProbability
 export AbstractDiscretization
 export AbstractInferenceState
 export AbstractNode
+export AbstractContinuousNode
+export AbstractDiscreteNode
 export ApproximatedDiscretization
 # export BayesianNetwork
 export ConditionalProbabilityDistribution
