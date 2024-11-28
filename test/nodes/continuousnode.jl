@@ -76,6 +76,14 @@
             dist2 = (1, 5)
             dist3 = UnamedProbabilityBox{Normal}([Interval(-0.5, 0.5, :μ), Interval(1, 2, :σ)])
 
+            @test EnhancedBayesianNetworks._distribution_bounds(dist1) == [-Inf, Inf]
+            @test EnhancedBayesianNetworks._distribution_bounds(dist2) == [1, 5]
+            @test EnhancedBayesianNetworks._distribution_bounds(dist3) == [-Inf, Inf]
+
+            @test EnhancedBayesianNetworks._distribution_bounds(node1) == [-Inf, Inf]
+            @test EnhancedBayesianNetworks._distribution_bounds(node2) == [1, 5]
+            @test EnhancedBayesianNetworks._distribution_bounds(node3) == [-Inf, Inf]
+
             @test EnhancedBayesianNetworks._truncate(dist1, [-1, 1]) == truncated(Normal(), -1, 1)
             @test EnhancedBayesianNetworks._truncate(dist2, [-1, 1]) == (-1, 1)
             @test EnhancedBayesianNetworks._truncate(dist3, [-1, 1]).lb == -1
@@ -130,6 +138,7 @@
             @test isempty(node3.discretization.intervals)
             @test isempty(node3.additional_info)
         end
+
         @testset "functions" begin
             name = :A
             cpt1 = DataFrame(:G => [:g1, :g2], :Prob => [Normal(0, 1), Normal(1, 1)])
@@ -155,7 +164,6 @@
             @test EnhancedBayesianNetworks._scenarios(node1) == [Dict(:G => :g1), Dict(:G => :g2)]
             @test EnhancedBayesianNetworks._scenarios(node2) == [Dict(:G => :g1), Dict(:G => :g2)]
             @test EnhancedBayesianNetworks._scenarios(node3) == [Dict(:G => :g1), Dict(:G => :g2)]
-
 
             @test EnhancedBayesianNetworks._continuous_input(node1) == [RandomVariable(Normal(), :A), RandomVariable(Normal(1, 1), :A)]
             @test EnhancedBayesianNetworks._continuous_input(node2) == [Interval(0, 1, :A), Interval(1, 1, :A)]
@@ -184,6 +192,10 @@
             @test EnhancedBayesianNetworks._continuous_input(node3, evidence2)[1].lb == -Inf
             @test EnhancedBayesianNetworks._continuous_input(node3, evidence2)[1].ub == Inf
             @test EnhancedBayesianNetworks._continuous_input(node3, evidence2)[1].parameters == [Interval(-0.5, 0.5, :μ), Interval(1, 2, :σ)]
+
+            @test EnhancedBayesianNetworks._distribution_bounds(node1) == [-Inf, Inf]
+            @test EnhancedBayesianNetworks._distribution_bounds(node2) == [0, 1]
+            @test EnhancedBayesianNetworks._distribution_bounds(node3) == [-Inf, Inf]
 
             @test EnhancedBayesianNetworks._is_precise(node1)
             @test EnhancedBayesianNetworks._is_precise(node2) == false

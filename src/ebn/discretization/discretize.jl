@@ -1,61 +1,64 @@
-function _discretize!(net::EnhancedBayesianNetwork)
-    continuous_nodes = filter(x -> isa(x, ContinuousNode) && !isa(x, FunctionalNode), net.nodes)
-    evidence_nodes = filter(n -> !isempty(n.discretization.intervals), continuous_nodes)
-    discretizations_tuples = map(n -> (n, get_parents(net, n)[3], get_children(net, n)[3], _discretize(n)), evidence_nodes)
-    for tup in discretizations_tuples
-        node = tup[1]
-        parents = tup[2]
-        children = tup[3]
-        disc_new = tup[4][1]
-        cont_new = tup[4][2]
-        _remove_node!(net, node)
-        _add_node!(net, disc_new)
-        _add_node!(net, cont_new)
-        add_child!(net, disc_new, cont_new)
-        for par in parents
-            try
-                add_child!(net, par, disc_new)
-            catch e
-                @warn "node $(disc_new.name) is a root node and will be added as a child of of $(par.name). This is allowed only for network evaluation."
-                index_par = net.topology_dict[par.name]
-                index_ch = net.topology_dict[disc_new.name]
-                net.adj_matrix[index_par, index_ch] = 1
-            end
-        end
-        for ch in children
-            add_child!(net, cont_new, ch)
-        end
-        order!(net)
-    end
-    return nothing
-end
+# function _discretize!(net::EnhancedBayesianNetwork)
+#     continuous_nodes = filter(x -> isa(x, ContinuousNode) && !isa(x, FunctionalNode), net.nodes)
+#     evidence_nodes = filter(n -> !isempty(n.discretization.intervals), continuous_nodes)
+#     discretizations_tuples = map(n -> (n, get_parents(net, n)[3], get_children(net, n)[3], _discretize(n)), evidence_nodes)
+#     for tup in discretizations_tuples
+#         node = tup[1]
+#         parents = tup[2]
+#         children = tup[3]
+#         disc_new = tup[4][1]
+#         cont_new = tup[4][2]
+#         _remove_node!(net, node)
+#         _add_node!(net, disc_new)
+#         _add_node!(net, cont_new)
+#         add_child!(net, disc_new, cont_new)
+#         for par in parents
+#             try
+#                 add_child!(net, par, disc_new)
+#             catch e
+#                 @warn "node $(disc_new.name) is a root node and will be added as a child of of $(par.name). This is allowed only for network evaluation."
+#                 index_par = net.topology_dict[par.name]
+#                 index_ch = net.topology_dict[disc_new.name]
+#                 net.adj_matrix[index_par, index_ch] = 1
+#             end
+#         end
+#         for ch in children
+#             add_child!(net, cont_new, ch)
+#         end
+#         order!(net)
+#     end
+#     return nothing
+# end
 
 ## RootNode
-function _discretize(node::ContinuousRootNode)
+function _discretize(node::ContinuousNode)
     intervals = _format_interval(node)
     states_symbols = Symbol.(intervals)
-    states = Dict(states_symbols .=> _discretize(node.distribution, intervals))
-    discrete_node = DiscreteRootNode(Symbol(string(node.name) * "_d"), states)
+    probs = map(dist -> _discretize(dist, intervals), node.cpt[!, :Prob])
+    name_discrete = Symbol(string(node.name) * "_d")
+    new_cpt_disc = DataFrame(name_discrete => states_symbols, :Prob => probs...)
+    discrete_node = DiscreteNode(name_discrete, new_cpt_disc)
     ## Adding continuous node as parents of children of the discretized node
     distribution_symbols = [[i] for i in states_symbols]
-    distribution = Dict(distribution_symbols .=> _truncate.(Ref(node.distribution), intervals))
-    continuous_node = ContinuousChildNode(node.name, distribution)
+    distribution = map(dist -> _truncate.(Ref(dist), intervals), node.cpt[!, :Prob])
+    new_cpt_cont = DataFrame(node.name => distribution_symbols, :Prob => distribution...)
+    continuous_node = ContinuousNode{typeof(node).parameters[1]}(node.name, new_cpt_cont)
     return [discrete_node, continuous_node]
 end
 
-# Child Node
-function _discretize(node::ContinuousChildNode)
-    intervals = _format_interval(node)
-    k = keys(node.distribution)
-    dists = values(node.distribution)
-    states = [(key, Dict(Symbol.(intervals) .=> _discretize(dist, intervals))) for (key, dist) in zip(k, dists)]
-    states = Dict(states)
-    discrete_node = DiscreteChildNode(Symbol(string(node.name) * "_d"), states)
-    distribution_symbols = [[Symbol(i)] for i in intervals]
-    distribution = Dict(distribution_symbols .=> _approximate(intervals, node.discretization.sigma))
-    continuous_node = ContinuousChildNode(node.name, distribution)
-    return [discrete_node, continuous_node]
-end
+# # Child Node
+# function _discretize(node::ContinuousChildNode)
+#     intervals = _format_interval(node)
+#     k = keys(node.distribution)
+#     dists = values(node.distribution)
+#     states = [(key, Dict(Symbol.(intervals) .=> _discretize(dist, intervals))) for (key, dist) in zip(k, dists)]
+#     states = Dict(states)
+#     discrete_node = DiscreteChildNode(Symbol(string(node.name) * "_d"), states)
+#     distribution_symbols = [[Symbol(i)] for i in intervals]
+#     distribution = Dict(distribution_symbols .=> _approximate(intervals, node.discretization.sigma))
+#     continuous_node = ContinuousChildNode(node.name, distribution)
+#     return [discrete_node, continuous_node]
+# end
 
 ## Auxiliary function
 function _discretize(dist::UnivariateDistribution, intervals::Vector)
@@ -69,7 +72,7 @@ function _discretize(dist::UnamedProbabilityBox, intervals::Vector)
     map((r, l) -> [minimum([r.lb - l.lb, r.ub - l.ub]), maximum([r.lb - l.lb, r.ub - l.ub])], right_bounds, left_bounds)
 end
 
-function _discretize(dist::Tuple{T,T}, intervals::Vector) where {T<:Real}
+function _discretize(_::Tuple{T,T}, intervals::Vector) where {T<:Real}
     repeat([[0, 1]], length(intervals))
 end
 
@@ -87,12 +90,12 @@ function _approximate(intervals::Vector, λ::Real)
     return dists
 end
 
-function _format_interval(node::Union{ContinuousChildNode,ContinuousRootNode})
+function _format_interval(node::ContinuousNode)
     intervals = node.discretization.intervals
     intervals = convert(Vector{Float64}, intervals)
     min = node.discretization.intervals[1]
     max = node.discretization.intervals[end]
-    lower_bound, upper_bound = _get_node_distribution_bounds(node)
+    lower_bound, upper_bound = _distribution_bounds(node)
     if minimum(min) > lower_bound
         @warn "node $(node.name) has minimum intervals value $min > support lower bound $lower_bound. Lower bound will be used as intervals start"
         insert!(intervals, 1, lower_bound)
