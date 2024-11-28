@@ -7,9 +7,9 @@ function _transfer_continuous!(net::EnhancedBayesianNetwork)
 end
 
 function _transfer_single_continuous_functional!(net::EnhancedBayesianNetwork, node::ContinuousFunctionalNode)
-    node_children = get_children(net, node)[3]
+    node_children = children(net, node)[3]
     if isempty(node.discretization.intervals) && !isempty(node_children)
-        node_parents = get_parents(net, node)[3]
+        node_parents = parents(net, node)[3]
         map(ch -> prepend!(ch.models, node.models), node_children)
         sim_incoherence = map(ch -> typeof(ch.simulation) != typeof(node.simulation), node_children)
         if any(sim_incoherence)
