@@ -56,6 +56,23 @@ end
 
 _continuous_input(node::ContinuousNode) = _continuous_input(node, Evidence())
 
+function _distribution_bounds(dist::UnivariateDistribution)
+    return [support(dist).lb, support(dist).ub]
+end
+
+function _distribution_bounds(dist::Tuple{T,T}) where {T<:Real}
+    return [dist[1], dist[2]]
+end
+
+function _distribution_bounds(dist::UnamedProbabilityBox)
+    return [minimum(vcat(map(x -> x.lb, dist.parameters), dist.lb)), maximum(vcat(map(x -> x.ub, dist.parameters), dist.ub))]
+end
+
+function _distribution_bounds(node::ContinuousNode)
+    bounds = mapreduce(dist -> _distribution_bounds(dist), hcat, node.cpt[!, :Prob])
+    return [minimum(bounds[1, :]), maximum(bounds[2, :])]
+end
+
 function _truncate(dist::UnivariateDistribution, i::AbstractVector)
     return truncated(dist, i[1], i[2])
 end
