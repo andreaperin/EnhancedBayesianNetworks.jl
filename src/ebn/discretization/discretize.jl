@@ -34,29 +34,45 @@
 function _discretize(node::ContinuousNode)
     intervals = _format_interval(node)
     states_symbols = Symbol.(intervals)
-    probs = map(dist -> _discretize(dist, intervals), node.cpt[!, :Prob])
+    n = length(states_symbols)
+    if isempty(_scenarios(node))
+        m = 1
+    else
+        m = length(_scenarios(node))
+    end
     name_discrete = Symbol(string(node.name) * "_d")
-    new_cpt_disc = DataFrame(name_discrete => states_symbols, :Prob => probs...)
+    new_cpt_disc = repeat(node.cpt[!, Not(:Prob)], inner=n)
+    new_cpt_disc[!, name_discrete] = repeat(Symbol.(intervals), m)
+    probs = map(dist -> _discretize(dist, intervals), node.cpt[!, :Prob])
+    new_cpt_disc[!, :Prob] = collect(Iterators.flatten(probs))
     discrete_node = DiscreteNode(name_discrete, new_cpt_disc)
-    ## Adding continuous node as parents of children of the discretized node
     distribution_symbols = [[i] for i in states_symbols]
-    distribution = map(dist -> _truncate.(Ref(dist), intervals), node.cpt[!, :Prob])
-    new_cpt_cont = DataFrame(node.name => distribution_symbols, :Prob => distribution...)
+    if _is_root(node)
+        distribution = mapreduce(dist -> EnhancedBayesianNetworks._truncate.(Ref(dist), intervals), vcat, node.cpt[!, :Prob])
+    else
+        distribution = _approximate.(intervals, node.discretization.sigma)
+    end
+    new_cpt_cont = DataFrame(node.name => distribution_symbols, :Prob => distribution)
     continuous_node = ContinuousNode{typeof(node).parameters[1]}(node.name, new_cpt_cont)
     return [discrete_node, continuous_node]
 end
 
-# # Child Node
-# function _discretize(node::ContinuousChildNode)
+# function _discretize(node::ContinuousNode)
 #     intervals = _format_interval(node)
-#     k = keys(node.distribution)
-#     dists = values(node.distribution)
-#     states = [(key, Dict(Symbol.(intervals) .=> _discretize(dist, intervals))) for (key, dist) in zip(k, dists)]
-#     states = Dict(states)
-#     discrete_node = DiscreteChildNode(Symbol(string(node.name) * "_d"), states)
-#     distribution_symbols = [[Symbol(i)] for i in intervals]
-#     distribution = Dict(distribution_symbols .=> _approximate(intervals, node.discretization.sigma))
-#     continuous_node = ContinuousChildNode(node.name, distribution)
+#     states_symbols = Symbol.(intervals)
+#     probs = map(dist -> _discretize(dist, intervals), node.cpt[!, :Prob])
+#     name_discrete = Symbol(string(node.name) * "_d")
+#     new_cpt_disc = DataFrame(name_discrete => states_symbols, :Prob => probs...)
+#     discrete_node = DiscreteNode(name_discrete, new_cpt_disc)
+#     ## Adding continuous node as parents of children of the discretized node
+#     distribution_symbols = [[i] for i in states_symbols]
+#     if _is_root(node)
+#         distribution = mapreduce(dist -> EnhancedBayesianNetworks._truncate.(Ref(dist), intervals), vcat, node.cpt[!, :Prob])
+#     else
+#         distribution = _approximate.(intervals, node.discretization.sigma)
+#     end
+#     new_cpt_cont = DataFrame(node.name => distribution_symbols, :Prob => distribution)
+#     continuous_node = ContinuousNode{typeof(node).parameters[1]}(node.name, new_cpt_cont)
 #     return [discrete_node, continuous_node]
 # end
 
@@ -76,18 +92,14 @@ function _discretize(_::Tuple{T,T}, intervals::Vector) where {T<:Real}
     repeat([[0, 1]], length(intervals))
 end
 
-function _approximate(intervals::Vector, λ::Real)
-    dists = map(intervals) do i
-        finite = isfinite.(i)
-        if all(finite)
-            return Uniform(i...)
-        elseif finite[end] == true
-            return -Exponential(λ) - finite[end]
-        elseif finite[1] == true
-            return Exponential(λ) + finite[1]
-        end
+function _approximate(i::AbstractVector{<:Real}, λ::Real)
+    if all(isfinite.(i))
+        return Uniform(i...)
+    elseif isfinite(last(i))
+        return -Exponential(λ) + last(i)
+    elseif isfinite(first(i))
+        return Exponential(λ) + first(i)
     end
-    return dists
 end
 
 function _format_interval(node::ContinuousNode)
