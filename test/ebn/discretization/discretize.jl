@@ -160,45 +160,63 @@
                 0.6914624612740131
             ]; atol=0.01))
 
-        # states = Dict(
-        #     [:y] => UnamedProbabilityBox{Normal}([Interval(-0.5, 0.5, :μ), Interval(1, 2, :σ)]),
-        #     [:n] => UnamedProbabilityBox{Normal}([Interval(1, 2, :μ), Interval(1, 2, :σ)])
-        # )
+        states = DataFrame(:β => [:y, :n], :Prob => [UnamedProbabilityBox{Normal}([Interval(-0.5, 0.5, :μ), Interval(1, 2, :σ)]), UnamedProbabilityBox{Normal}([Interval(1, 2, :μ), Interval(1, 2, :σ)])])
 
-        # child = ContinuousChildNode(:β, states, discretization)
 
-        # disc_child, cont_child = EnhancedBayesianNetworks._discretize(child)
+        child = ContinuousNode{UnamedProbabilityBox}(:β, states, discretization)
 
-        # @test cont_child.distribution[[Symbol("[-Inf, -1.0]")]] == exp1
-        # @test cont_child.distribution[[Symbol("[-1.0, 0.0]")]] == Uniform(-1, 0)
-        # @test cont_child.distribution[[Symbol("[0.0, 1.0]")]] == Uniform(0, 1.0)
-        # @test cont_child.distribution[[Symbol("[1.0, Inf]")]] == exp2
+        disc_child, cont_child = EnhancedBayesianNetworks._discretize(child)
 
-        # @test isapprox(disc_child.states[[:y]][Symbol("[-Inf, -1.0]")], [0.0668072, 0.401294]; atol=0.01)
-        # @test isapprox(disc_child.states[[:y]][Symbol("[0.0, 1.0]")], [0.24173, 0.290169]; atol=0.01)
-        # @test isapprox(disc_child.states[[:y]][Symbol("[1.0, Inf]")], [0.0668072, 0.401294]; atol=0.01)
-        # @test isapprox(disc_child.states[[:y]][Symbol("[-1.0, 0.0]")], [0.24173, 0.290169]; atol=0.01)
+        @test disc_child.cpt[!, :β] == [:y, :y, :y, :y, :n, :n, :n, :n]
+        @test disc_child.cpt[!, :β_d] == [
+            Symbol("[-Inf, -1.0]"),
+            Symbol("[-1.0, 0.0]"),
+            Symbol("[0.0, 1.0]"),
+            Symbol("[1.0, Inf]"),
+            Symbol("[-Inf, -1.0]"),
+            Symbol("[-1.0, 0.0]"),
+            Symbol("[0.0, 1.0]"),
+            Symbol("[1.0, Inf]")
+        ]
+        @test isapprox(disc_child.cpt[!, :Prob], [
+                [0.06680720126885804, 0.4012936743170763],
+                [0.24173033745712885, 0.2901687869569368],
+                [0.2417303374571288, 0.2901687869569368],
+                [0.06680720126885809, 0.4012936743170763],
+                [0.001349898031630093, 0.15865525393145702],
+                [0.021400233916549112, 0.14988228479452986],
+                [0.1359051219832778, 0.19146246127401312],
+                [0.5, 0.841344746068543]
+            ]; atol=0.01)
 
-        # @test isapprox(disc_child.states[[:n]][Symbol("[-Inf, -1.0]")], [0.0013499, 0.158655]; atol=0.01)
-        # @test isapprox(disc_child.states[[:n]][Symbol("[0.0, 1.0]")], [0.135905, 0.191462]; atol=0.01)
-        # @test isapprox(disc_child.states[[:n]][Symbol("[1.0, Inf]")], [0.5, 0.841345]; atol=0.01)
-        # @test isapprox(disc_child.states[[:n]][Symbol("[-1.0, 0.0]")], [0.0214002, 0.149882]; atol=0.01)
 
-        # states = Dict(
-        #     [:y] => (-1, 0),
-        #     [:n] => (0, 1)
-        # )
-        # child = ContinuousChildNode(:β, states, discretization)
+        @test cont_child.cpt[!, :β] == [
+            [Symbol("[-Inf, -1.0]")],
+            [Symbol("[-1.0, 0.0]")],
+            [Symbol("[0.0, 1.0]")],
+            [Symbol("[1.0, Inf]")]
+        ]
+        @test cont_child.cpt[!, :Prob] == [exp1, Uniform(-1, 0), Uniform(0, 1), exp2]
 
-        # disc_child, cont_child = @suppress EnhancedBayesianNetworks._discretize(child)
+        states = DataFrame(:β => [:y, :n], :Prob => [(-1, 0), (0, 1)])
 
-        # @test cont_child.distribution[[Symbol("[-1.0, 0.0]")]] == Uniform(-1, 0)
-        # @test cont_child.distribution[[Symbol("[0.0, 1.0]")]] == Uniform(0, 1)
+        child = ContinuousNode{Tuple{<:Real,<:Real}}(:β, states, discretization)
 
-        # @test disc_child.states[[:y]][Symbol("[0.0, 1.0]")] == [0, 1]
-        # @test disc_child.states[[:y]][Symbol("[-1.0, 0.0]")] == [0, 1]
-        # @test disc_child.states[[:n]][Symbol("[0.0, 1.0]")] == [0, 1]
-        # @test disc_child.states[[:n]][Symbol("[-1.0, 0.0]")] == [0, 1]
+        disc_child, cont_child = @suppress EnhancedBayesianNetworks._discretize(child)
+
+        @test disc_child.cpt[!, :β] == [:y, :y, :n, :n]
+        @test disc_child.cpt[!, :β_d] == [
+            Symbol("[-1.0, 0.0]"),
+            Symbol("[0.0, 1.0]"),
+            Symbol("[-1.0, 0.0]"),
+            Symbol("[0.0, 1.0]"),
+        ]
+        @test disc_child.cpt[!, :Prob] == [[0, 1], [0, 1], [0, 1], [0, 1]]
+
+        @test cont_child.cpt[!, :β] == [[Symbol("[-1.0, 0.0]")],
+            [Symbol("[0.0, 1.0]")],
+        ]
+        @test cont_child.cpt[!, :Prob] == [Uniform(-1, 0), Uniform(0, 1)]
     end
 
     # @testset "Network" begin

@@ -57,25 +57,6 @@ function _discretize(node::ContinuousNode)
     return [discrete_node, continuous_node]
 end
 
-# function _discretize(node::ContinuousNode)
-#     intervals = _format_interval(node)
-#     states_symbols = Symbol.(intervals)
-#     probs = map(dist -> _discretize(dist, intervals), node.cpt[!, :Prob])
-#     name_discrete = Symbol(string(node.name) * "_d")
-#     new_cpt_disc = DataFrame(name_discrete => states_symbols, :Prob => probs...)
-#     discrete_node = DiscreteNode(name_discrete, new_cpt_disc)
-#     ## Adding continuous node as parents of children of the discretized node
-#     distribution_symbols = [[i] for i in states_symbols]
-#     if _is_root(node)
-#         distribution = mapreduce(dist -> EnhancedBayesianNetworks._truncate.(Ref(dist), intervals), vcat, node.cpt[!, :Prob])
-#     else
-#         distribution = _approximate.(intervals, node.discretization.sigma)
-#     end
-#     new_cpt_cont = DataFrame(node.name => distribution_symbols, :Prob => distribution)
-#     continuous_node = ContinuousNode{typeof(node).parameters[1]}(node.name, new_cpt_cont)
-#     return [discrete_node, continuous_node]
-# end
-
 ## Auxiliary function
 function _discretize(dist::UnivariateDistribution, intervals::Vector)
     return cdf.(dist, getindex.(intervals, 2)) .- cdf.(dist, getindex.(intervals, 1))
