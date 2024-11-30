@@ -1,36 +1,35 @@
-# function _discretize!(net::EnhancedBayesianNetwork)
-#     continuous_nodes = filter(x -> isa(x, ContinuousNode) && !isa(x, FunctionalNode), net.nodes)
-#     evidence_nodes = filter(n -> !isempty(n.discretization.intervals), continuous_nodes)
-#     discretizations_tuples = map(n -> (n, get_parents(net, n)[3], get_children(net, n)[3], _discretize(n)), evidence_nodes)
-#     for tup in discretizations_tuples
-#         node = tup[1]
-#         parents = tup[2]
-#         children = tup[3]
-#         disc_new = tup[4][1]
-#         cont_new = tup[4][2]
-#         _remove_node!(net, node)
-#         _add_node!(net, disc_new)
-#         _add_node!(net, cont_new)
-#         add_child!(net, disc_new, cont_new)
-#         for par in parents
-#             try
-#                 add_child!(net, par, disc_new)
-#             catch e
-#                 @warn "node $(disc_new.name) is a root node and will be added as a child of of $(par.name). This is allowed only for network evaluation."
-#                 index_par = net.topology_dict[par.name]
-#                 index_ch = net.topology_dict[disc_new.name]
-#                 net.adj_matrix[index_par, index_ch] = 1
-#             end
-#         end
-#         for ch in children
-#             add_child!(net, cont_new, ch)
-#         end
-#         order!(net)
-#     end
-#     return nothing
-# end
+function _discretize!(net::EnhancedBayesianNetwork)
+    continuous_nodes = filter(x -> isa(x, ContinuousNode), net.nodes)
+    evidence_nodes = filter(n -> !isempty(n.discretization.intervals), continuous_nodes)
+    discretizations_tuples = map(n -> (n, parents(net, n)[3], children(net, n)[3], _discretize(n)), evidence_nodes)
+    for tup in discretizations_tuples
+        node = tup[1]
+        pars = tup[2]
+        chs = tup[3]
+        disc_new = tup[4][1]
+        cont_new = tup[4][2]
+        _remove_node!(net, node)
+        _add_node!(net, disc_new)
+        _add_node!(net, cont_new)
+        add_child!(net, disc_new, cont_new)
+        for par in pars
+            try
+                add_child!(net, par, disc_new)
+            catch e
+                @warn "node $(disc_new.name) is a root node and will be added as a child of $(par.name). This is allowed only for network evaluation."
+                index_par = net.topology_dict[par.name]
+                index_ch = net.topology_dict[disc_new.name]
+                net.adj_matrix[index_par, index_ch] = 1
+            end
+        end
+        for ch in chs
+            add_child!(net, cont_new, ch)
+        end
+        order!(net)
+    end
+    return nothing
+end
 
-## RootNode
 function _discretize(node::ContinuousNode)
     intervals = _format_interval(node)
     states_symbols = Symbol.(intervals)
@@ -42,17 +41,16 @@ function _discretize(node::ContinuousNode)
     end
     name_discrete = Symbol(string(node.name) * "_d")
     new_cpt_disc = repeat(node.cpt[!, Not(:Prob)], inner=n)
-    new_cpt_disc[!, name_discrete] = repeat(Symbol.(intervals), m)
+    new_cpt_disc[!, name_discrete] = repeat(states_symbols, m)
     probs = map(dist -> _discretize(dist, intervals), node.cpt[!, :Prob])
     new_cpt_disc[!, :Prob] = collect(Iterators.flatten(probs))
     discrete_node = DiscreteNode(name_discrete, new_cpt_disc)
-    distribution_symbols = [[i] for i in states_symbols]
     if _is_root(node)
         distribution = mapreduce(dist -> EnhancedBayesianNetworks._truncate.(Ref(dist), intervals), vcat, node.cpt[!, :Prob])
     else
         distribution = _approximate.(intervals, node.discretization.sigma)
     end
-    new_cpt_cont = DataFrame(node.name => distribution_symbols, :Prob => distribution)
+    new_cpt_cont = DataFrame(name_discrete => states_symbols, :Prob => distribution)
     continuous_node = ContinuousNode{typeof(node).parameters[1]}(node.name, new_cpt_cont)
     return [discrete_node, continuous_node]
 end
