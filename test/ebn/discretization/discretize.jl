@@ -58,7 +58,7 @@
         @test disc_root.cpt[!, :Prob] == [0.5, 0.5]
 
         @test cont_root.name == :z1
-        @test cont_root.cpt[!, :z1] == [[Symbol("[-Inf, 0.0]")], [Symbol("[0.0, Inf]")]]
+        @test cont_root.cpt[!, :z1_d] == [Symbol("[-Inf, 0.0]"), Symbol("[0.0, Inf]")]
         @test cont_root.cpt[!, :Prob] == [truncated(Normal(), -Inf, 0.0), truncated(Normal(), 0.0, Inf)]
 
         discretization = ExactDiscretization([-Inf, 0, Inf])
@@ -70,7 +70,7 @@
         @test disc_root.cpt[!, :Prob] == [0.5, 0.5]
 
         @test cont_root.name == :z1
-        @test cont_root.cpt[!, :z1] == [[Symbol("[-Inf, 0.0]")], [Symbol("[0.0, Inf]")]]
+        @test cont_root.cpt[!, :z1_d] == [Symbol("[-Inf, 0.0]"), Symbol("[0.0, Inf]")]
         @test cont_root.cpt[!, :Prob] == [truncated(Normal(), -Inf, 0.0), truncated(Normal(), 0.0, Inf)]
 
         discretization = ExactDiscretization([-1, 0, 1])
@@ -92,7 +92,7 @@
             UnamedProbabilityBox{Normal}(Interval[Interval(-0.5, 0.5, :μ), Interval(1, 2, :σ)], 1.0, Inf)
         ]
 
-        @test cont_root.cpt[!, :z1] == [[Symbol("[-Inf, -1.0]")], [Symbol("[-1.0, 0.0]")], [Symbol("[0.0, 1.0]")], [Symbol("[1.0, Inf]")]]
+        @test cont_root.cpt[!, :z1_d] == [Symbol("[-Inf, -1.0]"), Symbol("[-1.0, 0.0]"), Symbol("[0.0, 1.0]"), Symbol("[1.0, Inf]")]
 
         cont_root.cpt[!, :Prob] == dists
 
@@ -111,7 +111,7 @@
             (-1.0, 0.0),
             (0.0, 1.0)
         ]
-        @test cont_root.cpt[!, :z1] == [[Symbol("[-1.0, 0.0]")], [Symbol("[0.0, 1.0]")]]
+        @test cont_root.cpt[!, :z1_d] == [Symbol("[-1.0, 0.0]"), Symbol("[0.0, 1.0]")]
         @test cont_root.cpt[!, :Prob] == dists
     end
 
@@ -129,11 +129,11 @@
 
         exp1 = -Exponential(λ) - 1
         exp2 = Exponential(λ) + 1
-        @test cont_child.cpt[!, :β] == [
-            [Symbol("[-Inf, -1.0]")],
-            [Symbol("[-1.0, 0.0]")],
-            [Symbol("[0.0, 1.0]")],
-            [Symbol("[1.0, Inf]")]
+        @test cont_child.cpt[!, :β_d] == [
+            Symbol("[-Inf, -1.0]"),
+            Symbol("[-1.0, 0.0]"),
+            Symbol("[0.0, 1.0]"),
+            Symbol("[1.0, Inf]")
         ]
         @test cont_child.cpt[!, :Prob] == [exp1, Uniform(-1, 0), Uniform(0, 1.0), exp2]
 
@@ -167,6 +167,14 @@
 
         disc_child, cont_child = EnhancedBayesianNetworks._discretize(child)
 
+        @test cont_child.cpt[!, :β_d] == [
+            Symbol("[-Inf, -1.0]"),
+            Symbol("[-1.0, 0.0]"),
+            Symbol("[0.0, 1.0]"),
+            Symbol("[1.0, Inf]")
+        ]
+        @test cont_child.cpt[!, :Prob] == [exp1, Uniform(-1, 0), Uniform(0, 1), exp2]
+
         @test disc_child.cpt[!, :β] == [:y, :y, :y, :y, :n, :n, :n, :n]
         @test disc_child.cpt[!, :β_d] == [
             Symbol("[-Inf, -1.0]"),
@@ -190,19 +198,14 @@
             ]; atol=0.01)
 
 
-        @test cont_child.cpt[!, :β] == [
-            [Symbol("[-Inf, -1.0]")],
-            [Symbol("[-1.0, 0.0]")],
-            [Symbol("[0.0, 1.0]")],
-            [Symbol("[1.0, Inf]")]
-        ]
-        @test cont_child.cpt[!, :Prob] == [exp1, Uniform(-1, 0), Uniform(0, 1), exp2]
-
         states = DataFrame(:β => [:y, :n], :Prob => [(-1, 0), (0, 1)])
 
         child = ContinuousNode{Tuple{<:Real,<:Real}}(:β, states, discretization)
 
         disc_child, cont_child = @suppress EnhancedBayesianNetworks._discretize(child)
+
+        @test cont_child.cpt[!, :β_d] == [Symbol("[-1.0, 0.0]"), Symbol("[0.0, 1.0]")]
+        @test cont_child.cpt[!, :Prob] == [Uniform(-1, 0), Uniform(0, 1)]
 
         @test disc_child.cpt[!, :β] == [:y, :y, :n, :n]
         @test disc_child.cpt[!, :β_d] == [
@@ -212,73 +215,58 @@
             Symbol("[0.0, 1.0]"),
         ]
         @test disc_child.cpt[!, :Prob] == [[0, 1], [0, 1], [0, 1], [0, 1]]
-
-        @test cont_child.cpt[!, :β] == [[Symbol("[-1.0, 0.0]")],
-            [Symbol("[0.0, 1.0]")],
-        ]
-        @test cont_child.cpt[!, :Prob] == [Uniform(-1, 0), Uniform(0, 1)]
     end
 
-    # @testset "Network" begin
+    @testset "Network" begin
 
-    #     root1 = DiscreteRootNode(:x, Dict(:y => 0.2, :n => 0.8), Dict(:y => [Parameter(1, :x)], :n => [Parameter(0, :x), Parameter(5.6, :x1)]))
-    #     root2 = DiscreteRootNode(:y, Dict(:yes => 0.4, :no => 0.6), Dict(:yes => [Parameter(2.2, :y)], :no => [Parameter(5.5, :y)]))
-    #     discretization_root3 = ExactDiscretization([-Inf, 0, Inf])
-    #     root3 = ContinuousRootNode(:z1, Normal(), discretization_root3)
+        root1 = DiscreteNode(:x, DataFrame(:x => [:y, :n], :Prob => [0.2, 0.8]), Dict(:y => [Parameter(1, :x)], :n => [Parameter(0, :x), Parameter(5.6, :x1)]))
+        root2 = DiscreteNode(:y, DataFrame(:y => [:yes, :no], :Prob => [0.4, 0.6]), Dict(:yes => [Parameter(2.2, :y)], :no => [Parameter(5.5, :y)]))
+        discretization_root3 = ExactDiscretization([-Inf, 0, Inf])
+        root3 = ContinuousNode{UnivariateDistribution}(:z1, DataFrame(:Prob => Normal()), discretization_root3)
 
-    #     standard1_name = :α
-    #     standard1_states = Dict(
-    #         [:y, :yes] => Dict(:a => 0.2, :b => 0.8),
-    #         [:n, :yes] => Dict(:a => 0.3, :b => 0.7),
-    #         [:y, :no] => Dict(:a => 0.4, :b => 0.6),
-    #         [:n, :no] => Dict(:a => 0.5, :b => 0.5)
-    #     )
-    #     standard1_parameters = Dict(:a => [Parameter(3, :α)], :b => [Parameter(10, :α)])
-    #     standard1_node = DiscreteChildNode(standard1_name, standard1_states, standard1_parameters)
+        standard1_name = :α
+        standard1_states = DataFrame(:x => [:y, :y, :y, :y, :n, :n, :n, :n], :y => [:yes, :yes, :no, :no, :yes, :yes, :no, :no], :α => [:a, :b, :a, :b, :a, :b, :a, :b], :Prob => [0.2, 0.8, 0.3, 0.7, 0.4, 0.6, 0.5, 0.5]
+        )
+        standard1_parameters = Dict(:a => [Parameter(3, :α)], :b => [Parameter(10, :α)])
+        standard1_node = DiscreteNode(standard1_name, standard1_states, standard1_parameters)
 
-    #     standard2_name = :β
-    #     standard2_states = Dict(
-    #         [:y] => Normal(),
-    #         [:n] => Normal(2, 2)
-    #     )
-    #     standard2_states = Dict(
-    #         [:y] => Normal(),
-    #         [:n] => Normal(2, 2)
-    #     )
-    #     discretization_standard2 = ApproximatedDiscretization([-Inf, 0.1, Inf], 1.5)
-    #     standard2_node = ContinuousChildNode(standard2_name, standard2_states, discretization_standard2)
+        standard2_name = :β
+        standard2_states = DataFrame(:x => [:y, :n], :Prob => [Normal(), Normal(2, 2)])
 
-    #     functional2_name = :f2
-    #     functional2_model = Model(df -> (df.α .^ 2 + df.z .^ 2) ./ 2, :value1)
-    #     functional2_simulation = MonteCarlo(800)
-    #     functional2_performance = df -> 1 .- 2 .* df.value1
-    #     functional2_node = DiscreteFunctionalNode(functional2_name, [functional2_model], functional2_performance, functional2_simulation)
+        discretization_standard2 = ApproximatedDiscretization([-Inf, 0.1, Inf], 1.5)
+        standard2_node = ContinuousNode{UnivariateDistribution}(standard2_name, standard2_states, discretization_standard2)
 
-    #     nodes = [standard1_node, root1, root3, root2, standard2_node, functional2_node]
-    #     net = EnhancedBayesianNetwork(nodes)
+        functional2_name = :f2
+        functional2_model = Model(df -> (df.α .^ 2 + df.z .^ 2) ./ 2, :value1)
+        functional2_simulation = MonteCarlo(800)
+        functional2_performance = df -> 1 .- 2 .* df.value1
+        functional2_node = DiscreteFunctionalNode(functional2_name, [functional2_model], functional2_performance, functional2_simulation)
 
-    #     add_child!(net, :x, :α)
-    #     add_child!(net, :y, :α)
-    #     add_child!(net, :x, :β)
-    #     add_child!(net, :α, :f2)
-    #     add_child!(net, :z1, :f2)
-    #     order!(net)
+        nodes = [standard1_node, root1, root3, root2, standard2_node, functional2_node]
+        net = EnhancedBayesianNetwork(nodes)
 
-    #     EnhancedBayesianNetworks._discretize!(net)
-    #     d1, c1 = EnhancedBayesianNetworks._discretize(root3)
-    #     d2, c2 = EnhancedBayesianNetworks._discretize(standard2_node)
+        add_child!(net, :x, :α)
+        add_child!(net, :y, :α)
+        add_child!(net, :x, :β)
+        add_child!(net, :α, :f2)
+        add_child!(net, :z1, :f2)
+        order!(net)
 
-    #     @test net.adj_matrix == sparse([
-    #         0.0 0.0 0.0 1.0 0.0 1.0 0.0 0.0;
-    #         0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0;
-    #         0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0;
-    #         0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0;
-    #         0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0;
-    #         0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0;
-    #         0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0;
-    #         0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-    #     ])
-    #     @test net.topology_dict == Dict(:α => 4, :β_d => 6, :z1_d => 3, :y => 2, :z1 => 5, :f2 => 7, :β => 8, :x => 1)
-    #     @test issetequal(net.nodes, [standard1_node, root1, d1, c1, root2, d2, c2, functional2_node])
-    # end
+        EnhancedBayesianNetworks._discretize!(net)
+        d1, c1 = EnhancedBayesianNetworks._discretize(root3)
+        d2, c2 = EnhancedBayesianNetworks._discretize(standard2_node)
+
+        @test net.adj_matrix == sparse([
+            0.0 0.0 0.0 1.0 0.0 1.0 0.0 0.0;
+            0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0;
+            0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0;
+            0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0;
+            0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0;
+            0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0;
+            0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0;
+            0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+        ])
+        @test net.topology_dict == Dict(:α => 4, :β_d => 6, :z1_d => 3, :y => 2, :z1 => 5, :f2 => 7, :β => 8, :x => 1)
+        @test issetequal(net.nodes, [standard1_node, root1, d1, c1, root2, d2, c2, functional2_node])
+    end
 end
