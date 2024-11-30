@@ -172,7 +172,7 @@ function _is_cyclic_dfs(adj_matrix)
 end
 
 function _verify_net(net::AbstractNetwork)
-    map(n -> _verify_child_node(net, n), net.nodes)
+    map(n -> _verify_child_node(net, n), filter(x -> !isa(x, FunctionalNode), net.nodes))
     functional_nodes = filter(x -> isa(x, FunctionalNode), net.nodes)
     map(fn -> _verify_functional_node(net, fn), functional_nodes)
     return nothing
@@ -192,9 +192,24 @@ function _verify_functional_node(net::EnhancedBayesianNetwork, node::FunctionalN
     return nothing
 end
 
-function _verify_child_node(net::EnhancedBayesianNetwork, node::AbstractNode)
-    if !_is_root(node) && !isa(node, FunctionalNode)
+function _verify_child_node(net::EnhancedBayesianNetwork, node::DiscreteNode)
+    if !_is_root(node)
         th_parents_names = Symbol.(names(node.cpt[!, Not(node.name, :Prob)]))
+        if !issetequal(th_parents_names, parents(net, node)[2])
+            error("node '$(node.name)''s cpt requires exctly the nodes '$th_parents_names' to be its parents, but provided parents are '$(parents(net, node)[2])'")
+        end
+        th_scenarios = _theoretical_scenarios(net, node)
+        cpt_scenarios = _scenarios(node)
+        if !issetequal(cpt_scenarios, th_scenarios)
+            error("node '$(node.name)' has defined cpt scenarios $(node.cpt) not coherent with the theoretical one $th_scenarios")
+        end
+    end
+    return nothing
+end
+
+function _verify_child_node(net::EnhancedBayesianNetwork, node::ContinuousNode)
+    if !_is_root(node)
+        th_parents_names = Symbol.(names(node.cpt[!, Not(:Prob)]))
         if !issetequal(th_parents_names, parents(net, node)[2])
             error("node '$(node.name)''s cpt requires exctly the nodes '$th_parents_names' to be its parents, but provided parents are '$(parents(net, node)[2])'")
         end
