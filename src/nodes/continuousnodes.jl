@@ -39,7 +39,8 @@ end
 _scenarios(node::ContinuousNode) = _scenarios(node.cpt)
 
 function _continuous_input(node::ContinuousNode{UnivariateDistribution}, evidence::Evidence)
-    df_row = subset(node.cpt, _by_row(evidence))
+    new_evidence = filter(((k, v),) -> k ∈ names(node.cpt), evidence)
+    df_row = subset(node.cpt, _by_row(new_evidence))
     return map(dist -> RandomVariable(dist, node.name), df_row[!, :Prob])
 end
 

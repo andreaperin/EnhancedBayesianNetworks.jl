@@ -1,64 +1,73 @@
 function _evaluate_node(net::EnhancedBayesianNetwork, node::ContinuousFunctionalNode)
-    if any(_is_imprecise.(get_parents(net, node)[3]))
-        error("node $(node.name) is a continuousfunctionalnode with at least one parent with Interval or p-boxes in its distributions. No method for extracting failure probability p-box have been implemented yet")
-    else
-        discrete_parents = filter(x -> isa(x, DiscreteNode), get_parents(net, node)[3])
-        continuous_parents = filter(x -> isa(x, ContinuousNode), get_parents(net, node)[3])
-        ancestors = _get_discrete_ancestors(net, node)
-        ancestors_combination = vec(collect(Iterators.product(_get_states.(ancestors)...)))
-        ancestors_combination = map(x -> [x...], ancestors_combination)
-        distribution = Dict{Vector{Symbol},UnivariateDistribution}()
-        additional_info = Dict{Vector{Symbol},Dict}()
-        for evidence in ancestors_combination
-            parameters = mapreduce(p -> _get_parameters(p, evidence), vcat, discrete_parents; init=UQInput[])
-            randomvariables = mapreduce(p -> _get_continuous_input(p, evidence), vcat, continuous_parents; init=UQInput[])
+    if all(_is_precise.(parents(net, node)[3]))
+        discrete_parents = filter(x -> isa(x, DiscreteNode), parents(net, node)[3])
+        continuous_parents = filter(x -> isa(x, ContinuousNode), parents(net, node)[3])
+        ancestors = discrete_ancestors(net, node)
+
+        ancestors_combination = sort(vec(collect(Iterators.product(_states.(ancestors)...))))
+        new_cpt = DataFrame(ancestors_combination, [i.name for i in ancestors])
+        evidences = map(x -> Dict(pairs(new_cpt[x, :])), range(1, nrow(new_cpt)))
+
+        dists = []
+        add_info = Dict{Vector{Symbol},Dict}()
+        for evidence in evidences
+            parameters = mapreduce(p -> _parameters_with_evidence(p, evidence), vcat, discrete_parents; init=UQInput[])
+            randomvariables = mapreduce(p -> _continuous_input(p, evidence), vcat, continuous_parents; init=UQInput[])
             df = UncertaintyQuantification.sample([parameters..., randomvariables...], node.simulation)
             UncertaintyQuantification.evaluate!(node.models, df)
             pdf = EmpiricalDistribution(df[:, node.models[end].name])
-            distribution[evidence] = pdf
-            additional_info[evidence] = Dict(:samples => df)
+            push!(dists, pdf)
+            add_info[collect(values(evidence))] = Dict(:samples => df)
         end
-        if isempty(ancestors)
-            return ContinuousRootNode(node.name, distribution[[]], additional_info[[]], ExactDiscretization(node.discretization.intervals))
-        else
-            return ContinuousChildNode(node.name, distribution, additional_info, node.discretization)
-        end
+
+        new_cpt[!, :Prob] = dists
+        return ContinuousNode{UnivariateDistribution}(node.name, new_cpt, node.discretization, add_info)
+    else
+        error("node $(node.name) is a continuousfunctionalnode with at least one parent with Interval or p-boxes in its distributions. No method for extracting failure probability p-box have been implemented yet")
     end
 end
 
 function _evaluate_node(net::EnhancedBayesianNetwork, node::DiscreteFunctionalNode)
-    discrete_parents = filter(x -> isa(x, DiscreteNode), get_parents(net, node)[3])
-    continuous_parents = filter(x -> isa(x, ContinuousNode), get_parents(net, node)[3])
-    ancestors = _get_discrete_ancestors(net, node)
-    ancestors_combination = vec(collect(Iterators.product(_get_states.(ancestors)...)))
-    ancestors_combination = map(x -> [x...], ancestors_combination)
-    f = x -> convert(Dict{Symbol,Real}, Dict(Symbol("fail_$(node.name)") => x, Symbol("safe_$(node.name)") => 1 - x))
-    f_interval = x -> convert(Dict{Symbol,Vector{Real}}, Dict(Symbol("fail_$(node.name)") => [x.lb, x.ub], Symbol("safe_$(node.name)") => [1 - x.ub, 1 - x.lb]))
-    pf = Dict()
-    additional_info = Dict{Vector{Symbol},Dict}()
-    for evidence in ancestors_combination
-        parameters = mapreduce(p -> _get_parameters(p, evidence), vcat, discrete_parents; init=UQInput[])
-        randomvariables = mapreduce(p -> _get_continuous_input(p, evidence), vcat, continuous_parents; init=UQInput[])
+    discrete_parents = filter(x -> isa(x, DiscreteNode), parents(net, node)[3])
+    continuous_parents = filter(x -> isa(x, ContinuousNode), parents(net, node)[3])
+    ancestors = discrete_ancestors(net, node)
+
+    ancestors_combination = sort(vec(collect(Iterators.product(_states.(ancestors)...))))
+    new_cpt = DataFrame(ancestors_combination, [i.name for i in ancestors])
+    evidences = map(x -> Dict(pairs(new_cpt[x, :])), range(1, nrow(new_cpt)))
+    node_states = repeat([Symbol(string(node.name) * "_safe"), Symbol(string(node.name) * "_fail")], nrow(new_cpt))
+    new_cpt = repeat(new_cpt, inner=2)
+    new_cpt[!, node.name] = node_states
+
+    additional_info = Dict{AbstractVector{Symbol},Dict}()
+    probs = []
+    for evidence in evidences
+        parameters = mapreduce(p -> _parameters_with_evidence(p, evidence), vcat, discrete_parents; init=UQInput[])
+        randomvariables = mapreduce(p -> _continuous_input(p, evidence), vcat, continuous_parents; init=UQInput[])
         res = probability_of_failure(node.models, node.performance, [parameters..., randomvariables...], node.simulation)
+
         if isa(node.simulation, Union{AbstractMonteCarlo,LineSampling,ImportanceSampling,UncertaintyQuantification.AbstractSubSetSimulation})
-            pf[evidence] = f(res[1])
-            additional_info[evidence] = Dict(:cov => res[2], :samples => res[3])
+            push!(probs, res[1])
+            push!(probs, 1 - res[1])
+            additional_info[collect(values(evidence))] = Dict(:cov => res[2], :samples => res[3])
         elseif isa(node.simulation, DoubleLoop)
             !isa(res, Interval) ? res = Interval(res, res, :pf) : nothing
-            pf[evidence] = f_interval(res)
-            additional_info[evidence] = Dict()
+            push!(probs, res)
+            push!(probs, sort(1 .- res))
+            additional_info[collect(values(evidence))] = Dict()
         elseif isa(node.simulation, RandomSlicing)
             !isa(res[1], Interval) ? res[1] = Interval(res[1], res[1], :pf) : nothing
-            pf[evidence] = f_interval(res[1])
-            additional_info[evidence] = Dict(:lb => res[2], :ub => res[3])
+            push!(pd, res[1])
+            push!(probs, sort(1 .- res))
+            additional_info[collect(values(evidence))] = Dict(:lb => res[2], :ub => res[3])
         elseif isa(node.simulation, FORM)
-            pf[evidence] = f(res[1])
-            additional_info[evidence] = Dict(:β => res[2], :design_point => res[3], :α => res[4])
+            push!(probs, res[1])
+            push!(probs, 1 - res[1])
+            additional_info[collect(values(evidence))] = Dict(:β => res[2], :design_point => res[3], :α => res[4])
         end
     end
-    if isempty(ancestors)
-        return DiscreteRootNode(node.name, pf[[]], additional_info[[]], node.parameters)
-    else
-        return DiscreteChildNode(node.name, pf, additional_info, node.parameters)
-    end
+
+    new_cpt[!, :Prob] = probs
+
+    return DiscreteNode(node.name, new_cpt, node.parameters, additional_info)
 end
