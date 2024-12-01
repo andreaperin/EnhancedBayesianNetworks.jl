@@ -17,11 +17,15 @@ function print_object(io::IO, obj::DiscreteNode; multiline::Bool)
         print(io, "\n  ")
         print(io, "nature: $r $tp ")
         print(io, "\n  ")
-        isempty(obj.parameters) ? param = nothing : param = obj.parameters
-        print(io, "parameters: $param")
-        print(io, "\n  ")
         st = _states(obj)
         print(io, "\r  states: $st")
+        print(io, "\n  ")
+        isempty(obj.parameters) ? param = DataFrame() : param = DataFrame(obj.parameters)
+        # print(io, "parameters: $param")
+        print(io, "parameters:")
+        for (k, v) in obj.parameters
+            print(io, "\n $k => $v")
+        end
         print(io, "\n  ")
         print(io, "\r  CPT: $(obj.cpt)")
     else
