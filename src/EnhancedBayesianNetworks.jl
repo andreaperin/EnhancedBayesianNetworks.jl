@@ -51,11 +51,14 @@ const Evidence = Dict{Symbol,Symbol}
 export add_child!
 export children
 export discrete_ancestors
+export evaluate!
+export evaluate_with_envelopes
 export gplot
 export markov_blanket
 export markov_envelope
 export order!
 export parents
+export reduce!
 export saveplot
 # export evaluate!
 # export evaluate_with_envelopes

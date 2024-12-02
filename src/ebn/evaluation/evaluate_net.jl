@@ -4,9 +4,8 @@ function evaluate!(net::EnhancedBayesianNetwork)
     functional_nodes = filter(x -> isa(x, FunctionalNode), net.nodes)
     while !isempty(functional_nodes)
         first_node = first(functional_nodes)
-        continuous_nodes_2_eliminate = filter(x -> isa(x, ContinuousNode), get_parents(net, first_node)[3])
-        eliminable_node = map(x -> _is_eliminable(net, x),
-            continuous_nodes_2_eliminate)
+        continuous_nodes_2_eliminate = filter(x -> isa(x, ContinuousNode), parents(net, first_node)[3])
+        eliminable_node = map(x -> _is_eliminable(net, x), continuous_nodes_2_eliminate)
         if any(.!eliminable_node)
             names = [i.name for i in continuous_nodes_2_eliminate[.!eliminable_node]]
             error("nodes elimnation algorithm will lead to a cyclic network when elimnating node/s $names")
@@ -15,10 +14,10 @@ function evaluate!(net::EnhancedBayesianNetwork)
             global evaluated_node = _evaluate_node(net, first_node)
         catch e
             if isa(e, AssertionError)
-                error("node $(getproperty(first_node, :name)) has as imprecise parents only one or more child nodes with a discretization srtucture defined. They are approximated with Uniform and Exponential assumption and they are no more imprecise. A prices simulation technique must be selected")
+                error("node $(first_node.name) has as simulation $(first_node.simulation), but its imprecise parents will be discretized and approximated with Uniform and Exponential assumption, therefore are no longer imprecise. A prices simulation technique must be selected!")
             else
-                parents = get_parents(net, first_node)[3]
-                imprecise_parents = parents[_is_imprecise.(parents)]
+                pars = parents(net, first_node)[3]
+                imprecise_parents = pars[map(!, _is_precise.(pars))]
                 names = [i.name for i in imprecise_parents]
                 error("node $(getproperty(first_node, :name)) has $(getproperty(first_node, :simulation)) as simulation technique, but have $names as imprecise parent/s. DoubleLoop or RandomSlicing technique must be employeed instead")
             end
@@ -39,17 +38,17 @@ function evaluate_with_envelopes(net::EnhancedBayesianNetwork)
     return ebns
 end
 
-function dispatch_network(net::EnhancedBayesianNetwork)
-    if isempty(filter(x -> isa(x, ContinuousNode), net.nodes))
-        if all(.!_is_imprecise.(net.nodes))
-            return BayesianNetwork(net.nodes, net.topology_dict, net.adj_matrix)
-        else
-            return CredalNetwork(net.nodes, net.topology_dict, net.adj_matrix)
-        end
-    else
-        return net
-    end
-end
+# function dispatch_network(net::EnhancedBayesianNetwork)
+#     if isempty(filter(x -> isa(x, ContinuousNode), net.nodes))
+#         if all(.!_is_imprecise.(net.nodes))
+#             return BayesianNetwork(net.nodes, net.topology_dict, net.adj_matrix)
+#         else
+#             return CredalNetwork(net.nodes, net.topology_dict, net.adj_matrix)
+#         end
+#     else
+#         return net
+#     end
+# end
 
 function reduce!(net::EnhancedBayesianNetwork)
     if isempty(filter(x -> isa(x, FunctionalNode), net.nodes))
@@ -64,21 +63,20 @@ function reduce!(net::EnhancedBayesianNetwork)
 end
 
 function _eliminate_continuous_node!(net::EnhancedBayesianNetwork, node::ContinuousNode)
-    parents_indices = get_parents(net, node)[1]
-    children_indices = get_children(net, node)[1]
+    parents_indices = parents(net, node)[1]
+    children_indices = children(net, node)[1]
     map((i, j) -> net.adj_matrix[i, j] = 1, parents_indices, children_indices)
     _remove_node!(net, node)
 end
 
-
 function _add_root2envelope(net::EnhancedBayesianNetwork, envelope::AbstractVector{<:AbstractNode})
-    parents_vector = map(x -> get_parents(net, x)[3], envelope)
+    parents_vector = map(x -> parents(net, x)[3], envelope)
     is_not_in = map(x -> [i ∉ envelope for i in x], parents_vector)
     while any(collect(Iterators.Flatten(is_not_in)))
         missing_nodes = map((x, y) -> x[y], parents_vector, is_not_in)
         missing_nodes = unique(collect(Iterators.Flatten(missing_nodes)))
         envelope = append!(envelope, missing_nodes)
-        parents_vector = map(x -> get_parents(net, x)[3], envelope)
+        parents_vector = map(x -> parents(net, x)[3], envelope)
         is_not_in = map(x -> [i ∉ envelope for i in x], parents_vector)
     end
     return envelope
@@ -87,7 +85,7 @@ end
 function _build_envelope_edges(net::EnhancedBayesianNetwork, envelope::AbstractVector{<:AbstractNode})
     ebn = EnhancedBayesianNetwork(envelope)
     for node in envelope
-        par = get_parents(net, node)[3]
+        par = parents(net, node)[3]
         for p in par
             if p ∈ envelope
                 add_child!(ebn, p, node)
@@ -96,4 +94,30 @@ function _build_envelope_edges(net::EnhancedBayesianNetwork, envelope::AbstractV
     end
     order!(ebn)
     return ebn
+end
+
+function _is_eliminable(net::EnhancedBayesianNetwork, node::AbstractNode)
+    if !isa(node, ContinuousNode)
+        error("node elimination algorithm is for continuous nodes and $(node.name) is discrete")
+    end
+    index = net.topology_dict[node.name]
+    test_matrix = deepcopy(net.adj_matrix)
+    pars = parents(net, index)[1]
+    map(x -> test_matrix[x, index] = 0, pars)
+    map(x -> test_matrix[index, x] = 1, pars)
+    chs = children(net, index)[1]
+    map(x -> test_matrix[index, x] = 0, chs)
+    map(x -> test_matrix[x, index] = 1, chs)
+    !_is_cyclic_dfs(test_matrix)
+end
+
+function _is_eliminable(net::EnhancedBayesianNetwork, index::Int64)
+    reverse_dict = Dict(value => key for (key, value) in net.topology_dict)
+    index = findfirst(x -> x.name == reverse_dict[index], net.nodes)
+    _is_eliminable(net, net.nodes[index])
+end
+
+function _is_eliminable(net::EnhancedBayesianNetwork, name::Symbol)
+    index = findfirst(x -> x.name == name, net.nodes)
+    _is_eliminable(net, net.nodes[index])
 end
