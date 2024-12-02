@@ -39,19 +39,19 @@ end
 _scenarios(node::ContinuousNode) = _scenarios(node.cpt)
 
 function _continuous_input(node::ContinuousNode{UnivariateDistribution}, evidence::Evidence)
-    new_evidence = filter(((k, v),) -> k ∈ names(node.cpt), evidence)
+    new_evidence = filter(((k, v),) -> k ∈ Symbol.(names(node.cpt)), evidence)
     df_row = subset(node.cpt, _by_row(new_evidence))
     return map(dist -> RandomVariable(dist, node.name), df_row[!, :Prob])
 end
 
 function _continuous_input(node::ContinuousNode{Tuple{Real,Real}}, evidence::Evidence)
-    new_evidence = filter(((k, v),) -> k ∈ names(node.cpt), evidence)
+    new_evidence = filter(((k, v),) -> k ∈ Symbol.(names(node.cpt)), evidence)
     df_row = subset(node.cpt, _by_row(new_evidence))
     return map(tup -> Interval(tup..., node.name), df_row[!, :Prob])
 end
 
 function _continuous_input(node::ContinuousNode{UnamedProbabilityBox}, evidence::Evidence)
-    new_evidence = filter(((k, v),) -> k ∈ names(node.cpt), evidence)
+    new_evidence = filter(((k, v),) -> k ∈ Symbol.(names(node.cpt)), evidence)
     df_row = subset(node.cpt, _by_row(new_evidence))
     dists = map(r -> first(typeof(r).parameters), df_row[!, :Prob])
     return map((upb, dist) -> ProbabilityBox{dist}(upb.parameters, node.name, upb.lb, upb.ub), df_row[!, :Prob], dists)
