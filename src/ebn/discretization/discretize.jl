@@ -47,11 +47,13 @@ function _discretize(node::ContinuousNode)
     discrete_node = DiscreteNode(name_discrete, new_cpt_disc)
     if _is_root(node)
         distribution = mapreduce(dist -> EnhancedBayesianNetworks._truncate.(Ref(dist), intervals), vcat, node.cpt[!, :Prob])
+        new_cpt_cont = DataFrame(name_discrete => states_symbols, :Prob => distribution)
+        continuous_node = ContinuousNode{typeof(node).parameters[1]}(node.name, new_cpt_cont)
     else
         distribution = _approximate.(intervals, node.discretization.sigma)
+        new_cpt_cont = DataFrame(name_discrete => states_symbols, :Prob => distribution)
+        continuous_node = ContinuousNode{UnivariateDistribution}(node.name, new_cpt_cont)
     end
-    new_cpt_cont = DataFrame(name_discrete => states_symbols, :Prob => distribution)
-    continuous_node = ContinuousNode{typeof(node).parameters[1]}(node.name, new_cpt_cont)
     return [discrete_node, continuous_node]
 end
 
