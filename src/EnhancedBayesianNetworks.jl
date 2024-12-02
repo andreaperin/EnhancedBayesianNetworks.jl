@@ -24,11 +24,12 @@ export AbstractContinuousInput
 export AbstractDiscreteProbability
 export AbstractDiscretization
 export AbstractInferenceState
+export AbstractNetwork
 export AbstractNode
 export AbstractContinuousNode
 export AbstractDiscreteNode
 export ApproximatedDiscretization
-# export BayesianNetwork
+export BayesianNetwork
 export ConditionalProbabilityDistribution
 export ContinuousFunctionalNode
 export ContinuousNode
