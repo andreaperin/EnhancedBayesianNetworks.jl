@@ -38,35 +38,30 @@ function evaluate_with_envelopes(net::EnhancedBayesianNetwork)
     return ebns
 end
 
-# function dispatch_network(net::EnhancedBayesianNetwork)
-#     if isempty(filter(x -> isa(x, ContinuousNode), net.nodes))
-#         if all(.!_is_imprecise.(net.nodes))
-#             return BayesianNetwork(net.nodes, net.topology_dict, net.adj_matrix)
-#         else
-#             return CredalNetwork(net.nodes, net.topology_dict, net.adj_matrix)
-#         end
-#     else
-#         return net
-#     end
-# end
-
-function reduce!(net::EnhancedBayesianNetwork)
-    if isempty(filter(x -> isa(x, FunctionalNode), net.nodes))
-        cont_nodes = filter(x -> isa(x, ContinuousNode), net.nodes)
-        map(x -> _eliminate_continuous_node!(net, x), cont_nodes)
-    else
-        evaluate!(net)
-        cont_nodes = filter(x -> isa(x, ContinuousNode), net.nodes)
-        map(x -> _eliminate_continuous_node!(net, x), cont_nodes)
+function _is_eliminable(net::EnhancedBayesianNetwork, node::AbstractNode)
+    if !isa(node, ContinuousNode)
+        error("node elimination algorithm is for continuous nodes and $(node.name) is discrete")
     end
-    return nothing
+    index = net.topology_dict[node.name]
+    test_matrix = deepcopy(net.adj_matrix)
+    pars = parents(net, index)[1]
+    map(x -> test_matrix[x, index] = 0, pars)
+    map(x -> test_matrix[index, x] = 1, pars)
+    chs = children(net, index)[1]
+    map(x -> test_matrix[index, x] = 0, chs)
+    map(x -> test_matrix[x, index] = 1, chs)
+    !_is_cyclic_dfs(test_matrix)
 end
 
-function _eliminate_continuous_node!(net::EnhancedBayesianNetwork, node::ContinuousNode)
-    parents_indices = parents(net, node)[1]
-    children_indices = children(net, node)[1]
-    map((i, j) -> net.adj_matrix[i, j] = 1, parents_indices, children_indices)
-    _remove_node!(net, node)
+function _is_eliminable(net::EnhancedBayesianNetwork, index::Int64)
+    reverse_dict = Dict(value => key for (key, value) in net.topology_dict)
+    index = findfirst(x -> x.name == reverse_dict[index], net.nodes)
+    _is_eliminable(net, net.nodes[index])
+end
+
+function _is_eliminable(net::EnhancedBayesianNetwork, name::Symbol)
+    index = findfirst(x -> x.name == name, net.nodes)
+    _is_eliminable(net, net.nodes[index])
 end
 
 function _add_root2envelope(net::EnhancedBayesianNetwork, envelope::AbstractVector{<:AbstractNode})
@@ -94,30 +89,4 @@ function _build_envelope_edges(net::EnhancedBayesianNetwork, envelope::AbstractV
     end
     order!(ebn)
     return ebn
-end
-
-function _is_eliminable(net::EnhancedBayesianNetwork, node::AbstractNode)
-    if !isa(node, ContinuousNode)
-        error("node elimination algorithm is for continuous nodes and $(node.name) is discrete")
-    end
-    index = net.topology_dict[node.name]
-    test_matrix = deepcopy(net.adj_matrix)
-    pars = parents(net, index)[1]
-    map(x -> test_matrix[x, index] = 0, pars)
-    map(x -> test_matrix[index, x] = 1, pars)
-    chs = children(net, index)[1]
-    map(x -> test_matrix[index, x] = 0, chs)
-    map(x -> test_matrix[x, index] = 1, chs)
-    !_is_cyclic_dfs(test_matrix)
-end
-
-function _is_eliminable(net::EnhancedBayesianNetwork, index::Int64)
-    reverse_dict = Dict(value => key for (key, value) in net.topology_dict)
-    index = findfirst(x -> x.name == reverse_dict[index], net.nodes)
-    _is_eliminable(net, net.nodes[index])
-end
-
-function _is_eliminable(net::EnhancedBayesianNetwork, name::Symbol)
-    index = findfirst(x -> x.name == name, net.nodes)
-    _is_eliminable(net, net.nodes[index])
 end
