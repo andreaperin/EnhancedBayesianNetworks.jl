@@ -39,7 +39,7 @@ function evaluate_with_envelopes(net::EnhancedBayesianNetwork)
 end
 
 function _is_eliminable(net::EnhancedBayesianNetwork, node::AbstractNode)
-    if !isa(node, ContinuousNode)
+    if !isa(node, AbstractContinuousNode)
         error("node elimination algorithm is for continuous nodes and $(node.name) is discrete")
     end
     index = net.topology_dict[node.name]
