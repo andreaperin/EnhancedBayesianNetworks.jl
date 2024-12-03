@@ -1,25 +1,10 @@
 @testset "Credal Networks" begin
 
-    F = DiscreteRootNode(:F, Dict(:Ft => 0.5, :Ff => 0.5))
-
-    B = DiscreteRootNode(:B, Dict(:Bt => 0.5, :Bf => 0.5))
-
-    L = DiscreteChildNode(:L, Dict(
-        [:Ft] => Dict(:Lt => 0.3, :Lf => 0.4, :L2 => 0.3),
-        [:Ff] => Dict(:Lt => 0.05, :Lf => 0.85, :L2 => 0.1)
-    ))
-    D = DiscreteChildNode(:D, Dict(
-        [:Ft, :Bt] => Dict(:Dt => 0.8, :Df => 0.2),
-        [:Ft, :Bf] => Dict(:Dt => 0.1, :Df => 0.9),
-        [:Ff, :Bt] => Dict(:Dt => 0.1, :Df => 0.9),
-        [:Ff, :Bf] => Dict(:Dt => 0.7, :Df => 0.3)
-    ))
-
-    H = DiscreteChildNode(:D, Dict(
-        [:Dt] => Dict(:Ht => 0.6, :Hf => 0.4),
-        [:Df] => Dict(:Ht => 0.3, :Hf => 0.7)
-    ))
-
+    F = DiscreteNode(:F, DataFrame(:F => [:Ft, :Ff], :Prob => [0.5, 0.5]))
+    B = DiscreteNode(:B, DataFrame(:B => [:Bt, :Bf], :Prob => [0.5, 0.5]))
+    L = DiscreteNode(:L, DataFrame(:F => [:Ft, :Ft, :Ft, :Ff, :Ff, :Ff], :L => [:Lt, :Lf, :L2, :Lt, :Lf, :L2], :Prob => [0.3, 0.4, 0.3, 0.05, 0.85, 0.1]))
+    D = DiscreteNode(:D, DataFrame(:F => [:Ft, :Ft, :Ft, :Ft, :Ff, :Ff, :Ff, :Ff], :B => [:Bt, :Bt, :Bf, :Bf, :Bt, :Bt, :Bf, :Bf], :D => [:Dt, :Df, :Dt, :Df, :Dt, :Df, :Dt, :Df], :Prob => [0.8, 0.2, 0.1, 0.9, 0.1, 0.9, 0.7, 0.3]))
+    H = DiscreteNode(:B, DataFrame(:D => [:Dt, :Dt, :Df, :Df], :B => [:Ht, :Hf, :Ht, :Hf], :Prob => [0.6, 0.4, 0.3, 0.7]))
     @test_throws ErrorException("network nodes names must be unique") CredalNetwork([F, B, L, D, H])
 
     H = DiscreteChildNode(:H, Dict(

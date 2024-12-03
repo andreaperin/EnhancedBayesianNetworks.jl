@@ -51,6 +51,7 @@ const Evidence = Dict{Symbol,Symbol}
 ## Functions
 export add_child!
 export children
+export cpd
 export discrete_ancestors
 export evaluate!
 export evaluate_with_envelopes
@@ -61,10 +62,6 @@ export order!
 export parents
 export reduce!
 export saveplot
-# export evaluate!
-# export evaluate_with_envelopes
-# export reduce!
-# export get_cpd
 # export infer
 # export factorize_cpd
 # export dispatch_network
@@ -72,7 +69,7 @@ export saveplot
 include("util/wrap.jl")
 include("util/verification_common.jl")
 include("nodes/nodes.jl")
-include("ebn/ebn.jl")
+include("networks/networks.jl")
 # include("inference/inference.jl")
 include("util/base_show.jl")
 include("util/plots.jl")
