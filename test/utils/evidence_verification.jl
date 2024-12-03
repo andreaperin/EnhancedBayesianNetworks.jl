@@ -1,14 +1,8 @@
 @testset "Evidence Verification" begin
-    v = DiscreteRootNode(:V, Dict(:yesV => 0.01, :noV => 0.99))
-    s = DiscreteRootNode(:S, Dict(:yesS => 0.5, :noS => 0.5))
-    t = DiscreteChildNode(:T, Dict(
-        [:yesV] => Dict(:yesT => 0.05, :noT => 0.95),
-        [:noV] => Dict(:yesT => 0.01, :noT => 0.99))
-    )
-    l = DiscreteChildNode(:L, Dict(
-        [:yesS] => Dict(:yesL => 0.1, :noL => 0.9),
-        [:noS] => Dict(:yesL => 0.01, :noL => 0.99))
-    )
+    v = DiscreteNode(:V, DataFrame(:V => [:yesV, :noV], :Prob => [0.01, 0.99]))
+    s = DiscreteNode(:S, DataFrame(:S => [:yesS, :noS], :Prob => [0.5, 0.5]))
+    t = DiscreteNode(:T, DataFrame(:V => [:yesV, :yesV, :noV, :noV], :T => [:yesT, :noT, :yesT, :noT], :Prob => [0.05, 0.95, 0.01, 0.99]))
+    l = DiscreteNode(:L, DataFrame(:S => [:yesS, :yesS, :noS, :noS], :L => [:yesL, :noL, :yesL, :noL], :Prob => [0.1, 0.9, 0.01, 0.99]))
     bn = BayesianNetwork([v, s, t, l])
     add_child!(bn, v, t)
     add_child!(bn, s, l)
