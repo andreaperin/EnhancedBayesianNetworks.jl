@@ -61,16 +61,8 @@ function cpd(bn::BayesianNetwork, i::Int)
     _, parents_names, parents_nodes = parents(bn, i)
 
     parental_ncategories = map(n -> length(_states(n)), parents_nodes)
-    if isa(node, RootNode)
-        distribution = Dict(Vector{Symbol}() => node.states)
-    else
-        distribution = node.states
-    end
-    mapping_dict = Dict{Symbol,Dict{Symbol,Int}}()
-    for node in parents_nodes
-        mapping_dict[node.name] = Dict(s => i for (i, s) in enumerate(_states(node)))
-    end
-    ConditionalProbabilityDistribution(node.name, parents_names, mapping_dict, parental_ncategories, st, distribution)
+
+    ConditionalProbabilityDistribution(node.name, parents_names, parental_ncategories, st, node.cpt)
 end
 
 cpd(bn::BayesianNetwork, name::Symbol) = cpd(bn, bn.topology_dict[name])
