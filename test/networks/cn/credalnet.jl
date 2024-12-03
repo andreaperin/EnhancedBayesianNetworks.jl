@@ -7,33 +7,21 @@
     H = DiscreteNode(:B, DataFrame(:D => [:Dt, :Dt, :Df, :Df], :B => [:Ht, :Hf, :Ht, :Hf], :Prob => [0.6, 0.4, 0.3, 0.7]))
     @test_throws ErrorException("network nodes names must be unique") CredalNetwork([F, B, L, D, H])
 
-    H = DiscreteChildNode(:H, Dict(
-        [:Dt] => Dict(:Lt => 0.6, :Hf => 0.4),
-        [:Df] => Dict(:Lt => 0.3, :Hf => 0.7)
-    ))
+    H = DiscreteNode(:H, DataFrame(:D => [:Dt, :Dt, :Df, :Df], :H => [:Bt, :Bf, :Bt, :Bf], :Prob => [0.6, 0.4, 0.3, 0.7]))
 
     @test_throws ErrorException("network nodes states must be unique") CredalNetwork([F, B, L, D, H])
 
-    H = DiscreteChildNode(:H, Dict(
-        [:Dt] => Dict(:Ht => 0.6, :Hf => 0.4),
-        [:Df] => Dict(:Ht => 0.3, :Hf => 0.7)
-    ))
+    H = DiscreteNode(:H, DataFrame(:D => [:Dt, :Dt, :Df, :Df], :H => [:Ht, :Hf, :Ht, :Hf], :Prob => [0.6, 0.4, 0.3, 0.7]))
 
-    @test_throws ErrorException("networks nodes are all precise. Use BayesianNetwork structure!") CredalNetwork([F, B, L, D, H])
+    @test_throws ErrorException("all nodes are precise. Use BayesianNetwork structure!") CredalNetwork([F, B, L, D, H])
 
-    H = DiscreteChildNode(:H, Dict(
-            [:Dt] => Dict(:Ht => 0.6, :Hf => 0.4),
-            [:Df] => Dict(:Ht => 0.3, :Hf => 0.7)
-        ), Dict(:Ht => [Parameter(1, :H)], :Hf => [Parameter(0, :H)]))
+    H = DiscreteNode(:H, DataFrame(:D => [:Dt, :Dt, :Df, :Df], :H => [:Ht, :Hf, :Ht, :Hf], :Prob => [0.6, 0.4, 0.3, 0.7]), Dict(:Ht => [Parameter(1, :H)], :Hf => [Parameter(0, :H)]))
 
-    I = ContinuousRootNode(:I, Normal())
+    I = ContinuousNode{UnivariateDistribution}(:I, DataFrame(:Prob => Normal()))
 
     @test_throws ErrorException("node/s [:I] are continuous. Use EnhancedBayesianNetwork structure!") CredalNetwork([F, B, L, D, H, I])
 
-    H = DiscreteChildNode(:H, Dict(
-        [:Dt] => Dict(:Ht => [0.6, 0.8], :Hf => [0.2, 0.4]),
-        [:Df] => Dict(:Ht => [0.2, 0.3], :Hf => [0.7, 0.8])
-    ))
+    H = DiscreteNode(:H, DataFrame(:D => [:Dt, :Dt, :Df, :Df], :H => [:Ht, :Hf, :Ht, :Hf], :Prob => [[0.6, 0.8], [0.2, 0.4], [0.2, 0.3], [0.7, 0.8]]))
 
     cn = CredalNetwork([F, B, L, D, H])
     @test cn.adj_matrix == sparse(zeros(5, 5))

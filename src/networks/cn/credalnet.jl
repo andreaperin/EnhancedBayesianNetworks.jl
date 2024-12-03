@@ -5,13 +5,13 @@
 
     function CredalNetwork(nodes::AbstractVector{<:AbstractNode}, topology_dict::Dict, adj_matrix::SparseMatrixCSC)
         nodes_names = map(i -> i.name, nodes)
-        if nodes_names != unique(nodes_names)
+        if !allunique(nodes_names)
             error("network nodes names must be unique")
         end
-        discrete_nodes = filter(x -> isa(x, DiscreteNode) && !isa(x, FunctionalNode), nodes)
+        discrete_nodes = filter(x -> isa(x, DiscreteNode), nodes)
         if !isempty(discrete_nodes)
-            states_list = mapreduce(i -> _get_states(i), vcat, discrete_nodes)
-            if states_list != unique(states_list)
+            states_list = mapreduce(i -> _states(i), vcat, discrete_nodes)
+            if !allunique(states_list)
                 error("network nodes states must be unique")
             end
         end
@@ -20,9 +20,9 @@
         if !isempty(continuous_nodes)
             error("node/s $continuous_nodes_names are continuous. Use EnhancedBayesianNetwork structure!")
         end
-        imprecise_nodes = nodes[_is_imprecise.(nodes)]
+        imprecise_nodes = nodes[map(!, _is_precise.(nodes))]
         if isempty(imprecise_nodes)
-            error("networks nodes are all precise. Use BayesianNetwork structure!")
+            error("all nodes are precise. Use BayesianNetwork structure!")
         end
         new(nodes, topology_dict, adj_matrix)
     end

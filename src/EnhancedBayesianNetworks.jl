@@ -33,7 +33,7 @@ export BayesianNetwork
 export ConditionalProbabilityDistribution
 export ContinuousFunctionalNode
 export ContinuousNode
-# export CredalNetwork
+export CredalNetwork
 export DiscreteFunctionalNode
 export DiscreteNode
 export ExactDiscretization
