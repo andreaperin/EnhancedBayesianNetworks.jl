@@ -1,24 +1,14 @@
 @testset "CPD" begin
     target = :A
     parents = [:B, :C]
-    parents_states_mapping_dict = Dict(
-        :B => Dict(:b1 => 1, :b2 => 2),
-        :C => Dict(:c1 => 1, :c2 => 2)
-    )
     parental_ncategories = [2, 2]
     states = [:a1, :a2]
-    distribution = Dict(
-        [:b1, :c1] => Dict(:a1 => 0.5, :a2 => 0.5),
-        [:b1, :c2] => Dict(:a1 => 0.5, :a2 => 0.5),
-        [:b2, :c1] => Dict(:a1 => 0.5, :a2 => 0.5),
-        [:b2, :c2] => Dict(:a1 => 0.5, :a2 => 0.5)
-    )
+    distribution = DataFrame(:B => [:b1, :b1, :b1, :b1, :b2, :b2, :b2, :b2], :C => [:c1, :c1, :c2, :c2, :c1, :c1, :c2, :c2], :Prob => [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
 
-    cpd = ConditionalProbabilityDistribution(target, parents, parents_states_mapping_dict, parental_ncategories, states, distribution)
+    cpd = ConditionalProbabilityDistribution(target, parents, parental_ncategories, states, distribution)
 
     @test cpd.target == target
     @test cpd.parents == parents
-    @test cpd.parents_states_mapping_dict == parents_states_mapping_dict
     @test cpd.parental_ncategories == parental_ncategories
     @test cpd.states == states
     @test cpd.probabilities == distribution
