@@ -7,21 +7,10 @@
     @test_throws ErrorException("Having a dimension called potential will cause problems") Factor([:V, :potential], potential, states_mapping)
     @test_throws ErrorException("states mapping keys have to be coherent with defined dimensions") Factor([:V, :L], potential, states_mapping)
 
-    v = DiscreteRootNode(:V, Dict(:yesV => 0.01, :noV => 0.90, :maybe => 0.09))
-    s = DiscreteRootNode(:S, Dict(:yesS => 0.5, :noS => 0.5))
-    t = DiscreteChildNode(:T, Dict(
-        [:yesV] => Dict(:yesT => 0.05, :noT => 0.95),
-        [:noV] => Dict(:yesT => 0.01, :noT => 0.99),
-        [:maybe] => Dict(:yesT => 0.01, :noT => 0.99)
-    ))
-    l = DiscreteChildNode(:L, Dict(
-        [:yesS, :yesV] => Dict(:yesL => 0.1, :noL => 0.9),
-        [:noS, :yesV] => Dict(:yesL => 0.5, :noL => 0.5),
-        [:yesS, :noV] => Dict(:noL => 0.2, :yesL => 0.8),
-        [:noS, :noV] => Dict(:yesL => 0.01, :noL => 0.99),
-        [:yesS, :maybe] => Dict(:yesL => 0.4, :noL => 0.6),
-        [:noS, :maybe] => Dict(:yesL => 0.3, :noL => 0.7)
-    ))
+    v = DiscreteNode(:V, DataFrame(:V => [:yesV, :noV, :maybe], :Prob => [0.01, 0.90, 0.09]))
+    s = DiscreteNode(:S, DataFrame(:S => [:yesS, :noS], :Prob => [0.5, 0.5]))
+    t = DiscreteNode(:T, DataFrame(:V => [:yesV, :yesV, :noV, :noV, :maybe, :maybe], :T => [:yesT, :noT, :yesT, :noT, :yesT, :noT], :Prob => [0.05, 0.95, 0.01, 0.99, 0.01, 0.99]))
+    l = DiscreteNode(:L, DataFrame(:S => [:yesS, :yesS, :yesS, :yesS, :yesS, :yesS, :noS, :noS, :noS, :noS, :noS, :noS], :V => [:yesV, :yesV, :noV, :noV, :maybe, :maybe, :yesV, :yesV, :noV, :noV, :maybe, :maybe], :L => [:yesL, :noL, :yesL, :noL, :yesL, :noL, :yesL, :noL, :yesL, :noL, :yesL, :noL], :Prob => [0.1, 0.9, 0.5, 0.5, 0.2, 0.8, 0.01, 0.99, 0.4, 0.6, 0.3, 0.7]))
 
     bn = BayesianNetwork([v, s, t, l])
     add_child!(bn, v, t)
@@ -29,7 +18,7 @@
     add_child!(bn, v, l)
     order!(bn)
 
-    cpd_l = get_cpd(bn, :L)
+    cpd_l = cpd(bn, :L)
     ϕ_l = factorize_cpd(cpd_l)
     # pot = stack([
     #     [0.7 0.6; 0.3 0.4],
