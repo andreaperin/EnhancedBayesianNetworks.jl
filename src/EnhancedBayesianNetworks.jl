@@ -39,6 +39,7 @@ export DiscreteNode
 export ExactDiscretization
 export EnhancedBayesianNetwork
 export Evidence
+export Factor
 export FunctionalNode
 export ImpreciseInferenceState
 export PreciseInferenceState
