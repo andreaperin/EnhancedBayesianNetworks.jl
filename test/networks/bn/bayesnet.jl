@@ -54,31 +54,5 @@
 
         @test bn2 == bn
     end
-
-    @testset "get_cpd" begin
-        v = DiscreteNode(:V, DataFrame(:V => [:yesV, :noV], :Prob => [0.01, 0.99]))
-        s = DiscreteNode(:S, DataFrame(:S => [:yesS, :noS], :Prob => [0.5, 0.5]))
-        t = DiscreteNode(:T, DataFrame(:V => [:yesV, :yesV, :noV, :noV], :T => [:yesT, :noT, :yesT, :noT], :Prob => [0.05, 0.95, 0.01, 0.99]))
-        l = DiscreteNode(:L, DataFrame(:S => [:yesS, :yesS, :noS, :noS], :L => [:yesL, :noL, :yesL, :noL], :Prob => [0.1, 0.9, 0.01, 0.99]))
-        bn = BayesianNetwork([v, s, t, l])
-        add_child!(bn, v, t)
-        add_child!(bn, s, l)
-        order!(bn)
-        cpd_s = cpd(bn, :S)
-        cpd_t = cpd(bn, :T)
-
-        @test cpd_s.probabilities == s.cpt
-        @test cpd_t.probabilities == t.cpt
-        @test isempty(cpd_s.parental_ncategories)
-        @test cpd_t.parental_ncategories == [2]
-        @test isempty(cpd_s.parents)
-        @test cpd_t.parents == [:V]
-        @test Set(cpd_s.states) == Set([:yesS, :noS])
-        @test Set(cpd_t.states) == Set([:yesT, :noT])
-        @test cpd_s.target == :S
-        @test cpd_t.target == :T
-        @test cpd(bn, 2) == cpd_s
-        @test cpd(bn, s) == cpd_s
-    end
 end
 

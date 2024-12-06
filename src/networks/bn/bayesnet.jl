@@ -51,19 +51,3 @@ function BayesianNetwork(net::EnhancedBayesianNetwork)
     adj_matrix = net.adj_matrix
     return BayesianNetwork(nodes, topology_dict, adj_matrix)
 end
-
-function cpd(bn::BayesianNetwork, i::Int)
-    reverse_dict = Dict(value => key for (key, value) in bn.topology_dict)
-    name = reverse_dict[i]
-    node = first(filter(x -> x.name == name, bn.nodes))
-    st = _states(node)
-
-    _, parents_names, parents_nodes = parents(bn, i)
-
-    parental_ncategories = map(n -> length(_states(n)), parents_nodes)
-
-    ConditionalProbabilityDistribution(node.name, parents_names, parental_ncategories, st, node.cpt)
-end
-
-cpd(bn::BayesianNetwork, name::Symbol) = cpd(bn, bn.topology_dict[name])
-cpd(bn::BayesianNetwork, node::AbstractNode) = cpd(bn, node.name)

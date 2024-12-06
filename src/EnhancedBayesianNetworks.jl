@@ -30,7 +30,6 @@ export AbstractContinuousNode
 export AbstractDiscreteNode
 export ApproximatedDiscretization
 export BayesianNetwork
-export ConditionalProbabilityDistribution
 export ContinuousFunctionalNode
 export ContinuousNode
 export CredalNetwork
@@ -52,7 +51,6 @@ const Evidence = Dict{Symbol,Symbol}
 ## Functions
 export add_child!
 export children
-export cpd
 export discrete_ancestors
 export evaluate!
 export evaluate_with_envelopes
