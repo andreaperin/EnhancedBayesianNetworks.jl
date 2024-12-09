@@ -200,7 +200,7 @@
 
         child = ContinuousNode{Tuple{<:Real,<:Real}}(:β, states, discretization)
 
-        disc_child, cont_child = EnhancedBayesianNetworks._discretize(child)
+        disc_child, cont_child = @suppress EnhancedBayesianNetworks._discretize(child)
 
         @test cont_child.cpt[!, :β_d] == [Symbol("[-1.0, 0.0]"), Symbol("[0.0, 1.0]")]
         @test cont_child.cpt[!, :Prob] == [Uniform(-1, 0), Uniform(0, 1)]
