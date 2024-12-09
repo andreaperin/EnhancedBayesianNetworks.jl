@@ -106,4 +106,14 @@
         @test ϕ.potential == [1.0, 1.0]
         @test ϕ.states_mapping == Dict(:V => Dict(:yesV => 1, :noV => 2))
     end
+    @testset "Factors Algebra" begin
+        ϕ1 = Factor([:S], [0.5, 0.5, 0.7], Dict(:S => Dict(:noS => 1, :yesS => 2)))
+        ϕ2 = Factor([:B, :S], [0.3 0.6; 0.7 0.4], Dict(:B => Dict(:yesB => 1, :noB => 2), :S => Dict(:noS => 1, :yesS => 2)))
+
+        @test_throws ErrorException("Common dimensions must have same size") ϕ1 * ϕ2
+
+        ϕ1 = Factor([:S], [0.5, 0.5], Dict(:S => Dict(:noS => 1, :yesS => 2)))
+        ϕ12 = ϕ1 * ϕ2
+        @test ϕ12.potential[:] == [0.15, 0.35, 0.3, 0.2]
+    end
 end
