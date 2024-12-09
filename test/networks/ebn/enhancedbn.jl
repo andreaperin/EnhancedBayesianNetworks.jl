@@ -43,12 +43,12 @@
         rain1 = DiscreteNode(:r, rain_state1)
         nodes1 = [weather, grass, rain1, sprinkler]
         net1 = EnhancedBayesianNetwork(nodes1)
-        @test_throws ErrorException("trying to set node 'r' as child of node 'w', but 'r' has a cpt that does not contains 'w' in the scenarios: $rain_state1") add_child!(net1, weather, rain1)
+        @test_throws ErrorException("trying to set node 'r' as child of node 'w', but 'r' has a cpt that does not contains 'w' in the scenarios: $(rain1.cpt)") add_child!(net1, weather, rain1)
         rain_state2 = DataFrame(:w => [:sunny, :sunny, :cloudies, :cloudies], :r => [:no_rain, :rain, :no_rain, :rain], :Prob => [0.9, 0.1, 0.2, 0.8])
         rain2 = DiscreteNode(:r, rain_state2)
         nodes2 = [weather, grass, rain2, sprinkler]
         net2 = EnhancedBayesianNetwork(nodes2)
-        @test_throws ErrorException("child node 'r' has scenarios [:sunny, :cloudies], that is not coherent with its parent node 'w' with states [:sunny, :cloudy]") add_child!(net2, weather, rain2)
+        @test_throws ErrorException("child node 'r' has scenarios [:cloudies, :sunny], that is not coherent with its parent node 'w' with states [:cloudy, :sunny]") add_child!(net2, weather, rain2)
 
         grass_model = Model(df -> df.r .+ df.s, :g)
         grass_simulation = MonteCarlo(200)
@@ -135,10 +135,11 @@
 
         @test issetequal(discrete_ancestors(net, functional1_node), [root2, child1])
         @test isempty(discrete_ancestors(net, root1))
-        th_scenarios = [Dict(:C1 => :c1y, :X2 => :yes)
-            Dict(:C1 => :c1n, :X2 => :yes)
+        th_scenarios = [
+            Dict(:C1 => :c1n, :X2 => :no)
             Dict(:C1 => :c1y, :X2 => :no)
-            Dict(:C1 => :c1n, :X2 => :no)]
+            Dict(:C1 => :c1n, :X2 => :yes)
+            Dict(:C1 => :c1y, :X2 => :yes)]
         @test EnhancedBayesianNetworks._theoretical_scenarios(net, functional1_node) == th_scenarios
         @test EnhancedBayesianNetworks._theoretical_scenarios(net, root1) == [Dict()]
     end
@@ -204,8 +205,8 @@
         add_child!(net3, :w, :s)
         add_child!(net3, :s, :g)
         add_child!(net3, :r, :g)
-        @test_throws ErrorException("node 's' has defined cpt scenarios $(sprinkler3.cpt) not coherent with the theoretical one [Dict(:w => :sunny), Dict(:w => :cloudy)]") EnhancedBayesianNetworks._verify_child_node(net3, sprinkler3)
-        @test_throws ErrorException("node 's' has defined cpt scenarios $(sprinkler3.cpt) not coherent with the theoretical one [Dict(:w => :sunny), Dict(:w => :cloudy)]") EnhancedBayesianNetworks._verify_net(net3)
+        @test_throws ErrorException("node 's' has defined cpt scenarios $(sprinkler3.cpt) not coherent with the theoretical one [Dict(:w => :cloudy), Dict(:w => :sunny)]") EnhancedBayesianNetworks._verify_child_node(net3, sprinkler3)
+        @test_throws ErrorException("node 's' has defined cpt scenarios $(sprinkler3.cpt) not coherent with the theoretical one [Dict(:w => :cloudy), Dict(:w => :sunny)]") EnhancedBayesianNetworks._verify_net(net3)
     end
 
     @testset "order network" begin

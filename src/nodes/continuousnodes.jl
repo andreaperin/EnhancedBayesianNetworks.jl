@@ -12,6 +12,9 @@
     ) where {T<:AbstractContinuousInput}
         ## Check appropriate Discretization struct
         _verify_discretization(cpt, discretization)
+        ## setting :Prob as last column and sorting
+        select!(cpt, Not(:Prob), :Prob)
+        sort!(cpt)
         new{T}(name, cpt, discretization, additional_info)
     end
 end

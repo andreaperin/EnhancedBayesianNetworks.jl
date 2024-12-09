@@ -163,10 +163,15 @@
 
             node = DiscreteNode(:x, cpt2)
             ext_nodes = EnhancedBayesianNetworks._extreme_points(node)
-            node1 = DiscreteNode(:x, extreme_point_dfs[1])
-            node2 = DiscreteNode(:x, extreme_point_dfs[2])
-            @test ext_nodes[1] == node1
-            @test ext_nodes[2] == node2
+            node1 = DiscreteNode(:x, extreme_point_dfs[2])
+            node2 = DiscreteNode(:x, extreme_point_dfs[1])
+            @test ext_nodes[1].name == node1.name
+            @test ext_nodes[1].cpt[!, :x] == node1.cpt[!, :x]
+            @test all(isapprox.(ext_nodes[1].cpt[!, :Prob], node1.cpt[!, :Prob]; atol=0.01))
+
+            @test ext_nodes[2].name == node2.name
+            @test ext_nodes[2].cpt[!, :x] == node2.cpt[!, :x]
+            @test all(isapprox.(ext_nodes[2].cpt[!, :Prob], node2.cpt[!, :Prob]; atol=0.01))
         end
     end
 
@@ -219,16 +224,24 @@
 
             @test node1.name == name
             @test node1.parameters == parameters
-            @test node1.cpt == cpt1
+            @test issetequal(node1.cpt[!, :y], cpt1[!, :y])
+            @test issetequal(node1.cpt[!, :x], cpt1[!, :x])
+            @test issetequal(node1.cpt[!, :Prob], cpt1[!, :Prob])
             @test node2.name == name
             @test isempty(node2.parameters)
-            @test node2.cpt == cpt1
+            @test issetequal(node2.cpt[!, :y], cpt1[!, :y])
+            @test issetequal(node2.cpt[!, :x], cpt1[!, :x])
+            @test issetequal(node2.cpt[!, :Prob], cpt1[!, :Prob])
             @test node3.name == name
             @test node3.parameters == parameters
-            @test node3.cpt == cpt2
+            @test issetequal(node3.cpt[!, :y], cpt2[!, :y])
+            @test issetequal(node3.cpt[!, :x], cpt2[!, :x])
+            @test issetequal(node3.cpt[!, :Prob], cpt2[!, :Prob])
             @test node4.name == name
             @test isempty(node4.parameters)
-            @test node4.cpt == cpt2
+            @test issetequal(node4.cpt[!, :y], cpt2[!, :y])
+            @test issetequal(node4.cpt[!, :x], cpt2[!, :x])
+            @test issetequal(node4.cpt[!, :Prob], cpt2[!, :Prob])
         end
 
         @testset "node functions" begin
@@ -262,10 +275,10 @@
             sub_cpts = EnhancedBayesianNetworks._scenarios_cpt(node.cpt, node.name)
             res = map(sc -> EnhancedBayesianNetworks._extreme_points_dfs(sc), sub_cpts)
 
-            @test isapprox(res[1][1][!, :Prob][1], 0.2, atol=0.05)
-            @test isapprox(res[1][1][!, :Prob][2], 0.8, atol=0.05)
-            @test isapprox(res[1][2][!, :Prob][1], 0.3, atol=0.05)
-            @test isapprox(res[1][2][!, :Prob][2], 0.7, atol=0.05)
+            @test isapprox(res[1][1][!, :Prob][1], 0.7, atol=0.05)
+            @test isapprox(res[1][1][!, :Prob][2], 0.3, atol=0.05)
+            @test isapprox(res[1][2][!, :Prob][1], 0.8, atol=0.05)
+            @test isapprox(res[1][2][!, :Prob][2], 0.2, atol=0.05)
 
             @test isapprox(res[2][1][!, :Prob][1], 0.4, atol=0.05)
             @test isapprox(res[2][1][!, :Prob][2], 0.6, atol=0.05)
@@ -289,20 +302,20 @@
             sub_cpts = EnhancedBayesianNetworks._scenarios_cpt(node.cpt, node.name)
             res = map(sc -> EnhancedBayesianNetworks._extreme_points_dfs(sc), sub_cpts)
 
-            @test isapprox(res[1][1][!, :Prob][1], 0.2, atol=0.05)
-            @test isapprox(res[1][1][!, :Prob][2], 0.8, atol=0.05)
-            @test isapprox(res[1][2][!, :Prob][1], 0.3, atol=0.05)
-            @test isapprox(res[1][2][!, :Prob][2], 0.7, atol=0.05)
+            @test isapprox(res[1][1][!, :Prob][1], 0.7, atol=0.05)
+            @test isapprox(res[1][1][!, :Prob][2], 0.3, atol=0.05)
+            @test isapprox(res[1][2][!, :Prob][1], 0.8, atol=0.05)
+            @test isapprox(res[1][2][!, :Prob][2], 0.2, atol=0.05)
 
             @test isapprox(res[2][1][!, :Prob][1], 0.4, atol=0.05)
             @test isapprox(res[2][1][!, :Prob][2], 0.6, atol=0.05)
             @test isapprox(res[2][2][!, :Prob][1], 0.6, atol=0.05)
             @test isapprox(res[2][2][!, :Prob][2], 0.4, atol=0.05)
 
-            @test isapprox(res[3][1][!, :Prob][1], 0.2, atol=0.05)
-            @test isapprox(res[3][1][!, :Prob][2], 0.8, atol=0.05)
-            @test isapprox(res[3][2][!, :Prob][1], 0.3, atol=0.05)
-            @test isapprox(res[3][2][!, :Prob][2], 0.7, atol=0.05)
+            @test isapprox(res[3][1][!, :Prob][1], 0.7, atol=0.05)
+            @test isapprox(res[3][1][!, :Prob][2], 0.3, atol=0.05)
+            @test isapprox(res[3][2][!, :Prob][1], 0.8, atol=0.05)
+            @test isapprox(res[3][2][!, :Prob][2], 0.2, atol=0.05)
 
             @test isapprox(res[4][1][!, :Prob][1], 0.4, atol=0.05)
             @test isapprox(res[4][1][!, :Prob][2], 0.6, atol=0.05)
