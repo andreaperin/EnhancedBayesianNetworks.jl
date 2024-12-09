@@ -15,6 +15,9 @@
         end
         cpt = _verify_cpt_and_normalize!(cpt, name)
         _verify_parameters(cpt, parameters, name)
+        ## setting node column as last column before :Prob
+        select!(cpt, Not([name, :Prob]), name, :Prob)
+        sort!(cpt)
         new(name, cpt, parameters, additional_info)
     end
 end
