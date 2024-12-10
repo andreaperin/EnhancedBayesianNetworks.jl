@@ -72,7 +72,7 @@ function Base.getindex(ϕ::Factor, e::Evidence)
     return Factor(new_dims, new_p, states_mapping_dict)
 end
 
-# Base.getindex(ϕ::Factor, pair::Pair{Symbol}...) = Base.getindex(ϕ, Evidence(pair))
+Base.getindex(ϕ::Factor, pair::Pair{Symbol}...) = Base.getindex(ϕ, Evidence(pair))
 
 function Base.join(op, ϕ1::Factor, ϕ2::Factor)
     if length(ϕ1) < length(ϕ2)
