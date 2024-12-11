@@ -129,158 +129,157 @@
         @test isequal(ϕ.states_mapping, ϕ1.states_mapping)
         @test isapprox(ϕ.potential, ϕ1.potential)
     end
-    # @testset "Straub Example" begin
-    #     using .MathConstants: γ
+    @testset "Straub Example" begin
+        using .MathConstants: γ
 
-    #     n = 10^6
-    #     Uᵣ = ContinuousRootNode(:Uᵣ, Normal())
-    #     μ_gamma = 60
-    #     cov_gamma = 0.2
-    #     α, θ = distribution_parameters(μ_gamma, μ_gamma * cov_gamma, Gamma)
-    #     V = ContinuousRootNode(:V, Gamma(α, θ))
+        n = 10^6
+        Uᵣ = ContinuousNode{UnivariateDistribution}(:Uᵣ, DataFrame(:Prob => Normal()))
+        μ_gamma = 60
+        cov_gamma = 0.2
+        α, θ = distribution_parameters(μ_gamma, μ_gamma * cov_gamma, Gamma)
+        V = ContinuousNode{UnivariateDistribution}(:V, DataFrame(:Prob => Gamma(α, θ)))
 
-    #     μ_gumbel = 50
-    #     cov_gumbel = 0.4
-    #     μ_loc, β = distribution_parameters(μ_gumbel, cov_gumbel * μ_gumbel, Gumbel)
-    #     H = ContinuousRootNode(:H, Gumbel(μ_loc, β))
+        μ_gumbel = 50
+        cov_gumbel = 0.4
+        μ_loc, β = distribution_parameters(μ_gumbel, cov_gumbel * μ_gumbel, Gumbel)
+        H = ContinuousNode{UnivariateDistribution}(:H, DataFrame(:Prob => Gumbel(μ_loc, β)))
 
-    #     function plastic_moment_capacities(uᵣ)
-    #         ρ = 0.5477
-    #         μ = 150
-    #         cov = 0.2
+        function plastic_moment_capacities(uᵣ)
+            ρ = 0.5477
+            μ = 150
+            cov = 0.2
 
-    #         λ, ζ = distribution_parameters(μ, μ * cov, LogNormal)
+            λ, ζ = distribution_parameters(μ, μ * cov, LogNormal)
 
-    #         normal_μ = λ + ρ * ζ * uᵣ
-    #         normal_std = sqrt((1 - ρ^2) * ζ^2)
-    #         exp(rand(Normal(normal_μ, normal_std)))
-    #     end
+            normal_μ = λ + ρ * ζ * uᵣ
+            normal_std = sqrt((1 - ρ^2) * ζ^2)
+            exp(rand(Normal(normal_μ, normal_std)))
+        end
 
-    #     model1 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r1)
-    #     model2 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r2)
-    #     model3 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r3)
-    #     model4 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r4)
-    #     model5 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r5)
+        model1 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r1)
+        model2 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r2)
+        model3 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r3)
+        model4 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r4)
+        model5 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r5)
 
-    #     function frame_model(r1, r2, r3, r4, r5, v, h)
-    #         g1 = r1 + r2 + r4 + r5 - 5 * h
-    #         g2 = r2 + 2 * r3 + r4 - 5 * v
-    #         g3 = r1 + 2 * r3 + 2 * r4 + r5 - 5 * h - 5 * v
-    #         return minimum([g1, g2, g3])
-    #     end
+        function frame_model(r1, r2, r3, r4, r5, v, h)
+            g1 = r1 + r2 + r4 + r5 - 5 * h
+            g2 = r2 + 2 * r3 + r4 - 5 * v
+            g3 = r1 + 2 * r3 + 2 * r4 + r5 - 5 * h - 5 * v
+            return minimum([g1, g2, g3])
+        end
 
-    #     R1 = ContinuousFunctionalNode(:R1, [model1], MonteCarlo(n))
-    #     R2 = ContinuousFunctionalNode(:R2, [model2], MonteCarlo(n))
-    #     R3 = ContinuousFunctionalNode(:R3, [model3], MonteCarlo(n))
+        R1 = ContinuousFunctionalNode(:R1, [model1], MonteCarlo(n))
+        R2 = ContinuousFunctionalNode(:R2, [model2], MonteCarlo(n))
+        R3 = ContinuousFunctionalNode(:R3, [model3], MonteCarlo(n))
 
-    #     @testset "No Evidence" begin
-    #         R4 = ContinuousFunctionalNode(:R4, [model4], MonteCarlo(n))
-    #         R5 = ContinuousFunctionalNode(:R5, [model5], MonteCarlo(n))
+        @testset "No Evidence" begin
+            R4 = ContinuousFunctionalNode(:R4, [model4], MonteCarlo(n))
+            R5 = ContinuousFunctionalNode(:R5, [model5], MonteCarlo(n))
 
-    #         model = Model(df -> frame_model.(df.r1, df.r2, df.r3, df.r4, df.r5, df.V, df.H), :G)
-    #         performance = df -> df.G
-    #         simulation = MonteCarlo(n)
-    #         frame = DiscreteFunctionalNode(:E, [model], performance, simulation)
+            model = Model(df -> frame_model.(df.r1, df.r2, df.r3, df.r4, df.r5, df.V, df.H), :G)
+            performance = df -> df.G
+            simulation = MonteCarlo(n)
+            frame = DiscreteFunctionalNode(:E, [model], performance, simulation)
 
-    #         nodes = [Uᵣ, V, H, R1, R2, R3, R4, R5, frame]
+            nodes = [Uᵣ, V, H, R1, R2, R3, R4, R5, frame]
 
-    #         net = EnhancedBayesianNetwork(nodes)
+            net = EnhancedBayesianNetwork(nodes)
 
-    #         add_child!(net, Uᵣ, R1)
-    #         add_child!(net, Uᵣ, R2)
-    #         add_child!(net, Uᵣ, R3)
-    #         add_child!(net, Uᵣ, R4)
-    #         add_child!(net, Uᵣ, R5)
-    #         add_child!(net, R1, frame)
-    #         add_child!(net, R2, frame)
-    #         add_child!(net, R3, frame)
-    #         add_child!(net, R4, frame)
-    #         add_child!(net, R5, frame)
-    #         add_child!(net, V, frame)
-    #         add_child!(net, H, frame)
-    #         order!(net)
-    #         evaluate!(net)
+            add_child!(net, Uᵣ, R1)
+            add_child!(net, Uᵣ, R2)
+            add_child!(net, Uᵣ, R3)
+            add_child!(net, Uᵣ, R4)
+            add_child!(net, Uᵣ, R5)
+            add_child!(net, R1, frame)
+            add_child!(net, R2, frame)
+            add_child!(net, R3, frame)
+            add_child!(net, R4, frame)
+            add_child!(net, R5, frame)
+            add_child!(net, V, frame)
+            add_child!(net, H, frame)
+            order!(net)
+            evaluate!(net)
 
-    #         @test isapprox(net.nodes[end].states[:safe_E], 0.973871; atol=0.01)
-    #         @test isapprox(net.nodes[end].states[:fail_E], 0.026129; atol=0.01)
-    #     end
+            @test all(isapprox.(net.nodes[end].cpt[!, :Prob], [0.026129, 0.973871]; atol=0.01))
+        end
 
-    #     @testset "Evidence" begin
-    #         n2 = 2000
-    #         discretization1 = ApproximatedDiscretization(collect(range(50, 250, 21)), 1)
-    #         discretization2 = ApproximatedDiscretization(collect(range(50.01, 250.01, 21)), 1)
-    #         R4 = ContinuousFunctionalNode(:R4, [model4], MonteCarlo(n2), discretization1)
-    #         R5 = ContinuousFunctionalNode(:R5, [model5], MonteCarlo(n2), discretization2)
+        @testset "Evidence" begin
+            n2 = 2000
+            discretization1 = ApproximatedDiscretization(collect(range(50, 250, 21)), 1)
+            discretization2 = ApproximatedDiscretization(collect(range(50.01, 250.01, 21)), 1)
+            R4 = ContinuousFunctionalNode(:R4, [model4], MonteCarlo(n2), discretization1)
+            R5 = ContinuousFunctionalNode(:R5, [model5], MonteCarlo(n2), discretization2)
 
-    #         model = Model(df -> frame_model.(df.r1, df.r2, df.r3, df.R4, df.R5, df.V, df.H), :G)
-    #         performance = df -> df.G
-    #         simulation = MonteCarlo(n2)
-    #         frame = DiscreteFunctionalNode(:E, [model], performance, simulation)
+            model = Model(df -> frame_model.(df.r1, df.r2, df.r3, df.R4, df.R5, df.V, df.H), :G)
+            performance = df -> df.G
+            simulation = MonteCarlo(n2)
+            frame = DiscreteFunctionalNode(:E, [model], performance, simulation)
 
-    #         nodes = [Uᵣ, V, H, R1, R2, R3, R4, R5, frame]
+            nodes = [Uᵣ, V, H, R1, R2, R3, R4, R5, frame]
 
-    #         net = EnhancedBayesianNetwork(nodes)
+            net = EnhancedBayesianNetwork(nodes)
 
-    #         add_child!(net, Uᵣ, R1)
-    #         add_child!(net, Uᵣ, R2)
-    #         add_child!(net, Uᵣ, R3)
-    #         add_child!(net, Uᵣ, R4)
-    #         add_child!(net, Uᵣ, R5)
-    #         add_child!(net, R1, frame)
-    #         add_child!(net, R2, frame)
-    #         add_child!(net, R3, frame)
-    #         add_child!(net, R4, frame)
-    #         add_child!(net, R5, frame)
-    #         add_child!(net, V, frame)
-    #         add_child!(net, H, frame)
-    #         order!(net)
+            add_child!(net, Uᵣ, R1)
+            add_child!(net, Uᵣ, R2)
+            add_child!(net, Uᵣ, R3)
+            add_child!(net, Uᵣ, R4)
+            add_child!(net, Uᵣ, R5)
+            add_child!(net, R1, frame)
+            add_child!(net, R2, frame)
+            add_child!(net, R3, frame)
+            add_child!(net, R4, frame)
+            add_child!(net, R5, frame)
+            add_child!(net, V, frame)
+            add_child!(net, H, frame)
+            order!(net)
 
-    #         @suppress evaluate!(net)
+            @suppress evaluate!(net)
 
-    #         @test net.adj_matrix == sparse([
-    #             0.0 0.0 0.0 1.0 1.0 0.0 0.0 1.0;
-    #             0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0;
-    #             0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0;
-    #             0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0;
-    #             0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0;
-    #             0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0;
-    #             0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0;
-    #             0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-    #         ])
-    #         @test net.topology_dict == Dict(:R5_d => 5,
-    #             :R4_d => 4,
-    #             :H => 3,
-    #             :R5 => 7,
-    #             :V => 2,
-    #             :R4 => 6,
-    #             :E => 8,
-    #             :Uᵣ => 1)
+            @test net.adj_matrix == sparse([
+                0.0 0.0 0.0 1.0 1.0 0.0 0.0 1.0;
+                0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0;
+                0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0;
+                0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0;
+                0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0;
+                0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0;
+                0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0;
+                0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+            ])
+            @test net.topology_dict == Dict(:R5_d => 5,
+                :R4_d => 4,
+                :H => 3,
+                :R5 => 7,
+                :V => 2,
+                :R4 => 6,
+                :E => 8,
+                :Uᵣ => 1)
 
-    #         EnhancedBayesianNetworks._eliminate_continuous_node!(net, net.nodes[7])
-    #         @test net.adj_matrix == sparse([
-    #             0.0 0.0 0.0 1.0 1.0 0.0 1.0;
-    #             0.0 0.0 0.0 0.0 0.0 0.0 1.0;
-    #             0.0 0.0 0.0 0.0 0.0 0.0 1.0;
-    #             0.0 0.0 0.0 0.0 0.0 1.0 0.0;
-    #             0.0 0.0 0.0 0.0 0.0 0.0 1.0;
-    #             0.0 0.0 0.0 0.0 0.0 0.0 1.0;
-    #             0.0 0.0 0.0 0.0 0.0 0.0 0.0])
+            EnhancedBayesianNetworks._eliminate_continuous_node!(net, net.nodes[7])
+            @test net.adj_matrix == sparse([
+                0.0 0.0 0.0 1.0 1.0 0.0 1.0;
+                0.0 0.0 0.0 0.0 0.0 0.0 1.0;
+                0.0 0.0 0.0 0.0 0.0 0.0 1.0;
+                0.0 0.0 0.0 0.0 0.0 1.0 0.0;
+                0.0 0.0 0.0 0.0 0.0 0.0 1.0;
+                0.0 0.0 0.0 0.0 0.0 0.0 1.0;
+                0.0 0.0 0.0 0.0 0.0 0.0 0.0])
 
-    #         reduce!(net)
-    #         @test net.adj_matrix == sparse([
-    #             0.0 0.0 1.0;
-    #             0.0 0.0 1.0;
-    #             0.0 0.0 0.0])
+            reduce!(net)
+            @test net.adj_matrix == sparse([
+                0.0 0.0 1.0;
+                0.0 0.0 1.0;
+                0.0 0.0 0.0])
 
-    #         bn = BayesianNetwork(net)
+            bn = BayesianNetwork(net)
 
-    #         evidence2 = Dict(
-    #             :R4_d => Symbol([140.0, 150.0]),
-    #             :R5_d => Symbol([90.01, 100.01])
-    #         )
-    #         # ϕ2 = infer(bn, :E, evidence2)
+            evidence2 = Dict(
+                :R4_d => Symbol([140.0, 150.0]),
+                :R5_d => Symbol([90.01, 100.01])
+            )
+            ϕ2 = infer(bn, :E, evidence2)
 
-    #         # @test all(isapprox.(ϕ2.potential, [0.965, 0.035], atol=0.05))
-    #     end
-    # end
+            @test all(isapprox.(ϕ2.potential, [0.035, 0.965], atol=0.05))
+        end
+    end
 end
