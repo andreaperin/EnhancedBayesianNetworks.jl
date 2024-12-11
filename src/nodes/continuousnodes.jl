@@ -10,6 +10,13 @@
         discretization::AbstractDiscretization,
         additional_info::Dict{Vector{Symbol},Dict}
     ) where {T<:AbstractContinuousInput}
+        if !allequal(_continuous_node_input_type.(cpt[!, :Prob]))
+            error("continuous node $name has a cpt defined with different AbstractContinuousInputs $cpt")
+        end
+        new_T = first(_continuous_node_input_type.(cpt[!, :Prob]))
+        if new_T != T
+            error("continuous node $name has a parameter $T not coherent with the type of distribution $new_T")
+        end
         ## Check appropriate Discretization struct
         _verify_discretization(cpt, discretization)
         ## setting :Prob as last column and sorting
@@ -19,9 +26,30 @@
     end
 end
 
+function ContinuousNode(name::Symbol, cpt::DataFrame)
+    T = first(_continuous_node_input_type.(cpt[!, :Prob]))
+    _is_continuous_root(cpt) ? d = ExactDiscretization() : d = ApproximatedDiscretization()
+    ContinuousNode{T}(name, cpt, d, Dict{Vector{Symbol},Dict}())
+end
+
+function ContinuousNode(name::Symbol, cpt::DataFrame, discretization::AbstractDiscretization)
+    T = first(_continuous_node_input_type.(cpt[!, :Prob]))
+    ContinuousNode{T}(name, cpt, discretization, Dict{Vector{Symbol},Dict}())
+end
+
 function ContinuousNode{T}(name::Symbol, cpt::DataFrame) where {T<:AbstractContinuousInput}
     _is_continuous_root(cpt) ? d = ExactDiscretization() : d = ApproximatedDiscretization()
     ContinuousNode{T}(name, cpt, d, Dict{Vector{Symbol},Dict}())
+end
+
+function _continuous_node_input_type(x::AbstractContinuousInput)
+    if isa(x, UnivariateDistribution)
+        return UnivariateDistribution
+    elseif isa(x, Tuple{Real,Real})
+        return Tuple{Real,Real}
+    elseif isa(x, UnamedProbabilityBox)
+        return UnamedProbabilityBox
+    end
 end
 
 function ContinuousNode{T}(name::Symbol, cpt::DataFrame, discretization::AbstractDiscretization) where {T<:AbstractContinuousInput}

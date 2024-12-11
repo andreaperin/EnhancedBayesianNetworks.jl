@@ -25,33 +25,18 @@ Manifest.toml
 
 # Mine
 .vscode/*
-model_TH_macos/*
-model_TH_win/*
-compiler_macos.sh
-compiler_unix.sh
-compiler_windows.ps1
-demo/TH_model/*
-demo/BayesianUpdate/*
-demo/imprecise_bn.jl
-demo/markov.jl
-demo/paper_figs/*
 coverage/*
+.DS_Store
 
 old/*
-demo/th_model_esrel_res.jl
-demo/Hydrogen
+# Local
+demo/BayesianUpdate
 demo/NuclearBatteries
+demo/paper_figs
+demo/TH_model
 demo/HC_ebn.jl
-.DS_Store
 imgs/
-demo/Hydrogen_new/ebn/
-demo/Diegos_tower/
+demo/Diegos_tower/Fire_modelCN_fix.m
+demo/Diegos_tower/Thesis_HDEL_corrections.pdf
+demo/Hydrogen_new/ebn
 demo/papers_fig.jl
-demo/credal.jl
-demo/imprecise_bn_continuous.jl
-demo/imprecise_bn.jl
-demo/jasper_example_math.jl
-demo/vehicle_suspension.jl
-demo/vehicle_suspension_imprecise.jl
-demo/adiajency.jl
-demo/HC_ebn_surrogate.jl
