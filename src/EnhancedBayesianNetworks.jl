@@ -56,6 +56,7 @@ export evaluate!
 export evaluate_with_envelopes
 export factorize
 export gplot
+export infer
 export markov_blanket
 export markov_envelope
 export order!
