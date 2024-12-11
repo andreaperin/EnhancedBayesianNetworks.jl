@@ -20,9 +20,11 @@
         order!(bn)
 
         ϕ_l = factorize(l.cpt)
-        pot = zeros(2, 3, 2)
-        pot[:, :, 1] = [0.7 0.99 0.5; 0.3 0.01 0.5]
-        pot[:, :, 2] = [0.6 0.2 0.9; 0.4 0.8 0.1]
+        pot = zeros(2, 2, 3)
+        pot[:, :, 1] = [0.7 0.6; 0.3 0.4]
+        pot[:, :, 2] = [0.99 0.2; 0.01 0.8]
+        pot[:, :, 3] = [0.5 0.9; 0.5 0.1]
+
 
         states_mapping = Dict(
             :L => Dict(:noL => 1, :yesL => 2),
@@ -30,12 +32,12 @@
             :V => Dict(:maybe => 1, :noV => 2, :yesV => 3)
         )
 
-        @test ϕ_l.dimensions == [:S, :V, :L]
+        @test ϕ_l.dimensions == [:L, :S, :V]
         @test ϕ_l.potential == pot
         @test ϕ_l.states_mapping == states_mapping
 
         ϕ_l = convert(Factor, l.cpt)
-        @test ϕ_l.dimensions == [:S, :V, :L]
+        @test ϕ_l.dimensions == [:L, :S, :V]
         @test ϕ_l.potential == pot
         @test ϕ_l.states_mapping == states_mapping
 
@@ -52,7 +54,7 @@
         @test EnhancedBayesianNetworks._translate_index(ϕ_t, Evidence()) == inds
         inds = Array{Any}(undef, length(ϕ_t.dimensions))
         inds[:] .= Colon()
-        inds[2] = 2
+        inds[1] = 2
         @test EnhancedBayesianNetworks._translate_index(ϕ_t, Dict(:T => :yesT)) == inds
     end
     @testset "Factors Methods" begin
