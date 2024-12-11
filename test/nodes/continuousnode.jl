@@ -7,7 +7,7 @@
             discretization = ApproximatedDiscretization([-1, 0, 1], 2)
             @test_throws ErrorException("Root node must have ExactDiscretization as discretization structure, provided discretization is $discretization and node cpt is $cpt1") ContinuousNode{UnivariateDistribution}(name, cpt1, discretization)
             node1 = ContinuousNode{UnivariateDistribution}(name, cpt1)
-            node2 = ContinuousNode{UnivariateDistribution}(name, cpt1, ExactDiscretization([-1, 0, 1]))
+            node2 = ContinuousNode(name, cpt1, ExactDiscretization([-1, 0, 1]))
 
             @test node1.name == name
             @test node2.name == name
@@ -26,11 +26,13 @@
             @test isempty(node3.additional_info)
 
             cpt3 = DataFrame(:Prob => UnamedProbabilityBox{Normal}([Interval(-0.5, 0.5, :μ), Interval(1, 2, :σ)]))
-            node3 = ContinuousNode{UnamedProbabilityBox}(name, cpt2)
+            node3 = ContinuousNode{UnamedProbabilityBox}(name, cpt3)
             @test node3.name == name
-            @test node3.cpt == cpt2
+            @test node3.cpt == cpt3
             @test isempty(node3.discretization.intervals)
             @test isempty(node3.additional_info)
+
+            @test_throws ErrorException("continuous node A has a parameter UnamedProbabilityBox not coherent with the type of distribution Tuple{Real, Real}") ContinuousNode{UnamedProbabilityBox}(name, cpt2)
         end
 
         @testset "functions" begin
@@ -112,7 +114,7 @@
 
             discretization = ApproximatedDiscretization([-1, 0, 1], 2)
             node1 = ContinuousNode{UnivariateDistribution}(name, cpt1)
-            node2 = ContinuousNode{UnivariateDistribution}(name, cpt1, discretization)
+            node2 = ContinuousNode(name, cpt1, discretization)
             @test node1.name == name
             @test node2.name == name
             @test node1.cpt == cpt1
