@@ -1,40 +1,32 @@
 using EnhancedBayesianNetworks
 using Plots
 
-tampering = DiscreteRootNode(:Tampering, Dict(:NoT => [0.98999, 0.99111], :YesT => [0.00889, 0.01001]))
-fire = DiscreteRootNode(:Fire, Dict(:NoF => [0.958978, 0.959989], :YesF => [0.00011, 0.041002]))
+tampering = DiscreteNode(:Tampering, DataFrame(:Tampering => [:NoT, :YesT], :Prob => [[0.98999, 0.99111], [0.00889, 0.01001]]))
+fire = DiscreteNode(:Fire, DataFrame(:Fire => [:NoF, :YesF], :Prob => [[0.958978, 0.959989], [0.00011, 0.041002]]))
 
-alarm_states = Dict(
-    [:NoT, :NoF] => Dict(:NoA => [0.999800, 0.999997], :YesA => [0.000003, 0.000200]),
-    [:NoT, :YesF] => Dict(:NoA => [0.010000, 0.012658], :YesA => [0.987342, 0.990000]),
-    [:YesT, :NoF] => Dict(:NoA => [0.100000, 0.119999], :YesA => [0.880001, 0.900000]),
-    [:YesT, :YesF] => Dict(:NoA => [0.400000, 0.435894], :YesA => [0.564106, 0.600000])
-)
-alarm = DiscreteChildNode(:Alarm, [tampering, fire], alarm_states)
+alarm_df = DataFrame(:Tampering => [:NoT, :NoT, :NoT, :NoT, :YesT, :YesT, :YesT, :YesT], :Fire => [:NoF, :NoF, :YesF, :YesF, :NoF, :NoF, :YesF, :YesF], :Alarm => [:NoA, :YesA, :NoA, :YesA, :NoA, :YesA, :NoA, :YesA], :Prob => [[0.999800, 0.999997], [0.000003, 0.000200], [0.010000, 0.012658], [0.987342, 0.990000], [0.100000, 0.119999], [0.880001, 0.900000], [0.400000, 0.435894], [0.564106, 0.600000]])
+alarm = DiscreteNode(:Alarm, alarm_df)
 
-smoke_state = Dict(
-    [:NoF] => Dict(:NoS => [0.897531, 0.915557], :YesS => [0.010000, 0.102469]),
-    [:YesF] => Dict(:NoS => [0.090000, 0.110000], :YesS => [0.890000, 0.910000])
-)
-smoke = DiscreteChildNode(:Smoke, [fire], smoke_state)
+smoke_df = DataFrame(:Fire => [:NoF, :NoF, :YesF, :YesF], :Smoke => [:NoS, :YesS, :NoS, :YesS], :Prob => [[0.897531, 0.915557], [0.010000, 0.102469], [0.090000, 0.110000], [0.890000, 0.910000]])
+smoke = DiscreteNode(:Smoke, smoke_df)
 
-leaving_state = Dict(
-    [:NoA] => Dict(:NoL => [0.585577, 0.599999], :YesL => [0.400001, 0.414423]),
-    [:YesA] => Dict(:NoL => [0.100000, 0.129999], :YesL => [0.870001, 0.900000])
-)
-leaving = DiscreteChildNode(:Leaving, [alarm], leaving_state)
+leaving_df = DataFrame(:Alarm => [:NoA, :NoA, :YesA, :YesA], :Leaving => [:NoL, :YesL, :NoL, :YesL], :Prob => [[0.585577, 0.599999], [0.400001, 0.414423], [0.100000, 0.129999], [0.870001, 0.900000]])
+leaving = DiscreteNode(:Leaving, leaving_df)
 
-report_state = Dict(
-    [:NoL] => Dict(:NoR => [0.809988, 0.828899], :YesR => [0.171101, 0.190012]),
-    [:YesL] => Dict(:NoR => [0.240011, 0.250000], :YesR => [0.750000, 0.759989])
-)
-report = DiscreteChildNode(:Report, [leaving], report_state)
+report_df = DataFrame(:Leaving => [:NoL, :NoL, :YesL, :YesL], :Report => [:NoR, :YesR, :NoR, :YesR], :Prob => [[0.809988, 0.828899], [0.171101, 0.190012], [0.240011, 0.250000], [0.750000, 0.759989]])
+report = DiscreteNode(:Report, report_df)
 
 nodes = [tampering, fire, alarm, smoke, leaving, report]
 
 cn = CredalNetwork(nodes)
+add_child!(cn, :Tampering, :Alarm)
+add_child!(cn, :Fire, :Alarm)
+add_child!(cn, :Fire, :Smoke)
+add_child!(cn, :Alarm, :Leaving)
+add_child!(cn, :Leaving, :Report)
+order!(cn)
 
-plt1 = EnhancedBayesianNetworks.plot(cn, :stress, 0.1, 8)
+plt1 = gplot(cn; nodesizefactor=0.17)
 savefig(plt1, "/Users/andreaperin_macos/Documents/PhD/3_Academic/Papers_Presentations/Papers/0_IEEE_ebn/imgs/fig_cn_tolo.png")
 
 
@@ -113,6 +105,7 @@ starting_points_ref_evi = [0.850, 0.648, 0.660, 0.030]
 
 st_evi = hcat(starting_points_evi, starting_points_ref_evi)
 en_evi = hcat(ending_points_evi, ending_points_ref_evi)
+
 using StatsPlot
 
 prob_names = ["P(YesL|YesF)", "P(YesR|YesF)", "P(YesR|YesA)", "P(YesF|YesL)"]
