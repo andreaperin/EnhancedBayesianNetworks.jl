@@ -2,9 +2,9 @@ using EnhancedBayesianNetworks
 # using JDL2
 if Sys.isapple()
     include("/Users/andreaperin_macos/Documents/Code/Hydrogen_project/JuliaHyram/wrapper.jl")
-elseif Sys.iswindows()
-    include("D:/Code/Hydrogen_project/JuliaHyram/wrapper.jl")
-else
+    # elseif Sys.iswindows()
+    #     include("D:/Code/Hydrogen_project/JuliaHyram/wrapper.jl")
+    # else
     error("missing linux python environment for Hyra")
 end
 
