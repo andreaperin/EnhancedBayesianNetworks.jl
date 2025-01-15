@@ -52,6 +52,7 @@ const Evidence = Dict{Symbol,Symbol}
 export add_child!
 export children
 export discrete_ancestors
+export dispatch
 export evaluate!
 export evaluate_with_envelopes
 export factorize
@@ -63,9 +64,6 @@ export order!
 export parents
 export reduce!
 export saveplot
-# export infer
-# export factorize_cpd
-# export dispatch_network
 
 include("util/wrap.jl")
 include("util/verification_common.jl")
