@@ -8,21 +8,22 @@ if Sys.isapple()
     error("missing linux python environment for Hyra")
 end
 
-node_leak = DiscreteRootNode(:Leak, Dict(:YL => 0.1, :NL => 0.9))
-node_detector = DiscreteRootNode(:Detect, Dict(:WD => 0.9, :NWD => 0.1))
+node_leak = DiscreteNode(:Leak, DataFrame(:Leak => [:YL, :NL], :Prob => [0.1, 0.9]))
+node_detector = DiscreteNode(:Detect, DataFrame(:Detect => [:WD, :NWD], :Prob => [0.9, 0.1]))
 
-release_states = Dict(
-    [:YL, :WD] => Dict(:Nor => 1.0, :Sr => 0.0, :Mr => 0.0, :Br => 0.0),
-    [:YL, :NWD] => Dict(:Nor => 0.0, :Sr => 0.4, :Mr => 0.3, :Br => 0.3),
-    [:NL, :WD] => Dict(:Nor => 1.0, :Sr => 0.0, :Mr => 0.0, :Br => 0.0),
-    [:NL, :NWD] => Dict(:Nor => 1.0, :Sr => 0.0, :Mr => 0.0, :Br => 0.0))
-node_release = DiscreteChildNode(:Rel, [node_leak, node_detector], release_states)
 
-ignition_states = Dict(
-    [:Nor] => Dict(:No => 1.0, :Rel => 0.0, :Imm => 0.0, :Del => 0.0),
-    [:Sr] => Dict(:No => 0.0, :Rel => 0.988, :Imm => 0.008, :Del => 0.004),
-    [:Mr] => Dict(:No => 0.0, :Rel => 0.92, :Imm => 0.053, :Del => 0.027),
-    [:Br] => Dict(:No => 0.0, :Rel => 0.66, :Imm => 0.230, :Del => 0.110),
+release_df = DataFrame(
+    :Leak => [:YL, :YL, :YL, :YL, :YL, :YL, :YL, :YL, :NL, :NL, :NL, :NL, :NL, :NL, :NL, :NL],
+    :Detect => [:WD, :WD, :WD, :WD, :NWD, :NWD, :NWD, :NWD, :WD, :WD, :WD, :WD, :NWD, :NWD, :NWD, :NWD],
+    :Release => [:Nor, :Sr, :Mr, :Br, :Nor, :Sr, :Mr, :Br, :Nor, :Sr, :Mr, :Br, :Nor, :Sr, :Mr, :Br],
+    :Prob => [1.0, 0.0, 0.0, 0.0, 0.0, 0.4, 0.3, 0.3, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0])
+node_release = DiscreteNode(:Release, release_df)
+
+
+ignition_df = DataFrame(
+    :Release => [:Nor, :Nor, :Nor, :Nor, :Sr, :Sr, :Sr, :Sr, :Mr, :Mr, :Mr, :Mr, :Br, :Br, :Br, :Br],
+    :Ignition => [:No, :Rel, :Imm, :Del, :No, :Rel, :Imm, :Del, :No, :Rel, :Imm, :Del, :No, :Rel, :Imm, :Del],
+    :Prob => [1.0, 0.0, 0.0, 0.0, 0.0, 0.988, 0.008, 0.004, 0.0, 0.92, 0.053, 0.027, 0.0, 0.66, 0.23, 0.11]
 )
 ignition_parameters = Dict(
     :No => [Parameter(3, :scenario)],
@@ -30,18 +31,18 @@ ignition_parameters = Dict(
     :Imm => [Parameter(1, :scenario)],
     :Del => [Parameter(2, :scenario)]
 )
-node_ignition = DiscreteChildNode(:Ignition, [node_release], ignition_states, ignition_parameters)
+node_ignition = DiscreteNode(:Ignition, ignition_df, ignition_parameters)
 
-node_time = DiscreteRootNode(:Time, Dict(:long_exp => 0.3, :short_exp => 0.7), Dict(:long_exp => [Parameter(30, :time)], :short_exp => [Parameter(60, :time)]))
-node_operator_radius = DiscreteRootNode(:Operators, Dict(:close => 0.1, :far => 0.9), Dict(:close => [Parameter(5, :r_operators)], :far => [Parameter(15, :r_operators)]))
+node_time = DiscreteNode(:Time, DataFrame(:Time => [:long_exp, :short_exp], :Prob => [0.3, 0.7]), Dict(:long_exp => [Parameter(30, :time)], :short_exp => [Parameter(60, :time)]))
+node_operator_radius = DiscreteNode(:Operators, DataFrame(:Operators => [:close, :far], :Prob => [0.1, 0.9]), Dict(:close => [Parameter(5, :r_operators)], :far => [Parameter(15, :r_operators)]))
 
-node_t_amb = ContinuousRootNode(:t_amb, Normal(288.15, 20))
-node_p_amb = ContinuousRootNode(:p_amb, Normal(101_325, 5_000))
-node_t_h2 = ContinuousRootNode(:t_h2, Normal(287.15, 20))
-node_p_h2 = ContinuousRootNode(:p_h2, Normal(13_420_000, 50_000))
-node_d_or = ContinuousRootNode(:d_or, (Uniform(0.00356 - 0.003, 0.00356 + 0.003)))
-node_rel_humidity = ContinuousRootNode(:humidity, Uniform(0.85 - 0.1, 0.85 + 0.1))
-node_Θ = ContinuousRootNode(:Θ, Uniform(50 / 180 * π, 130 / 180 * π))
+node_t_amb = ContinuousNode(:t_amb, DataFrame(:Prob => Normal(288.15, 20)))
+node_p_amb = ContinuousNode(:p_amb, DataFrame(:Prob => Normal(101_325, 5_000)))
+node_t_h2 = ContinuousNode(:t_h2, DataFrame(:Prob => Normal(287.15, 20)))
+node_p_h2 = ContinuousNode(:p_h2, DataFrame(:Prob => Normal(13_420_000, 50_000)))
+node_d_or = ContinuousNode(:d_or, DataFrame(:Prob => Uniform(0.00356 - 0.003, 0.00356 + 0.003)))
+node_rel_humidity = ContinuousNode(:humidity, DataFrame(:Prob => Uniform(0.85 - 0.1, 0.85 + 0.1)))
+node_Θ = ContinuousNode(:Θ, DataFrame(:Prob => Uniform(50 / 180 * π, 130 / 180 * π)))
 
 
 ## Model node
@@ -111,18 +112,35 @@ end
 
 hyram_models = [model_1, model_mfr, model_t_plume, overpressures_model, th_dose_model, radius_0_1st_level_model, radius_0_2nd_level_model, radius_0_3rd_level_model, radius_C_1st_level_model, radius_C_2nd_level_model, radius_C_3th_level_model, explosion_radius_0_model, explosion_radius_c_model]
 
-hyram_parents = [node_t_amb, node_p_amb, node_t_h2, node_p_h2, node_d_or, node_Θ, node_rel_humidity, node_ignition, node_time, node_operator_radius]
-
-hyram_simulations = MonteCarlo(2)
+hyram_simulations = MonteCarlo(200)
 hyram_perf = df -> overall_performance(df)
 
-node_hyram = DiscreteFunctionalNode(:HYRAM, hyram_parents, hyram_models, hyram_perf, hyram_simulations)
+node_hyram = DiscreteFunctionalNode(:HyRam, hyram_models, hyram_perf, hyram_simulations)
 
 nodes = [node_leak, node_detector, node_release, node_ignition, node_time, node_operator_radius, node_p_amb, node_t_amb, node_p_h2, node_t_h2, node_d_or, node_rel_humidity, node_Θ, node_hyram]
 
 ebn = EnhancedBayesianNetwork(nodes)
 
-eebn = EnhancedBayesianNetworks.evaluate(ebn)
+add_child!(ebn, :Leak, :Release)
+add_child!(ebn, :Detect, :Release)
+add_child!(ebn, :Release, :Ignition)
+add_child!(ebn, :Ignition, :HyRam)s
+add_child!(ebn, :Time, :HyRam)
+add_child!(ebn, :Operators, :HyRam)
+add_child!(ebn, :t_amb, :HyRam)
+add_child!(ebn, :p_amb, :HyRam)
+add_child!(ebn, :t_h2, :HyRam)
+add_child!(ebn, :p_h2, :HyRam)
+add_child!(ebn, :d_or, :HyRam)
+add_child!(ebn, :humidity, :HyRam)
+add_child!(ebn, :Θ, :HyRam)
 
-# path = pwd() * "/demo/Hydrogen_new/ebn/"
+order!(ebn)
+gplot(ebn, nodesizefactor=0.14, NODELABELSIZE=3)
+
+evaluate!(ebn)
+bn = dispatch(ebn)
+
+gplot(bn, nodesizefactor=0.18)
+
 # save_object(path * "ebn" * string(hyram_simulations.n) * string(typeof(hyram_simulations)) * ".jld2", eebn)
