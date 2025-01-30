@@ -1,19 +1,20 @@
 using EnhancedBayesianNetworks
 using Plots
 
-tampering = DiscreteNode(:Tampering, DataFrame(:Tampering => [:NoT, :YesT], :Prob => [[0.98999, 0.99111], [0.00889, 0.01001]]))
-fire = DiscreteNode(:Fire, DataFrame(:Fire => [:NoF, :YesF], :Prob => [[0.958978, 0.959989], [0.00011, 0.041002]]))
+tampering = DiscreteNode(:Tampering, DataFrame(:Tampering => [:NoT, :YesT], :Prob => [0.98, 0.02]))
+fire = DiscreteNode(:Fire, DataFrame(:Fire => [:NoF, :YesF], :Prob => [[0.98, 0.99], [0.01, 0.02]]))
 
-alarm_df = DataFrame(:Tampering => [:NoT, :NoT, :NoT, :NoT, :YesT, :YesT, :YesT, :YesT], :Fire => [:NoF, :NoF, :YesF, :YesF, :NoF, :NoF, :YesF, :YesF], :Alarm => [:NoA, :YesA, :NoA, :YesA, :NoA, :YesA, :NoA, :YesA], :Prob => [[0.999800, 0.999997], [0.000003, 0.000200], [0.010000, 0.012658], [0.987342, 0.990000], [0.100000, 0.119999], [0.880001, 0.900000], [0.400000, 0.435894], [0.564106, 0.600000]])
+alarm_df = DataFrame(:Tampering => [:NoT, :NoT, :NoT, :NoT, :YesT, :YesT, :YesT, :YesT], :Fire => [:NoF, :NoF, :YesF, :YesF, :NoF, :NoF, :YesF, :YesF], :Alarm => [:NoA, :YesA, :NoA, :YesA, :NoA, :YesA, :NoA, :YesA], :Prob => [[0.9998, 0.9999], [0.0001, 0.0002], [0.01, 0.015], [0.985, 0.99], [0.1, 0.15], [0.85, 0.90], [0.4, 0.6], [0.4, 0.6]])
 alarm = DiscreteNode(:Alarm, alarm_df)
 
-smoke_df = DataFrame(:Fire => [:NoF, :NoF, :YesF, :YesF], :Smoke => [:NoS, :YesS, :NoS, :YesS], :Prob => [[0.897531, 0.915557], [0.010000, 0.102469], [0.090000, 0.110000], [0.890000, 0.910000]])
+smoke_df = DataFrame(:Fire => [:NoF, :NoF, :YesF, :YesF], :Smoke => [:NoS, :YesS, :NoS, :YesS], :Prob => [[0.9, 0.99], [0.01, 0.1], [0.09, 0.13], [0.87, 0.91]])
 smoke = DiscreteNode(:Smoke, smoke_df)
 
-leaving_df = DataFrame(:Alarm => [:NoA, :NoA, :YesA, :YesA], :Leaving => [:NoL, :YesL, :NoL, :YesL], :Prob => [[0.585577, 0.599999], [0.400001, 0.414423], [0.100000, 0.129999], [0.870001, 0.900000]])
+leaving_df = DataFrame(:Alarm => [:NoA, :NoA, :YesA, :YesA], :Leaving => [:NoL, :YesL, :NoL, :YesL], :Prob => [[0.58, 0.999], [0.10, 0.12], [0.001, 0.420], [0.88, 0.9]])
 leaving = DiscreteNode(:Leaving, leaving_df)
 
-report_df = DataFrame(:Leaving => [:NoL, :NoL, :YesL, :YesL], :Report => [:NoR, :YesR, :NoR, :YesR], :Prob => [[0.809988, 0.828899], [0.171101, 0.190012], [0.240011, 0.250000], [0.750000, 0.759989]])
+report_df = DataFrame(:Leaving => [:NoL, :NoL, :YesL, :YesL], :Report => [:NoR, :YesR, :NoR, :YesR], :Prob => [[0.80, 0.99], [0.01, 0.2], [0.24, 0.75], [0.25, 0.76]])
+
 report = DiscreteNode(:Report, report_df)
 
 nodes = [tampering, fire, alarm, smoke, leaving, report]
@@ -27,91 +28,95 @@ add_child!(cn, :Leaving, :Report)
 order!(cn)
 
 plt1 = gplot(cn; nodesizefactor=0.17)
-savefig(plt1, "/Users/andreaperin_macos/Documents/PhD/3_Academic/Papers_Presentations/Papers/0_IEEE_ebn/imgs/fig_cn_tolo.png")
 
+# saveplot(plt1, "/Users/andreaperin_macos/Documents/PhD/3_Academic/Papers_Presentations/Presentations/BGE-Slide/imgs/fig_cn_tolo.svg")
 
 evidence = Evidence()
 query = [:Smoke]
 ϕ1 = infer(cn, query, evidence)
-res1 = ϕ1.potential[ϕ1.states_mapping[:Smoke][:YesS]]
-
 
 evidence = Evidence()
 query = [:Report]
 ϕ2 = infer(cn, query, evidence)
-res2 = ϕ2.potential[ϕ2.states_mapping[:Report][:YesR]]
-
 
 evidence = Evidence()
 query = [:Alarm]
 ϕ3 = infer(cn, query, evidence)
-res3 = ϕ3.potential[ϕ3.states_mapping[:Alarm][:YesA]]
 
-evidence = Evidence()
+evidence = Evidence(
+    :Fire => :YesF
+)
 query = [:Leaving]
 ϕ4 = infer(cn, query, evidence)
-res4 = ϕ4.potential[ϕ4.states_mapping[:Leaving][:YesL]]
-
 
 evidence = Evidence(
     :Fire => :YesF
 )
-query = [:Leaving]
+query = [:Report]
 ϕ5 = infer(cn, query, evidence)
-res5 = ϕ5.potential[ϕ5.states_mapping[:Leaving][:YesL]]
-
-
-evidence = Evidence(
-    :Fire => :YesF
-)
-query = [:Report]
-ϕ6 = infer(cn, query, evidence)
-res6 = ϕ6.potential[ϕ6.states_mapping[:Report][:YesR]]
-
-
-evidence = Evidence(
-    :Alarm => :YesA
-)
-query = [:Report]
-ϕ7 = infer(cn, query, evidence)
-res7 = ϕ7.potential[ϕ7.states_mapping[:Report][:YesR]]
-
-
 
 evidence = Evidence(
     :Leaving => :YesL
 )
 query = [:Fire]
-ϕ8 = infer(cn, query, evidence)
-res8 = ϕ8.potential[ϕ8.states_mapping[:Fire][:YesF]]
+ϕ6 = infer(cn, query, evidence)
 
-res_no_evi = [res1, res2, res3, res4]
-ending_points = map(i -> i[2], res_no_evi)
-starting_points = map(i -> i[1], res_no_evi)
-ending_points_ref = [0.025, 0.040, 0.030, 0.040]
-starting_points_ref = [0.130, 0.444, 0.040, 0.440]
+smoke_pot = ϕ1.potential
+reference_smoke = [[0.8838 0.9814], [0.0186, 0.1162]]
 
-st = hcat(starting_points, starting_points_ref)
-en = hcat(ending_points, ending_points_ref)
-plot(bar(ending_points, bar_width=1.2, alpha=0.8, color=:red, fillto=starting_points, label="Ebn.jl"), bar([0.130, 0.444, 0.040, 0.440], bar_width=0.8, alpha=1, color=:green, fillto=[0.025, 0.040, 0.030, 0.040], label="Ref"))
+report_pot = ϕ2.potential
+reference_report = [[0.5547, 0.9719], [0.0281, 0.4453]]
+
+alarm_pot = ϕ3.potential
+reference_alarm = [[0.9625 0.9733], [0.0281, 0.0375]]
+
+leaving_pot = ϕ4.potential
+reference_leaving = [[0.1085 0.1435], [0.8565, 0.8915]]
 
 
+### PLOTIING
 
-res_evi = [res5, res6, res7, res8]
-ending_points_evi = map(i -> i[2], res_evi)
-starting_points_evi = map(i -> i[1], res_evi)
-ending_points_ref_evi = [0.900, 0.700, 0.710, 0.510]
-starting_points_ref_evi = [0.850, 0.648, 0.660, 0.030]
+mn = [
+    reference_smoke[1][2],
+    reference_smoke[2][2],
+    # reference_report[1][2],
+    # reference_report[2][2],
+    reference_alarm[1][2],
+    reference_alarm[2][2],
+    reference_leaving[1][2],
+    reference_leaving[2][2],
+    smoke_pot[1][2],
+    smoke_pot[2][2],
+    # report_pot[1][2],
+    # report_pot[2][2],
+    alarm_pot[1][2],
+    alarm_pot[2][2],
+    leaving_pot[1][2],
+    leaving_pot[2][2],]
 
-st_evi = hcat(starting_points_evi, starting_points_ref_evi)
-en_evi = hcat(ending_points_evi, ending_points_ref_evi)
+nm = [
+    reference_smoke[1][1],
+    reference_smoke[2][1],
+    # reference_report[1][1],
+    # reference_report[2][1],
+    reference_alarm[1][1],
+    reference_alarm[2][1],
+    reference_leaving[1][1],
+    reference_leaving[2][1],
+    smoke_pot[1][1],
+    smoke_pot[2][1],
+    # report_pot[1][1],
+    # report_pot[2][1],
+    alarm_pot[1][1],
+    alarm_pot[2][1],
+    leaving_pot[1][1],
+    leaving_pot[2][1]
+]
+sx = repeat(["Ref", "ebn.jl"], inner=6)
+nam = repeat(["S=N", "S=Y", "A=N", "A=Y", "L|F=N", "L|F=Y"], outer=2)
 
-using StatsPlot
+# using StatsPlots
+fig1 = groupedbar(nam, mn, group=sx, ylabel="Marginal Probabilities", fillto=nm,
+    title="Inference In CN - Comparison with reference solutions")
 
-prob_names = ["P(YesL|YesF)", "P(YesR|YesF)", "P(YesR|YesA)", "P(YesF|YesL)"]
-ctg = repeat(["Ebn.jl", "Ref"], inner=length(prob_names))
-nam = repeat(prob_names, outer=2)
-
-plt2 = groupedbar(nam, st_evi, bar_position=:dodge, group=ctg, bar_width=0.7, fillto=en_evi, ylims=(0, 1), grid=true)
-
-savefig(plt2, "/Users/andreaperin_macos/Documents/PhD/3_Academic/Papers_Presentations/Papers/0_IEEE_ebn/imgs/fig_cn_inference.png")
+# savefig(fig1, "/Users/andreaperin_macos/Documents/PhD/3_Academic/Papers_Presentations/Presentations/BGE-Slide/imgs/barplot.png")
