@@ -6,7 +6,7 @@ function evaluate!(net::EnhancedBayesianNetwork, check::Bool=true)
         first_node = first(functional_nodes)
         continuous_nodes_2_eliminate = filter(x -> isa(x, ContinuousNode), parents(net, first_node)[3])
         eliminable_node = map(x -> _is_eliminable(net, x), continuous_nodes_2_eliminate)
-        if any(.!eliminable_node) && checks
+        if any(.!eliminable_node) && check
             names = [i.name for i in continuous_nodes_2_eliminate[.!eliminable_node]]
             error("nodes elimnation algorithm will lead to a cyclic network when elimnating node/s $names")
         end
