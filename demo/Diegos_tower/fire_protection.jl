@@ -1,19 +1,19 @@
 using EnhancedBayesianNetworks
 using Plots
 
-tampering = DiscreteNode(:Tampering, DataFrame(:Tampering => [:NoT, :YesT], :Prob => [0.98, 0.02]))
-fire = DiscreteNode(:Fire, DataFrame(:Fire => [:NoF, :YesF], :Prob => [[0.98, 0.99], [0.01, 0.02]]))
+tampering = DiscreteNode(:Tampering, DataFrame(:Tampering => [:NoT, :YesT], :Π => [0.98, 0.02]))
+fire = DiscreteNode(:Fire, DataFrame(:Fire => [:NoF, :YesF], :Π => [[0.98, 0.99], [0.01, 0.02]]))
 
-alarm_df = DataFrame(:Tampering => [:NoT, :NoT, :NoT, :NoT, :YesT, :YesT, :YesT, :YesT], :Fire => [:NoF, :NoF, :YesF, :YesF, :NoF, :NoF, :YesF, :YesF], :Alarm => [:NoA, :YesA, :NoA, :YesA, :NoA, :YesA, :NoA, :YesA], :Prob => [[0.9998, 0.9999], [0.0001, 0.0002], [0.01, 0.015], [0.985, 0.99], [0.1, 0.15], [0.85, 0.90], [0.4, 0.6], [0.4, 0.6]])
+alarm_df = DataFrame(:Tampering => [:NoT, :NoT, :NoT, :NoT, :YesT, :YesT, :YesT, :YesT], :Fire => [:NoF, :NoF, :YesF, :YesF, :NoF, :NoF, :YesF, :YesF], :Alarm => [:NoA, :YesA, :NoA, :YesA, :NoA, :YesA, :NoA, :YesA], :Π => [[0.9998, 0.9999], [0.0001, 0.0002], [0.01, 0.015], [0.985, 0.99], [0.1, 0.15], [0.85, 0.90], [0.4, 0.6], [0.4, 0.6]])
 alarm = DiscreteNode(:Alarm, alarm_df)
 
-smoke_df = DataFrame(:Fire => [:NoF, :NoF, :YesF, :YesF], :Smoke => [:NoS, :YesS, :NoS, :YesS], :Prob => [[0.9, 0.99], [0.01, 0.1], [0.09, 0.13], [0.87, 0.91]])
+smoke_df = DataFrame(:Fire => [:NoF, :NoF, :YesF, :YesF], :Smoke => [:NoS, :YesS, :NoS, :YesS], :Π => [[0.9, 0.99], [0.01, 0.1], [0.09, 0.13], [0.87, 0.91]])
 smoke = DiscreteNode(:Smoke, smoke_df)
 
-leaving_df = DataFrame(:Alarm => [:NoA, :NoA, :YesA, :YesA], :Leaving => [:NoL, :YesL, :NoL, :YesL], :Prob => [[0.58, 0.999], [0.10, 0.12], [0.001, 0.420], [0.88, 0.9]])
+leaving_df = DataFrame(:Alarm => [:NoA, :NoA, :YesA, :YesA], :Leaving => [:NoL, :YesL, :NoL, :YesL], :Π => [[0.58, 0.999], [0.10, 0.12], [0.001, 0.420], [0.88, 0.9]])
 leaving = DiscreteNode(:Leaving, leaving_df)
 
-report_df = DataFrame(:Leaving => [:NoL, :NoL, :YesL, :YesL], :Report => [:NoR, :YesR, :NoR, :YesR], :Prob => [[0.80, 0.99], [0.01, 0.2], [0.24, 0.75], [0.25, 0.76]])
+report_df = DataFrame(:Leaving => [:NoL, :NoL, :YesL, :YesL], :Report => [:NoR, :YesR, :NoR, :YesR], :Π => [[0.80, 0.99], [0.01, 0.2], [0.24, 0.75], [0.25, 0.76]])
 
 report = DiscreteNode(:Report, report_df)
 

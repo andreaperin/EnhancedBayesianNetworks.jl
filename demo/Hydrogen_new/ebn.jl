@@ -8,22 +8,22 @@ if Sys.isapple()
     error("missing linux python environment for Hyra")
 end
 
-node_leak = DiscreteNode(:Leak, DataFrame(:Leak => [:YL, :NL], :Prob => [0.1, 0.9]))
-node_detector = DiscreteNode(:Detect, DataFrame(:Detect => [:WD, :NWD], :Prob => [0.9, 0.1]))
+node_leak = DiscreteNode(:Leak, DataFrame(:Leak => [:YL, :NL], :Π => [0.1, 0.9]))
+node_detector = DiscreteNode(:Detect, DataFrame(:Detect => [:WD, :NWD], :Π => [0.9, 0.1]))
 
 
 release_df = DataFrame(
     :Leak => [:YL, :YL, :YL, :YL, :YL, :YL, :YL, :YL, :NL, :NL, :NL, :NL, :NL, :NL, :NL, :NL],
     :Detect => [:WD, :WD, :WD, :WD, :NWD, :NWD, :NWD, :NWD, :WD, :WD, :WD, :WD, :NWD, :NWD, :NWD, :NWD],
     :Release => [:Nor, :Sr, :Mr, :Br, :Nor, :Sr, :Mr, :Br, :Nor, :Sr, :Mr, :Br, :Nor, :Sr, :Mr, :Br],
-    :Prob => [1.0, 0.0, 0.0, 0.0, 0.0, 0.4, 0.3, 0.3, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0])
+    :Π => [1.0, 0.0, 0.0, 0.0, 0.0, 0.4, 0.3, 0.3, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0])
 node_release = DiscreteNode(:Release, release_df)
 
 
 ignition_df = DataFrame(
     :Release => [:Nor, :Nor, :Nor, :Nor, :Sr, :Sr, :Sr, :Sr, :Mr, :Mr, :Mr, :Mr, :Br, :Br, :Br, :Br],
     :Ignition => [:No, :Rel, :Imm, :Del, :No, :Rel, :Imm, :Del, :No, :Rel, :Imm, :Del, :No, :Rel, :Imm, :Del],
-    :Prob => [1.0, 0.0, 0.0, 0.0, 0.0, 0.988, 0.008, 0.004, 0.0, 0.92, 0.053, 0.027, 0.0, 0.66, 0.23, 0.11]
+    :Π => [1.0, 0.0, 0.0, 0.0, 0.0, 0.988, 0.008, 0.004, 0.0, 0.92, 0.053, 0.027, 0.0, 0.66, 0.23, 0.11]
 )
 ignition_parameters = Dict(
     :No => [Parameter(3, :scenario)],
@@ -33,16 +33,16 @@ ignition_parameters = Dict(
 )
 node_ignition = DiscreteNode(:Ignition, ignition_df, ignition_parameters)
 
-node_time = DiscreteNode(:Time, DataFrame(:Time => [:long_exp, :short_exp], :Prob => [0.3, 0.7]), Dict(:long_exp => [Parameter(30, :time)], :short_exp => [Parameter(60, :time)]))
-node_operator_radius = DiscreteNode(:Operators, DataFrame(:Operators => [:close, :far], :Prob => [0.1, 0.9]), Dict(:close => [Parameter(5, :r_operators)], :far => [Parameter(15, :r_operators)]))
+node_time = DiscreteNode(:Time, DataFrame(:Time => [:long_exp, :short_exp], :Π => [0.3, 0.7]), Dict(:long_exp => [Parameter(30, :time)], :short_exp => [Parameter(60, :time)]))
+node_operator_radius = DiscreteNode(:Operators, DataFrame(:Operators => [:close, :far], :Π => [0.1, 0.9]), Dict(:close => [Parameter(5, :r_operators)], :far => [Parameter(15, :r_operators)]))
 
-node_t_amb = ContinuousNode(:t_amb, DataFrame(:Prob => Normal(288.15, 20)))
-node_p_amb = ContinuousNode(:p_amb, DataFrame(:Prob => Normal(101_325, 5_000)))
-node_t_h2 = ContinuousNode(:t_h2, DataFrame(:Prob => Normal(287.15, 20)))
-node_p_h2 = ContinuousNode(:p_h2, DataFrame(:Prob => Normal(13_420_000, 50_000)))
-node_d_or = ContinuousNode(:d_or, DataFrame(:Prob => Uniform(0.00356 - 0.003, 0.00356 + 0.003)))
-node_rel_humidity = ContinuousNode(:humidity, DataFrame(:Prob => Uniform(0.85 - 0.1, 0.85 + 0.1)))
-node_Θ = ContinuousNode(:Θ, DataFrame(:Prob => Uniform(50 / 180 * π, 130 / 180 * π)))
+node_t_amb = ContinuousNode(:t_amb, DataFrame(:Π => Normal(288.15, 20)))
+node_p_amb = ContinuousNode(:p_amb, DataFrame(:Π => Normal(101_325, 5_000)))
+node_t_h2 = ContinuousNode(:t_h2, DataFrame(:Π => Normal(287.15, 20)))
+node_p_h2 = ContinuousNode(:p_h2, DataFrame(:Π => Normal(13_420_000, 50_000)))
+node_d_or = ContinuousNode(:d_or, DataFrame(:Π => Uniform(0.00356 - 0.003, 0.00356 + 0.003)))
+node_rel_humidity = ContinuousNode(:humidity, DataFrame(:Π => Uniform(0.85 - 0.1, 0.85 + 0.1)))
+node_Θ = ContinuousNode(:Θ, DataFrame(:Π => Uniform(50 / 180 * π, 130 / 180 * π)))
 
 
 ## Model node

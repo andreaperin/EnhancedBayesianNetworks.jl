@@ -3,7 +3,7 @@
     @testset "Root Node" begin
         @testset "Nodes and Verifications" begin
             name = :A
-            cpt1 = DataFrame(:Prob => Normal())
+            cpt1 = DataFrame(:Π => Normal())
             discretization = ApproximatedDiscretization([-1, 0, 1], 2)
             @test_throws ErrorException("Root node must have ExactDiscretization as discretization structure, provided discretization is $discretization and node cpt is $cpt1") ContinuousNode{UnivariateDistribution}(name, cpt1, discretization)
             node1 = ContinuousNode{UnivariateDistribution}(name, cpt1)
@@ -18,14 +18,14 @@
             @test isempty(node1.additional_info)
             @test isempty(node2.additional_info)
 
-            cpt2 = DataFrame(:Prob => (1, 5))
+            cpt2 = DataFrame(:Π => (1, 5))
             node3 = ContinuousNode{Tuple{Real,Real}}(name, cpt2)
             @test node3.name == name
             @test node3.cpt == cpt2
             @test isempty(node3.discretization.intervals)
             @test isempty(node3.additional_info)
 
-            cpt3 = DataFrame(:Prob => UnamedProbabilityBox{Normal}([Interval(-0.5, 0.5, :μ), Interval(1, 2, :σ)]))
+            cpt3 = DataFrame(:Π => UnamedProbabilityBox{Normal}([Interval(-0.5, 0.5, :μ), Interval(1, 2, :σ)]))
             node3 = ContinuousNode{UnamedProbabilityBox}(name, cpt3)
             @test node3.name == name
             @test node3.cpt == cpt3
@@ -37,9 +37,9 @@
 
         @testset "functions" begin
             name = :A
-            cpt1 = DataFrame(:Prob => Normal())
-            cpt2 = DataFrame(:Prob => (1, 5))
-            cpt3 = DataFrame(:Prob => UnamedProbabilityBox{Normal}([Interval(-0.5, 0.5, :μ), Interval(1, 2, :σ)]))
+            cpt1 = DataFrame(:Π => Normal())
+            cpt2 = DataFrame(:Π => (1, 5))
+            cpt3 = DataFrame(:Π => UnamedProbabilityBox{Normal}([Interval(-0.5, 0.5, :μ), Interval(1, 2, :σ)]))
 
             node1 = ContinuousNode{UnivariateDistribution}(name, cpt1)
             node2 = ContinuousNode{Tuple{Real,Real}}(name, cpt2)
@@ -108,7 +108,7 @@
     @testset "Child Node" begin
         @testset "Nodes and Verification" begin
             name = :B
-            cpt1 = DataFrame(:G => [:g1, :g2], :Prob => [Normal(0, 1), Normal(1, 1)])
+            cpt1 = DataFrame(:G => [:g1, :g2], :Π => [Normal(0, 1), Normal(1, 1)])
             discretization = ExactDiscretization([-1, 0, 1])
             @test_throws ErrorException("Child node must have ExactDiscretization as discretization structure, provided discretization is $discretization and node cpt is $cpt1") ContinuousNode{UnivariateDistribution}(name, cpt1, discretization)
 
@@ -124,7 +124,7 @@
             @test isempty(node1.additional_info)
             @test isempty(node2.additional_info)
 
-            cpt2 = DataFrame(:G => [:g1, :g2], :Prob => [(0, 1), (1, 1)])
+            cpt2 = DataFrame(:G => [:g1, :g2], :Π => [(0, 1), (1, 1)])
             node3 = ContinuousNode{Tuple{Real,Real}}(name, cpt2)
             @test node3.name == name
             @test node3.cpt == cpt2
@@ -133,7 +133,7 @@
 
             pb1 = UnamedProbabilityBox{Normal}([Interval(-0.5, 0.5, :μ), Interval(1, 2, :σ)])
             pb2 = UnamedProbabilityBox{Normal}([Interval(-1, 0, :μ), Interval(1, 2, :σ)])
-            cpt3 = DataFrame(:G => [:g1, :g2], :Prob => [pb1, pb2])
+            cpt3 = DataFrame(:G => [:g1, :g2], :Π => [pb1, pb2])
             node3 = ContinuousNode{UnamedProbabilityBox}(name, cpt3)
             @test node3.name == name
             @test node3.cpt == cpt3
@@ -143,11 +143,11 @@
 
         @testset "functions" begin
             name = :A
-            cpt1 = DataFrame(:G => [:g1, :g2], :Prob => [Normal(0, 1), Normal(1, 1)])
-            cpt2 = DataFrame(:G => [:g1, :g2], :Prob => [(0, 1), (1, 1)])
+            cpt1 = DataFrame(:G => [:g1, :g2], :Π => [Normal(0, 1), Normal(1, 1)])
+            cpt2 = DataFrame(:G => [:g1, :g2], :Π => [(0, 1), (1, 1)])
             pb1 = UnamedProbabilityBox{Normal}([Interval(-0.5, 0.5, :μ), Interval(1, 2, :σ)])
             pb2 = UnamedProbabilityBox{Normal}([Interval(-1, 0, :μ), Interval(1, 2, :σ)])
-            cpt3 = DataFrame(:G => [:g1, :g2], :Prob => [pb1, pb2])
+            cpt3 = DataFrame(:G => [:g1, :g2], :Π => [pb1, pb2])
 
             node1 = ContinuousNode{UnivariateDistribution}(name, cpt1)
             node2 = ContinuousNode{Tuple{Real,Real}}(name, cpt2)

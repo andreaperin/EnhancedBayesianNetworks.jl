@@ -6,16 +6,16 @@ using UncertaintyQuantification
 
 
 n = 10^6
-Uᵣ = ContinuousNode{UnivariateDistribution}(:Uᵣ, DataFrame(:Prob => Normal()))
+Uᵣ = ContinuousNode{UnivariateDistribution}(:Uᵣ, DataFrame(:Π => Normal()))
 μ_gamma = 60
 cov_gamma = 0.2
 α, θ = distribution_parameters(μ_gamma, μ_gamma * cov_gamma, Gamma)
-V = ContinuousNode{UnivariateDistribution}(:V, DataFrame(:Prob => Gamma(α, θ)))
+V = ContinuousNode{UnivariateDistribution}(:V, DataFrame(:Π => Gamma(α, θ)))
 
 μ_gumbel = 50
 cov_gumbel = 0.4
 μ_loc, β = distribution_parameters(μ_gumbel, cov_gumbel * μ_gumbel, Gumbel)
-H = ContinuousNode{UnivariateDistribution}(:H, DataFrame(:Prob => Gumbel(μ_loc, β)))
+H = ContinuousNode{UnivariateDistribution}(:H, DataFrame(:Π => Gumbel(μ_loc, β)))
 
 function plastic_moment_capacities(uᵣ)
     ρ = 0.5477

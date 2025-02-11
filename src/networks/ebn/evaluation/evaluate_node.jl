@@ -27,7 +27,7 @@ function _evaluate_node(net::EnhancedBayesianNetwork, node::ContinuousFunctional
             add_info[collect(values(evidence))] = Dict(:samples => df)
         end
 
-        new_cpt[!, :Prob] = dists
+        new_cpt[!, :Π] = dists
 
         return ContinuousNode{UnivariateDistribution}(node.name, new_cpt, discretization, add_info)
     else
@@ -83,7 +83,7 @@ function _evaluate_node(net::EnhancedBayesianNetwork, node::DiscreteFunctionalNo
         end
     end
 
-    new_cpt[!, :Prob] = probs
+    new_cpt[!, :Π] = probs
 
     return DiscreteNode(node.name, new_cpt, node.parameters, additional_info)
 end

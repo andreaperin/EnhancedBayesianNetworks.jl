@@ -2,9 +2,9 @@
 
     @testset "Main Functions" begin
 
-        root1 = DiscreteNode(:x, DataFrame(:x => [:x1, :x2], :Prob => [0.3, 0.7]), Dict(:x1 => [Parameter(0.5, :x)], :x2 => [Parameter(0.7, :x)]))
-        root2 = ContinuousNode{UnivariateDistribution}(:y, DataFrame(:Prob => Normal()))
-        root3 = DiscreteNode(:z, DataFrame(:z => [:z1, :z2], :Prob => [0.3, 0.7]), Dict(:z1 => [Parameter(0.5, :z)], :z2 => [Parameter(0.7, :z)]))
+        root1 = DiscreteNode(:x, DataFrame(:x => [:x1, :x2], :Π => [0.3, 0.7]), Dict(:x1 => [Parameter(0.5, :x)], :x2 => [Parameter(0.7, :x)]))
+        root2 = ContinuousNode{UnivariateDistribution}(:y, DataFrame(:Π => Normal()))
+        root3 = DiscreteNode(:z, DataFrame(:z => [:z1, :z2], :Π => [0.3, 0.7]), Dict(:z1 => [Parameter(0.5, :z)], :z2 => [Parameter(0.7, :z)]))
 
         model1 = Model(df -> df.x .^ 2 .- 0.7 .+ df.y, :c1)
         cont_functional1 = ContinuousFunctionalNode(:cf1, [model1], MonteCarlo(300))
@@ -48,9 +48,9 @@
         @test EnhancedBayesianNetworks._is_root(ebn.nodes[5]) == false
 
         interval = (1.10, 1.30)
-        root1 = DiscreteNode(:A, DataFrame(:A => [:a1, :a2], :Prob => [0.5, 0.5]), Dict(:a1 => [Parameter(1, :A)], :a2 => [Parameter(2, :A)]))
-        root2 = ContinuousNode{Tuple{<:Real,<:Real}}(:B, DataFrame(:Prob => interval))
-        root3 = ContinuousNode{UnivariateDistribution}(:P, DataFrame(:Prob => Uniform(-10, 10)))
+        root1 = DiscreteNode(:A, DataFrame(:A => [:a1, :a2], :Π => [0.5, 0.5]), Dict(:a1 => [Parameter(1, :A)], :a2 => [Parameter(2, :A)]))
+        root2 = ContinuousNode{Tuple{<:Real,<:Real}}(:B, DataFrame(:Π => interval))
+        root3 = ContinuousNode{UnivariateDistribution}(:P, DataFrame(:Π => Uniform(-10, 10)))
         model = Model(df -> df.A .+ df.B .+ df.P, :C)
         sim = DoubleLoop(MonteCarlo(100_000))
         performance = df -> 2 .- df.C
@@ -73,17 +73,17 @@
     @testset "Evaluate with envelopes" begin
         n = 10^6
         using .MathConstants: γ
-        Uᵣ = ContinuousNode{UnivariateDistribution}(:Uᵣ, DataFrame(:Prob => Normal()))
+        Uᵣ = ContinuousNode{UnivariateDistribution}(:Uᵣ, DataFrame(:Π => Normal()))
         μ_gamma = 60
         cov_gamma = 0.2
-        M = DiscreteNode(:M, DataFrame(:M => [:new, :old], :Prob => [0.5, 0.5]))
+        M = DiscreteNode(:M, DataFrame(:M => [:new, :old], :Π => [0.5, 0.5]))
         α, θ = distribution_parameters(μ_gamma, μ_gamma * cov_gamma, Gamma)
-        V = ContinuousNode{UnivariateDistribution}(:V, DataFrame(:M => [:new, :old], :Prob => [Gamma(α, θ), Gamma(α - 1, 2.4)]))
+        V = ContinuousNode{UnivariateDistribution}(:V, DataFrame(:M => [:new, :old], :Π => [Gamma(α, θ), Gamma(α - 1, 2.4)]))
 
         μ_gumbel = 50
         cov_gumbel = 0.4
         μ_loc, β = distribution_parameters(μ_gumbel, cov_gumbel * μ_gumbel, Gumbel)
-        H = ContinuousNode{UnivariateDistribution}(:H, DataFrame(:Prob => Gumbel(μ_loc, β)))
+        H = ContinuousNode{UnivariateDistribution}(:H, DataFrame(:Π => Gumbel(μ_loc, β)))
         function plastic_moment_capacities(uᵣ)
             ρ = 0.5477
             μ = 150
@@ -114,8 +114,8 @@
         simulation = MonteCarlo(n)
 
         frame = DiscreteFunctionalNode(:E, [model], performance, simulation)
-        L = DiscreteNode(:L, DataFrame(:M => [:new, :new, :old, :old], :L => [:yesL, :noL, :yesL, :noL], :Prob => [0.2, 0.8, 0.5, 0.5]), Dict(:noL => [Parameter(1, :L)], :yesL => [Parameter(2, :L)]))
-        r9 = ContinuousNode{UnivariateDistribution}(:R9, DataFrame(:Prob => Normal()))
+        L = DiscreteNode(:L, DataFrame(:M => [:new, :new, :old, :old], :L => [:yesL, :noL, :yesL, :noL], :Π => [0.2, 0.8, 0.5, 0.5]), Dict(:noL => [Parameter(1, :L)], :yesL => [Parameter(2, :L)]))
+        r9 = ContinuousNode{UnivariateDistribution}(:R9, DataFrame(:Π => Normal()))
         model2 = Model(df -> df.L .^ 2 .* df.R9, :P)
         frame2 = DiscreteFunctionalNode(:E2, [model2], df -> df.P, simulation)
         nodes = [Uᵣ, M, V, H, R1, R2, R3, R4, R5, r9, frame, L, frame2]
@@ -174,7 +174,7 @@
     end
 
     @testset "No Ancestors case" begin
-        root2 = ContinuousNode{UnivariateDistribution}(:B, DataFrame(:Prob => Normal()))
+        root2 = ContinuousNode{UnivariateDistribution}(:B, DataFrame(:Π => Normal()))
         model = Model(df -> df.B .+ 1, :C)
         sim = MonteCarlo(100_000)
         performance = df -> 2 .- df.C
@@ -199,8 +199,8 @@
     end
 
     @testset "Imprecise Node with discretization" begin
-        root1 = DiscreteNode(:A, DataFrame(:A => [:y, :n], :Prob => [0.5, 0.5]))
-        root2 = ContinuousNode{UnamedProbabilityBox}(:B, DataFrame(:A => [:y, :n], :Prob => [UnamedProbabilityBox{Normal}([Interval(-0.5, 0.5, :μ), Interval(1, 2, :σ)]), UnamedProbabilityBox{Normal}([Interval(1, 2, :μ), Interval(1, 2, :σ)])]), ApproximatedDiscretization([-1, 0, 1], 2))
+        root1 = DiscreteNode(:A, DataFrame(:A => [:y, :n], :Π => [0.5, 0.5]))
+        root2 = ContinuousNode{UnamedProbabilityBox}(:B, DataFrame(:A => [:y, :n], :Π => [UnamedProbabilityBox{Normal}([Interval(-0.5, 0.5, :μ), Interval(1, 2, :σ)]), UnamedProbabilityBox{Normal}([Interval(1, 2, :μ), Interval(1, 2, :σ)])]), ApproximatedDiscretization([-1, 0, 1], 2))
         model = Model(df -> df.B .+ 1, :C)
         sim = DoubleLoop(MonteCarlo(100_000))
         performance = df -> 2 .- df.C
@@ -212,7 +212,7 @@
 
         @test_throws ErrorException("node C has as simulation DoubleLoop(MonteCarlo(100000)), but its imprecise parents will be discretized and approximated with Uniform and Exponential assumption, therefore are no longer imprecise. A prices simulation technique must be selected!") @suppress evaluate!(ebn)
 
-        root2 = ContinuousNode{Tuple{<:Real,<:Real}}(:B, DataFrame(:Prob => (-1, 1)))
+        root2 = ContinuousNode{Tuple{<:Real,<:Real}}(:B, DataFrame(:Π => (-1, 1)))
         model = Model(df -> df.B .+ 1, :C)
         sim = MonteCarlo(100_000)
         performance = df -> 2 .- df.C
@@ -226,9 +226,9 @@
     end
 
     @testset "Auxiliary functions" begin
-        root1 = DiscreteNode(:x, DataFrame(:x => [:x1, :x2], :Prob => [0.3, 0.7]), Dict(:x1 => [Parameter(0.5, :x)], :x2 => [Parameter(0.7, :x)]))
-        root2 = ContinuousNode{UnivariateDistribution}(:y, DataFrame(:Prob => Normal()))
-        root3 = DiscreteNode(:z, DataFrame(:z => [:z1, :z2], :Prob => [0.3, 0.7]), Dict(:z1 => [Parameter(0.5, :z)], :z2 => [Parameter(0.7, :z)]))
+        root1 = DiscreteNode(:x, DataFrame(:x => [:x1, :x2], :Π => [0.3, 0.7]), Dict(:x1 => [Parameter(0.5, :x)], :x2 => [Parameter(0.7, :x)]))
+        root2 = ContinuousNode{UnivariateDistribution}(:y, DataFrame(:Π => Normal()))
+        root3 = DiscreteNode(:z, DataFrame(:z => [:z1, :z2], :Π => [0.3, 0.7]), Dict(:z1 => [Parameter(0.5, :z)], :z2 => [Parameter(0.7, :z)]))
 
         model1 = Model(df -> df.x .^ 2 .- 0.7 .+ df.y, :c1)
         cont_functional1 = ContinuousFunctionalNode(:cf1, [model1], MonteCarlo(300))

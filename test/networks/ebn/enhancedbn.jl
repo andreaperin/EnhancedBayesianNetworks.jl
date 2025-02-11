@@ -1,13 +1,13 @@
 @testset "EnhancedBayesianNetwork" begin
 
     @testset "Structure" begin
-        weather = DiscreteNode(:w, DataFrame(:w => [:sunny, :cloudy], :Prob => [0.5, 0.5]))
-        sprinkler_states = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :s => [:on, :off, :on, :off], :Prob => [0.9, 0.1, 0.2, 0.8])
+        weather = DiscreteNode(:w, DataFrame(:w => [:sunny, :cloudy], :Π => [0.5, 0.5]))
+        sprinkler_states = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :s => [:on, :off, :on, :off], :Π => [0.9, 0.1, 0.2, 0.8])
         sprinkler = DiscreteNode(:s, sprinkler_states)
-        rain_state = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :r => [:no_rain, :rain, :no_rain, :rain], :Prob => [0.9, 0.1, 0.2, 0.8])
+        rain_state = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :r => [:no_rain, :rain, :no_rain, :rain], :Π => [0.9, 0.1, 0.2, 0.8])
         rain = DiscreteNode(:r, rain_state)
 
-        grass_states = DataFrame(:s => [:on, :on, :on, :on, :off, :off, :off, :off], :r => [:no_rain, :no_rain, :rain, :rain, :no_rain, :no_rain, :rain, :rain], :g => [:dry, :wet, :dry, :wet, :dry, :wet, :dry, :wet], :Prob => [0.9, 0.1, 0.9, 0.1, 0.9, 0.1, 0.9, 0.1])
+        grass_states = DataFrame(:s => [:on, :on, :on, :on, :off, :off, :off, :off], :r => [:no_rain, :no_rain, :rain, :rain, :no_rain, :no_rain, :rain, :rain], :g => [:dry, :wet, :dry, :wet, :dry, :wet, :dry, :wet], :Π => [0.9, 0.1, 0.9, 0.1, 0.9, 0.1, 0.9, 0.1])
         grass = DiscreteNode(:g, grass_states)
 
         nodes = [weather, grass, rain, sprinkler]
@@ -18,15 +18,15 @@
     end
 
     @testset "add_child!" begin
-        weather = DiscreteNode(:w, DataFrame(:w => [:sunny, :cloudy], :Prob => [0.5, 0.5]))
+        weather = DiscreteNode(:w, DataFrame(:w => [:sunny, :cloudy], :Π => [0.5, 0.5]))
         sprinkler_states = DataFrame(
-            :w => [:sunny, :sunny, :cloudy, :cloudy], :s => [:on, :off, :on, :off], :Prob => [0.9, 0.1, 0.2, 0.8]
+            :w => [:sunny, :sunny, :cloudy, :cloudy], :s => [:on, :off, :on, :off], :Π => [0.9, 0.1, 0.2, 0.8]
         )
         sprinkler = DiscreteNode(:s, sprinkler_states)
-        rain_state = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :r => [:no_rain, :rain, :no_rain, :rain], :Prob => [0.9, 0.1, 0.2, 0.8])
+        rain_state = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :r => [:no_rain, :rain, :no_rain, :rain], :Π => [0.9, 0.1, 0.2, 0.8])
         rain = DiscreteNode(:r, rain_state)
 
-        grass_states = DataFrame(:s => [:on, :on, :on, :on, :off, :off, :off, :off], :r => [:no_rain, :no_rain, :rain, :rain, :no_rain, :no_rain, :rain, :rain], :g => [:dry, :wet, :dry, :wet, :dry, :wet, :dry, :wet], :Prob => [0.9, 0.1, 0.9, 0.1, 0.9, 0.1, 0.9, 0.1])
+        grass_states = DataFrame(:s => [:on, :on, :on, :on, :off, :off, :off, :off], :r => [:no_rain, :no_rain, :rain, :rain, :no_rain, :no_rain, :rain, :rain], :g => [:dry, :wet, :dry, :wet, :dry, :wet, :dry, :wet], :Π => [0.9, 0.1, 0.9, 0.1, 0.9, 0.1, 0.9, 0.1])
         grass = DiscreteNode(:g, grass_states)
 
         nodes = [weather, grass, rain, sprinkler]
@@ -39,12 +39,12 @@
 
         @test_throws ErrorException("Recursion on the same node 'w' is not allowed in EnhancedBayesianNetworks") add_child!(net, :w, :w)
         @test_throws ErrorException("node 'w' is a root node and cannot have parents") add_child!(net, :s, :w)
-        rain_state1 = DataFrame(:a => [:sunny, :sunny, :cloudy, :cloudy], :r => [:no_rain, :rain, :no_rain, :rain], :Prob => [0.9, 0.1, 0.2, 0.8])
+        rain_state1 = DataFrame(:a => [:sunny, :sunny, :cloudy, :cloudy], :r => [:no_rain, :rain, :no_rain, :rain], :Π => [0.9, 0.1, 0.2, 0.8])
         rain1 = DiscreteNode(:r, rain_state1)
         nodes1 = [weather, grass, rain1, sprinkler]
         net1 = EnhancedBayesianNetwork(nodes1)
         @test_throws ErrorException("trying to set node 'r' as child of node 'w', but 'r' has a cpt that does not contains 'w' in the scenarios: $(rain1.cpt)") add_child!(net1, weather, rain1)
-        rain_state2 = DataFrame(:w => [:sunny, :sunny, :cloudies, :cloudies], :r => [:no_rain, :rain, :no_rain, :rain], :Prob => [0.9, 0.1, 0.2, 0.8])
+        rain_state2 = DataFrame(:w => [:sunny, :sunny, :cloudies, :cloudies], :r => [:no_rain, :rain, :no_rain, :rain], :Π => [0.9, 0.1, 0.2, 0.8])
         rain2 = DiscreteNode(:r, rain_state2)
         nodes2 = [weather, grass, rain2, sprinkler]
         net2 = EnhancedBayesianNetwork(nodes2)
@@ -76,12 +76,12 @@
     end
 
     @testset "parents & children" begin
-        weather = DiscreteNode(:w, DataFrame(:w => [:sunny, :cloudy], :Prob => [0.5, 0.5]))
+        weather = DiscreteNode(:w, DataFrame(:w => [:sunny, :cloudy], :Π => [0.5, 0.5]))
         sprinkler_states = DataFrame(
-            :w => [:sunny, :sunny, :cloudy, :cloudy], :s => [:on, :off, :on, :off], :Prob => [0.9, 0.1, 0.2, 0.8]
+            :w => [:sunny, :sunny, :cloudy, :cloudy], :s => [:on, :off, :on, :off], :Π => [0.9, 0.1, 0.2, 0.8]
         )
         sprinkler = DiscreteNode(:s, sprinkler_states)
-        rain_state = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :r => [:no_rain, :rain, :no_rain, :rain], :Prob => [0.9, 0.1, 0.2, 0.8])
+        rain_state = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :r => [:no_rain, :rain, :no_rain, :rain], :Π => [0.9, 0.1, 0.2, 0.8])
         rain = DiscreteNode(:r, rain_state)
 
         grass_model = Model(df -> df.r .+ df.s, :g)
@@ -112,14 +112,14 @@
         @test children(net, grass) == (Int64[], Symbol[], AbstractNode[])
     end
     @testset "discrete_ancestors" begin
-        root1 = DiscreteNode(:X1, DataFrame(:X1 => [:y, :n], :Prob => [0.2, 0.8]))
-        root2 = DiscreteNode(:X2, DataFrame(:X2 => [:yes, :no], :Prob => [0.4, 0.6]), Dict(:yes => [Parameter(2.2, :X2)], :no => [Parameter(5.5, :X2)]))
-        root3 = ContinuousNode{UnivariateDistribution}(:Y1, DataFrame(:Prob => Normal()), ExactDiscretization([0, 0.2, 1]))
+        root1 = DiscreteNode(:X1, DataFrame(:X1 => [:y, :n], :Π => [0.2, 0.8]))
+        root2 = DiscreteNode(:X2, DataFrame(:X2 => [:yes, :no], :Π => [0.4, 0.6]), Dict(:yes => [Parameter(2.2, :X2)], :no => [Parameter(5.5, :X2)]))
+        root3 = ContinuousNode{UnivariateDistribution}(:Y1, DataFrame(:Π => Normal()), ExactDiscretization([0, 0.2, 1]))
 
-        child1_states = DataFrame(:X1 => [:y, :y, :n, :n], :C1 => [:c1y, :c1n, :c1y, :c1n], :Prob => [0.3, 0.7, 0.4, 0.6])
+        child1_states = DataFrame(:X1 => [:y, :y, :n, :n], :C1 => [:c1y, :c1n, :c1y, :c1n], :Π => [0.3, 0.7, 0.4, 0.6])
         child1 = DiscreteNode(:C1, child1_states, Dict(:c1y => [Parameter(1, :X1)], :c1n => [Parameter(0, :X1)]))
 
-        child2 = ContinuousNode{UnivariateDistribution}(:C2, DataFrame(:X2 => [:yes, :no], :Prob => [Normal(), Normal(1, 1)]))
+        child2 = ContinuousNode{UnivariateDistribution}(:C2, DataFrame(:X2 => [:yes, :no], :Π => [Normal(), Normal(1, 1)]))
 
         functional1_parents = [child1, child2]
         disc_D = ApproximatedDiscretization([-1.1, 0, 0.11], 2)
@@ -145,12 +145,12 @@
     end
 
     @testset "verify net" begin
-        weather = DiscreteNode(:w, DataFrame(:w => [:sunny, :cloudy], :Prob => [0.5, 0.5]))
+        weather = DiscreteNode(:w, DataFrame(:w => [:sunny, :cloudy], :Π => [0.5, 0.5]))
         sprinkler_states = DataFrame(
-            :w => [:sunny, :sunny, :cloudy, :cloudy], :s => [:on, :off, :on, :off], :Prob => [0.9, 0.1, 0.2, 0.8]
+            :w => [:sunny, :sunny, :cloudy, :cloudy], :s => [:on, :off, :on, :off], :Π => [0.9, 0.1, 0.2, 0.8]
         )
         sprinkler = DiscreteNode(:s, sprinkler_states)
-        rain_state = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :r => [:no_rain, :rain, :no_rain, :rain], :Prob => [0.9, 0.1, 0.2, 0.8])
+        rain_state = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :r => [:no_rain, :rain, :no_rain, :rain], :Π => [0.9, 0.1, 0.2, 0.8])
         rain = DiscreteNode(:r, rain_state)
 
         grass_model = Model(df -> df.r .+ df.s, :g)
@@ -197,7 +197,7 @@
         )
 
         sprinkler_states3 = DataFrame(
-            :w => [:sunny, :sunny, :cloudy, :cloudy, :t, :t, :not_t, :not_t], :s => [:on, :off, :on, :off, :on, :off, :on, :off], :Prob => [0.9, 0.1, 0.2, 0.8, 0.1, 0.9, 0.4, 0.6]
+            :w => [:sunny, :sunny, :cloudy, :cloudy, :t, :t, :not_t, :not_t], :s => [:on, :off, :on, :off, :on, :off, :on, :off], :Π => [0.9, 0.1, 0.2, 0.8, 0.1, 0.9, 0.4, 0.6]
         )
         sprinkler3 = DiscreteNode(:s, sprinkler_states3)
         net3 = EnhancedBayesianNetwork([weather, rain, sprinkler3, grass])
@@ -210,10 +210,10 @@
     end
 
     @testset "order network" begin
-        root = DiscreteNode(:A, DataFrame(:A => [:a1, :a2], :Prob => [0.5, 0.5]))
-        child1 = DiscreteNode(:B, DataFrame(:D => [:d1, :d2, :d1, :d2, :d1, :d2, :d1, :d2], :A => [:a1, :a1, :a2, :a2, :a1, :a1, :a2, :a2], :B => [:b1, :b2, :b1, :b2, :b1, :b2, :b1, :b2], :Prob => [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]))
-        child2 = DiscreteNode(:C, DataFrame(:B => [:b1, :b1, :b2, :b2], :C => [:c1, :c2, :c1, :c2], :Prob => [0.5, 0.5, 0.5, 0.5]))
-        child3 = DiscreteNode(:D, DataFrame(:C => [:c1, :c1, :c2, :c2], :D => [:d1, :d2, :d1, :d2], :Prob => [0.5, 0.5, 0.5, 0.5]))
+        root = DiscreteNode(:A, DataFrame(:A => [:a1, :a2], :Π => [0.5, 0.5]))
+        child1 = DiscreteNode(:B, DataFrame(:D => [:d1, :d2, :d1, :d2, :d1, :d2, :d1, :d2], :A => [:a1, :a1, :a2, :a2, :a1, :a1, :a2, :a2], :B => [:b1, :b2, :b1, :b2, :b1, :b2, :b1, :b2], :Π => [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]))
+        child2 = DiscreteNode(:C, DataFrame(:B => [:b1, :b1, :b2, :b2], :C => [:c1, :c2, :c1, :c2], :Π => [0.5, 0.5, 0.5, 0.5]))
+        child3 = DiscreteNode(:D, DataFrame(:C => [:c1, :c1, :c2, :c2], :D => [:d1, :d2, :d1, :d2], :Π => [0.5, 0.5, 0.5, 0.5]))
         net = EnhancedBayesianNetwork([root, child1, child2, child3])
         add_child!(net, :A, :B)
         add_child!(net, :B, :C)
@@ -222,12 +222,12 @@
         @test EnhancedBayesianNetworks._is_cyclic_dfs(net.adj_matrix)
         @test_throws ErrorException("network is cyclic!") order!(net)
 
-        weather = DiscreteNode(:w, DataFrame(:w => [:sunny, :cloudy], :Prob => [0.5, 0.5]))
-        sprinkler_states = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :s => [:on, :off, :on, :off], :Prob => [0.9, 0.1, 0.2, 0.8])
+        weather = DiscreteNode(:w, DataFrame(:w => [:sunny, :cloudy], :Π => [0.5, 0.5]))
+        sprinkler_states = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :s => [:on, :off, :on, :off], :Π => [0.9, 0.1, 0.2, 0.8])
         sprinkler = DiscreteNode(:s, sprinkler_states)
-        rain_state = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :r => [:no_rain, :rain, :no_rain, :rain], :Prob => [0.9, 0.1, 0.2, 0.8])
+        rain_state = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :r => [:no_rain, :rain, :no_rain, :rain], :Π => [0.9, 0.1, 0.2, 0.8])
         rain = DiscreteNode(:r, rain_state)
-        grass_states = DataFrame(:s => [:on, :on, :on, :on, :off, :off, :off, :off], :r => [:no_rain, :no_rain, :rain, :rain, :no_rain, :no_rain, :rain, :rain], :g => [:dry, :wet, :dry, :wet, :dry, :wet, :dry, :wet], :Prob => [0.9, 0.1, 0.9, 0.1, 0.9, 0.1, 0.9, 0.1])
+        grass_states = DataFrame(:s => [:on, :on, :on, :on, :off, :off, :off, :off], :r => [:no_rain, :no_rain, :rain, :rain, :no_rain, :no_rain, :rain, :rain], :g => [:dry, :wet, :dry, :wet, :dry, :wet, :dry, :wet], :Π => [0.9, 0.1, 0.9, 0.1, 0.9, 0.1, 0.9, 0.1])
         grass = DiscreteNode(:g, grass_states)
         nodes = [weather, sprinkler, rain, grass]
         net = EnhancedBayesianNetwork(nodes)
@@ -242,11 +242,11 @@
         @test net.nodes == [weather, sprinkler, rain, grass]
 
         @test isnothing(EnhancedBayesianNetworks._verify_net(net))
-        rain_state = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :g => [:no_rain, :rain, :no_rain, :rain], :Prob => [0.9, 0.1, 0.2, 0.8])
+        rain_state = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :g => [:no_rain, :rain, :no_rain, :rain], :Π => [0.9, 0.1, 0.2, 0.8])
         rain = DiscreteNode(:g, rain_state)
         nodes = [weather, sprinkler, rain, grass]
         @test_throws ErrorException("network nodes names must be unique") EnhancedBayesianNetwork(nodes)
-        rain_state = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :r => [:on, :off, :on, :off], :Prob => [0.9, 0.1, 0.2, 0.8])
+        rain_state = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :r => [:on, :off, :on, :off], :Π => [0.9, 0.1, 0.2, 0.8])
         rain = DiscreteNode(:r, rain_state)
         nodes = [weather, sprinkler, rain, grass]
         @test_throws ErrorException("network nodes states must be unique") EnhancedBayesianNetwork(nodes)
@@ -254,12 +254,12 @@
 
     @testset "add & remove nodes" begin
 
-        weather = DiscreteNode(:w, DataFrame(:w => [:sunny, :cloudy], :Prob => [0.5, 0.5]))
-        sprinkler_states = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :s => [:on, :off, :on, :off], :Prob => [0.9, 0.1, 0.2, 0.8])
+        weather = DiscreteNode(:w, DataFrame(:w => [:sunny, :cloudy], :Π => [0.5, 0.5]))
+        sprinkler_states = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :s => [:on, :off, :on, :off], :Π => [0.9, 0.1, 0.2, 0.8])
         sprinkler = DiscreteNode(:s, sprinkler_states)
-        rain_state = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :r => [:no_rain, :rain, :no_rain, :rain], :Prob => [0.9, 0.1, 0.2, 0.8])
+        rain_state = DataFrame(:w => [:sunny, :sunny, :cloudy, :cloudy], :r => [:no_rain, :rain, :no_rain, :rain], :Π => [0.9, 0.1, 0.2, 0.8])
         rain = DiscreteNode(:r, rain_state)
-        grass_states = DataFrame(:s => [:on, :on, :on, :on, :off, :off, :off, :off], :r => [:no_rain, :no_rain, :rain, :rain, :no_rain, :no_rain, :rain, :rain], :g => [:dry, :wet, :dry, :wet, :dry, :wet, :dry, :wet], :Prob => [0.9, 0.1, 0.9, 0.1, 0.9, 0.1, 0.9, 0.1])
+        grass_states = DataFrame(:s => [:on, :on, :on, :on, :off, :off, :off, :off], :r => [:no_rain, :no_rain, :rain, :rain, :no_rain, :no_rain, :rain, :rain], :g => [:dry, :wet, :dry, :wet, :dry, :wet, :dry, :wet], :Π => [0.9, 0.1, 0.9, 0.1, 0.9, 0.1, 0.9, 0.1])
         grass = DiscreteNode(:g, grass_states)
         nodes = [weather, sprinkler, rain, grass]
         net = EnhancedBayesianNetwork(nodes)
@@ -312,66 +312,66 @@
     end
 
     @testset "Markov Blankets" begin
-        x1 = DiscreteNode(:x1, DataFrame(:x1 => [:x1y, :x1n], :Prob => [0.5, 0.5]))
-        x2 = DiscreteNode(:x2, DataFrame(:x2 => [:x2y, :x2n], :Prob => [0.5, 0.5]))
-        x4 = DiscreteNode(:x4, DataFrame(:x4 => [:x4y, :x4n], :Prob => [0.5, 0.5]))
-        x8 = DiscreteNode(:x8, DataFrame(:x8 => [:x8y, :x8n], :Prob => [0.5, 0.5]))
+        x1 = DiscreteNode(:x1, DataFrame(:x1 => [:x1y, :x1n], :Π => [0.5, 0.5]))
+        x2 = DiscreteNode(:x2, DataFrame(:x2 => [:x2y, :x2n], :Π => [0.5, 0.5]))
+        x4 = DiscreteNode(:x4, DataFrame(:x4 => [:x4y, :x4n], :Π => [0.5, 0.5]))
+        x8 = DiscreteNode(:x8, DataFrame(:x8 => [:x8y, :x8n], :Π => [0.5, 0.5]))
         x3_states = DataFrame(
             :x1 => [:x1y, :x1y, :x1n, :x1n],
             :x3 => [:x3y, :x3n, :x3y, :x3n],
-            :Prob => [0.5, 0.5, 0.5, 0.5]
+            :Π => [0.5, 0.5, 0.5, 0.5]
         )
 
         x3 = DiscreteNode(:x3, x3_states)
         x5_states = DataFrame(
             :x2 => [:x2y, :x2y, :x2n, :x2n],
             :x5 => [:x5y, :x5n, :x5y, :x5n],
-            :Prob => [0.5, 0.5, 0.5, 0.5]
+            :Π => [0.5, 0.5, 0.5, 0.5]
         )
         x5 = DiscreteNode(:x5, x5_states)
         x7_states = DataFrame(
             :x4 => [:x4y, :x4y, :x4n, :x4n],
             :x7 => [:x7y, :x7n, :x7y, :x7n],
-            :Prob => [0.5, 0.5, 0.5, 0.5]
+            :Π => [0.5, 0.5, 0.5, 0.5]
         )
         x7 = DiscreteNode(:x7, x7_states)
         x11_states = DataFrame(
             :x8 => [:x8y, :x8y, :x8n, :x8n],
             :x11 => [:x11y, :x11n, :x11y, :x11n],
-            :Prob => [0.5, 0.5, 0.5, 0.5]
+            :Π => [0.5, 0.5, 0.5, 0.5]
         )
         x11 = DiscreteNode(:x11, x11_states)
         x6_states = DataFrame(
             :x4 => [:x4y, :x4y, :x4y, :x4y, :x4n, :x4n, :x4n, :x4n],
             :x3 => [:x3y, :x3y, :x3n, :x3n, :x3y, :x3y, :x3n, :x3n],
             :x6 => [:x6y, :x6n, :x6y, :x6n, :x6y, :x6n, :x6y, :x6n],
-            :Prob => [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+            :Π => [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
         )
         x6 = DiscreteNode(:x6, x6_states)
         x9_states = DataFrame(
             :x6 => [:x6y, :x6y, :x6y, :x6y, :x6n, :x6n, :x6n, :x6n],
             :x5 => [:x5y, :x5y, :x5n, :x5n, :x5y, :x5y, :x5n, :x5n],
             :x9 => [:x9y, :x9n, :x9y, :x9n, :x9y, :x9n, :x9y, :x9n],
-            :Prob => [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+            :Π => [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
         )
         x9 = DiscreteNode(:x9, x9_states)
         x10_states = DataFrame(
             :x6 => [:x6y, :x6y, :x6y, :x6y, :x6n, :x6n, :x6n, :x6n],
             :x8 => [:x8y, :x8y, :x8n, :x8n, :x8y, :x8y, :x8n, :x8n],
             :x10 => [:x10y, :x10n, :x10y, :x10n, :x10y, :x10n, :x10y, :x10n],
-            :Prob => [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+            :Π => [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
         )
         x10 = DiscreteNode(:x10, x10_states)
         x12_states = DataFrame(
             :x9 => [:x9y, :x9y, :x9n, :x9n],
             :x12 => [:x12y, :x12n, :x12y, :x12n],
-            :Prob => [0.5, 0.5, 0.5, 0.5]
+            :Π => [0.5, 0.5, 0.5, 0.5]
         )
         x12 = DiscreteNode(:x12, x12_states)
         x13_states = DataFrame(
             :x10 => [:x10y, :x10y, :x10n, :x10n],
             :x13 => [:x13y, :x13n, :x13y, :x13n],
-            :Prob => [0.5, 0.5, 0.5, 0.5]
+            :Π => [0.5, 0.5, 0.5, 0.5]
         )
         x13 = DiscreteNode(:x13, x13_states)
         nodes = [x1, x2, x4, x8, x5, x7, x11, x3, x6, x9, x10, x12, x13]
@@ -399,10 +399,10 @@
     end
 
     @testset "Markov Envelopes" begin
-        Y1 = DiscreteNode(:y1, DataFrame(:y1 => [:yy1, :yn1], :Prob => [0.5, 0.5]), Dict(:yy1 => [Parameter(0.5, :y1)], :yn1 => [Parameter(0.8, :y1)]))
-        X1 = ContinuousNode{UnivariateDistribution}(:x1, DataFrame(:Prob => Normal()))
-        X2 = ContinuousNode{UnivariateDistribution}(:x2, DataFrame(:Prob => Normal()))
-        X3 = ContinuousNode{UnivariateDistribution}(:x3, DataFrame(:Prob => Normal()))
+        Y1 = DiscreteNode(:y1, DataFrame(:y1 => [:yy1, :yn1], :Π => [0.5, 0.5]), Dict(:yy1 => [Parameter(0.5, :y1)], :yn1 => [Parameter(0.8, :y1)]))
+        X1 = ContinuousNode{UnivariateDistribution}(:x1, DataFrame(:Π => Normal()))
+        X2 = ContinuousNode{UnivariateDistribution}(:x2, DataFrame(:Π => Normal()))
+        X3 = ContinuousNode{UnivariateDistribution}(:x3, DataFrame(:Π => Normal()))
 
         model = Model(df -> df.y1 .+ df.x1, :y2)
         models = [model]

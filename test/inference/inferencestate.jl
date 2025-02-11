@@ -1,8 +1,8 @@
 @testset "Inference State" begin
-    v = DiscreteNode(:V, DataFrame(:V => [:yesV, :noV], :Prob => [0.01, 0.99]))
-    s = DiscreteNode(:S, DataFrame(:S => [:yesS, :noS], :Prob => [0.5, 0.5]))
-    t = DiscreteNode(:T, DataFrame(:V => [:yesV, :yesV, :noV, :noV], :T => [:yesT, :noT, :yesT, :noT], :Prob => [0.05, 0.95, 0.01, 0.99]))
-    l = DiscreteNode(:L, DataFrame(:S => [:yesS, :yesS, :noS, :noS], :L => [:yesL, :noL, :yesL, :noL], :Prob => [0.1, 0.9, 0.01, 0.99]))
+    v = DiscreteNode(:V, DataFrame(:V => [:yesV, :noV], :Π => [0.01, 0.99]))
+    s = DiscreteNode(:S, DataFrame(:S => [:yesS, :noS], :Π => [0.5, 0.5]))
+    t = DiscreteNode(:T, DataFrame(:V => [:yesV, :yesV, :noV, :noV], :T => [:yesT, :noT, :yesT, :noT], :Π => [0.05, 0.95, 0.01, 0.99]))
+    l = DiscreteNode(:L, DataFrame(:S => [:yesS, :yesS, :noS, :noS], :L => [:yesL, :noL, :yesL, :noL], :Π => [0.1, 0.9, 0.01, 0.99]))
     bn = BayesianNetwork([v, s, t, l])
     add_child!(bn, v, t)
     add_child!(bn, s, l)
@@ -20,11 +20,11 @@
     @test PreciseInferenceState(bn, :V, Evidence()).query == PreciseInferenceState(bn, [:V], Evidence()).query
     @test PreciseInferenceState(bn, :V, Evidence()).evidence == PreciseInferenceState(bn, [:V], Evidence()).evidence
 
-    F = DiscreteNode(:F, DataFrame(:F => [:Ft, :Ff], :Prob => [[0.4, 0.5], [0.5, 0.6]]))
-    B = DiscreteNode(:B, DataFrame(:B => [:Bt, :Bf], :Prob => [0.5, 0.5]))
-    L = DiscreteNode(:L, DataFrame(:F => [:Ft, :Ft, :Ft, :Ff, :Ff, :Ff], :L => [:Lt, :Lf, :L2, :Lt, :Lf, :L2], :Prob => [0.3, 0.4, 0.3, 0.05, 0.85, 0.1]))
-    D = DiscreteNode(:D, DataFrame(:F => [:Ft, :Ft, :Ft, :Ft, :Ff, :Ff, :Ff, :Ff], :B => [:Bt, :Bt, :Bf, :Bf, :Bt, :Bt, :Bf, :Bf], :D => [:Dt, :Df, :Dt, :Df, :Dt, :Df, :Dt, :Df], :Prob => [0.8, 0.2, 0.1, 0.9, 0.1, 0.9, 0.7, 0.3]))
-    H = DiscreteNode(:H, DataFrame(:D => [:Dt, :Dt, :Df, :Df], :H => [:Ht, :Hf, :Ht, :Hf], :Prob => [0.6, 0.4, 0.3, 0.7]))
+    F = DiscreteNode(:F, DataFrame(:F => [:Ft, :Ff], :Π => [[0.4, 0.5], [0.5, 0.6]]))
+    B = DiscreteNode(:B, DataFrame(:B => [:Bt, :Bf], :Π => [0.5, 0.5]))
+    L = DiscreteNode(:L, DataFrame(:F => [:Ft, :Ft, :Ft, :Ff, :Ff, :Ff], :L => [:Lt, :Lf, :L2, :Lt, :Lf, :L2], :Π => [0.3, 0.4, 0.3, 0.05, 0.85, 0.1]))
+    D = DiscreteNode(:D, DataFrame(:F => [:Ft, :Ft, :Ft, :Ft, :Ff, :Ff, :Ff, :Ff], :B => [:Bt, :Bt, :Bf, :Bf, :Bt, :Bt, :Bf, :Bf], :D => [:Dt, :Df, :Dt, :Df, :Dt, :Df, :Dt, :Df], :Π => [0.8, 0.2, 0.1, 0.9, 0.1, 0.9, 0.7, 0.3]))
+    H = DiscreteNode(:H, DataFrame(:D => [:Dt, :Dt, :Df, :Df], :H => [:Ht, :Hf, :Ht, :Hf], :Π => [0.6, 0.4, 0.3, 0.7]))
 
     cn = CredalNetwork([F, B, L, D, H])
 
