@@ -1,8 +1,8 @@
 @testset "Trasmission Nodes" begin
 
     @testset "Transfer Single Node" begin
-        root1 = DiscreteNode(:x, DataFrame(:x => [:x1, :x2], :Prob => [0.3, 0.7]), Dict(:x1 => [Parameter(0.5, :x)], :x2 => [Parameter(0.7, :x)]))
-        root2 = ContinuousNode{UnivariateDistribution}(:y, DataFrame(:Prob => Normal()))
+        root1 = DiscreteNode(:x, DataFrame(:x => [:x1, :x2], :Π => [0.3, 0.7]), Dict(:x1 => [Parameter(0.5, :x)], :x2 => [Parameter(0.7, :x)]))
+        root2 = ContinuousNode{UnivariateDistribution}(:y, DataFrame(:Π => Normal()))
 
         model1 = Model(df -> df.x .^ 2 .- 0.7 .+ df.y, :fc)
         discretization = ApproximatedDiscretization([-2, 0, 2], 2)
@@ -58,9 +58,9 @@
     end
 
     @testset "Transfer All" begin
-        root1 = DiscreteNode(:x, DataFrame(:x => [:x1, :x2], :Prob => [0.3, 0.7]), Dict(:x1 => [Parameter(0.5, :x)], :x2 => [Parameter(0.7, :x)]))
-        root2 = ContinuousNode{UnivariateDistribution}(:y, DataFrame(:Prob => Normal()))
-        root3 = DiscreteNode(:z, DataFrame(:z => [:z1, :z2], :Prob => [0.3, 0.7]), Dict(:z1 => [Parameter(0.5, :z)], :z2 => [Parameter(0.7, :z)]))
+        root1 = DiscreteNode(:x, DataFrame(:x => [:x1, :x2], :Π => [0.3, 0.7]), Dict(:x1 => [Parameter(0.5, :x)], :x2 => [Parameter(0.7, :x)]))
+        root2 = ContinuousNode{UnivariateDistribution}(:y, DataFrame(:Π => Normal()))
+        root3 = DiscreteNode(:z, DataFrame(:z => [:z1, :z2], :Π => [0.3, 0.7]), Dict(:z1 => [Parameter(0.5, :z)], :z2 => [Parameter(0.7, :z)]))
 
         model1 = Model(df -> df.z .^ 2 .- 0.7 .+ df.y, :c1)
         cont_functional1 = ContinuousFunctionalNode(:cf1, [model1], MonteCarlo(300))

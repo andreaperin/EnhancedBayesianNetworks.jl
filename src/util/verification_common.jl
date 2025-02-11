@@ -5,7 +5,7 @@ function _by_row(evidence::Dict{Symbol,Symbol})
 end
 
 function _verify_prob_column(cpt::DataFrame)
-    if "Prob" ∉ names(cpt)
-        error("cpt must contain a column named :Prob where probabilities are collected: $cpt")
+    if "Π" ∉ names(cpt)
+        error("cpt must contain a column named :Π where probabilities are collected: $cpt")
     end
 end

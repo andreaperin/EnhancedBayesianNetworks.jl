@@ -13,10 +13,10 @@
 end
 
 function factorize(cpt::DataFrame)
-    node_names = Symbol.(names(cpt[!, Not(:Prob)]))
+    node_names = Symbol.(names(cpt[!, Not(:Π)]))
     node_name = pop!(node_names)
     insert!(node_names, 1, node_name)
-    new_cpt = sort(select(cpt, node_names, :Prob), [node_names[end]])
+    new_cpt = sort(select(cpt, node_names, :Π), [node_names[end]])
     function sts_map_dict(n::Symbol)
         dictionary = Dict{Symbol,Int}()
         for (i, p) in enumerate(unique(new_cpt[!, n]))
@@ -26,7 +26,7 @@ function factorize(cpt::DataFrame)
     end
     sts = Dict(map(n -> (n => sts_map_dict(n)), node_names))
     dims = map(name -> length(unique(new_cpt[!, name])), node_names)
-    potentials = reshape(new_cpt[!, :Prob], Tuple(dims))
+    potentials = reshape(new_cpt[!, :Π], Tuple(dims))
     return Factor(node_names, potentials, sts)
 end
 

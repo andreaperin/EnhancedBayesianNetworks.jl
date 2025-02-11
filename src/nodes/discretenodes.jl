@@ -15,8 +15,8 @@
         end
         cpt = _verify_cpt_and_normalize!(cpt, name)
         _verify_parameters(cpt, parameters, name)
-        ## setting node column as last column before :Prob
-        select!(cpt, Not([name, :Prob]), name, :Prob)
+        ## setting node column as last column before :Π 
+        select!(cpt, Not([name, :Π]), name, :Π)
         sort!(cpt)
         new(name, cpt, parameters, additional_info)
     end
@@ -54,7 +54,7 @@ end
 _states(node::DiscreteNode) = _states(node.cpt, node.name)
 
 function _scenarios(cpt::DataFrame, name::Symbol)
-    scenarios = copy.(eachrow(cpt[!, Not(name, :Prob)]))
+    scenarios = copy.(eachrow(cpt[!, Not(name, :Π)]))
     return unique(map(s -> Dict(pairs(s)), scenarios))
 end
 
@@ -81,7 +81,7 @@ function _parameters_with_evidence(node::DiscreteNode, evidence::Evidence)
 end
 
 function _is_precise(node::DiscreteNode)
-    all(isa.(node.cpt[!, :Prob], Real))
+    all(isa.(node.cpt[!, :Π], Real))
 end
 
 function _is_discrete_root(cpt::DataFrame)
@@ -108,7 +108,7 @@ function _extreme_points_dfs(sub_cpt::DataFrame)
         res = []
         for e in ext_points
             df = deepcopy(sub_cpt)
-            df[!, :Prob] = e
+            df[!, :Π] = e
             push!(res, df)
         end
         return res
@@ -117,14 +117,14 @@ function _extreme_points_dfs(sub_cpt::DataFrame)
 end
 
 function _extreme_points_probabilities(sub_cpt::DataFrame)
-    if all(isa.(sub_cpt[!, :Prob], Vector))
+    if all(isa.(sub_cpt[!, :Π], Vector))
         n = nrow(sub_cpt)
         A = zeros(2 * n, n)
         A[collect(1:2:2*n), :] = Matrix(-1.0I, n, n)
         A[collect(2:2:2*n), :] = Matrix(1.0I, n, n)
         A = vcat(A, [-ones(n)'; ones(n)'])
 
-        b = collect(Iterators.flatten(sub_cpt[!, :Prob]))
+        b = collect(Iterators.flatten(sub_cpt[!, :Π]))
         b[collect(1:2:2*n)] = -b[collect(1:2:2*n)]
         b = vcat(b, [-1 1]')
 

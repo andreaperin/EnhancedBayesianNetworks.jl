@@ -181,7 +181,7 @@ end
 
 function _verify_child_node(net::AbstractNetwork, node::DiscreteNode)
     if !_is_root(node)
-        th_parents_names = Symbol.(names(node.cpt[!, Not(node.name, :Prob)]))
+        th_parents_names = Symbol.(names(node.cpt[!, Not(node.name, :Π)]))
         if !issetequal(th_parents_names, parents(net, node)[2])
             error("node '$(node.name)''s cpt requires exctly the nodes '$th_parents_names' to be its parents, but provided parents are '$(parents(net, node)[2])'")
         end
@@ -196,7 +196,7 @@ end
 
 function _verify_child_node(net::AbstractNetwork, node::ContinuousNode)
     if !_is_root(node)
-        th_parents_names = Symbol.(names(node.cpt[!, Not(:Prob)]))
+        th_parents_names = Symbol.(names(node.cpt[!, Not(:Π)]))
         if !issetequal(th_parents_names, parents(net, node)[2])
             error("node '$(node.name)''s cpt requires exctly the nodes '$th_parents_names' to be its parents, but provided parents are '$(parents(net, node)[2])'")
         end
