@@ -21,26 +21,33 @@ import Base: *, sum, reduce
 
 # Types
 export AbstractContinuousInput
-export AbstractDiscreteProbability
+export AbstractContinuousNode
+export AbstractDiscreteNode
 export AbstractDiscretization
 export AbstractInferenceState
 export AbstractNetwork
 export AbstractNode
-export AbstractContinuousNode
-export AbstractDiscreteNode
 export ApproximatedDiscretization
 export BayesianNetwork
 export ContinuousFunctionalNode
+export ContinuousInput
 export ContinuousNode
+export ContinuousConditionalProbabilityTable
 export CredalNetwork
+export DiscreteConditionalProbabilityTable
 export DiscreteFunctionalNode
 export DiscreteNode
+export DiscreteProbability
 export ExactDiscretization
 export EnhancedBayesianNetwork
 export Evidence
 export Factor
 export FunctionalNode
 export ImpreciseInferenceState
+export ImpreciseContinuousInput
+export ImpreciseDiscreteProbability
+export PreciseContinuousInput
+export PreciseDiscreteProbability
 export PreciseInferenceState
 export UnamedProbabilityBox
 # export Factor
@@ -58,12 +65,15 @@ export evaluate_with_envelopes
 export factorize
 export gplot
 export infer
+export isprecise
 export markov_blanket
 export markov_envelope
 export order!
 export parents
 export reduce!
 export saveplot
+export scenarios
+export states
 
 include("util/wrap.jl")
 include("util/verification_common.jl")
@@ -71,6 +81,6 @@ include("nodes/nodes.jl")
 include("networks/networks.jl")
 include("inference/inference.jl")
 
-include("util/base_show.jl")
+# include("util/base_show.jl")
 include("util/plots.jl")
 end
