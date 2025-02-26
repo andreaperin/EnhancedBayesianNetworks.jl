@@ -42,10 +42,10 @@ function _verify_precise_exhaustiveness_and_normalize!(sub_cpt::DataFrame)
 end
 
 function _verify_imprecise_exhaustiveness(sub_cpt::DataFrame)
-    if all(isa.(sub_cpt[!, :Π], Vector{<:Real}))
-        if sum(first.(sub_cpt[!, :Π])) >= 1
+    if all(isa.(sub_cpt[!, :Prob], Vector{<:Real}))
+        if sum(first.(sub_cpt[!, :Prob])) > 1
             error("sum of intervals lower bounds is bigger than 1: $sub_cpt")
-        elseif sum(last.(sub_cpt[!, :Π])) <= 1
+        elseif sum(last.(sub_cpt[!, :Prob])) < 1
             error("sum of intervals upper bounds is smaller than 1: $sub_cpt")
         end
     end
