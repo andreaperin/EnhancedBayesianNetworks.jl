@@ -13,9 +13,6 @@ function UnamedProbabilityBox{T}(p::AbstractVector{<:UQInput}) where {T<:Univari
     return UnamedProbabilityBox{T}(p, domain.lb, domain.ub)
 end
 
-const AbstractContinuousInput = Union{UnivariateDistribution,Tuple{<:Real,<:Real},UnamedProbabilityBox}
-const AbstractDiscreteProbability = Union{<:Real,Tuple{<:Real,<:Real}}
-
 abstract type AbstractDiscretization end
 
 """ ExactDiscretization
@@ -62,8 +59,9 @@ end
 
 ApproximatedDiscretization() = ApproximatedDiscretization(Vector{Real}(), 0)
 
+include("cpts.jl")
 include("discretenodes.jl")
-include("../util/verification_discrete.jl")
+include("../util/verify_discrete.jl")
 include("continuousnodes.jl")
 include("../util/verification_continuous.jl")
 include("functionalnodes.jl")
