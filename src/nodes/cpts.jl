@@ -82,3 +82,9 @@ function _scenarios_cpt(cpt::AbstractConditionalProbabilityTable, name::Symbol)
     end
     return sub_cpts
 end
+
+function _by_row(evidence::Dict{Symbol,Symbol})
+    k = collect(keys(evidence))
+    v = collect(values(evidence))
+    return map((n, s) -> n => ByRow(x -> x == s), k, v)
+end
