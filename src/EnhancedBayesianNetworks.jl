@@ -76,7 +76,6 @@ export scenarios
 export states
 
 include("util/wrap.jl")
-include("util/verification_common.jl")
 include("nodes/nodes.jl")
 include("networks/networks.jl")
 include("inference/inference.jl")
