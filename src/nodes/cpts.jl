@@ -18,6 +18,12 @@ abstract type AbstractConditionalProbabilityTable end
     end
 end
 
+function DiscreteConditionalProbabilityTable{P}(data::DataFrame) where {P<:DiscreteProbability}
+    cpt = DiscreteConditionalProbabilityTable{P}(Symbol.(names(data[!, Not(:Π)])))
+    append!(cpt.data, data)
+    return cpt
+end
+
 @auto_hash_equals struct ContinuousConditionalProbabilityTable{P<:ContinuousInput} <: AbstractConditionalProbabilityTable
     data::DataFrame
     function ContinuousConditionalProbabilityTable{P}(names::Union{Symbol,Vector{Symbol}}) where {P<:ContinuousInput}
