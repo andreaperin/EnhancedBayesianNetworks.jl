@@ -1,104 +1,62 @@
 @auto_hash_equals struct DiscreteNode <: AbstractDiscreteNode
     name::Symbol
-    cpt::DataFrame
+    cpt::DiscreteConditionalProbabilityTable
     parameters::Dict{Symbol,Vector{Parameter}}
     additional_info::Dict{AbstractVector{Symbol},Dict}
 
     function DiscreteNode(
         name::Symbol,
-        cpt::DataFrame,
+        cpt::DiscreteConditionalProbabilityTable,
         parameters::Dict{Symbol,Vector{Parameter}},
         additional_info::Dict{AbstractVector{Symbol},Dict}
     )
-        if String(name) ∉ names(cpt)
+        if String(name) ∉ names(cpt.data)
             error("defined cpt does not contain a column refered to node name $name: $cpt")
         end
-        cpt = _verify_cpt_and_normalize!(cpt, name)
+        _verify_probabilities!(cpt, name)
         _verify_parameters(cpt, parameters, name)
         ## setting node column as last column before :Π 
-        select!(cpt, Not([name, :Π]), name, :Π)
-        sort!(cpt)
+        select!(cpt.data, Not([name, :Π]), name, :Π)
+        sort!(cpt.data)
         new(name, cpt, parameters, additional_info)
     end
 end
 
-function DiscreteNode(name::Symbol, cpt::DataFrame)
+function DiscreteNode(name::Symbol, cpt::DiscreteConditionalProbabilityTable)
     DiscreteNode(name, cpt, Dict{Symbol,Vector{Parameter}}(), Dict{AbstractVector{Symbol},Dict}())
 end
 
-function DiscreteNode(name::Symbol, cpt::DataFrame, parameters::Dict{Symbol,Vector{Parameter}})
+function DiscreteNode(name::Symbol, cpt::DiscreteConditionalProbabilityTable, parameters::Dict{Symbol,Vector{Parameter}})
     DiscreteNode(name, cpt, parameters, Dict{AbstractVector{Symbol},Dict}())
 end
 
-function _verify_cpt_and_normalize!(cpt::DataFrame, name::Symbol)
-    _verify_cpt_coherence(cpt)
-    sub_cpts = _scenarios_cpt(cpt, name)
-    _verify_precise_probabilities_values(cpt)
-    _verify_imprecise_probabilities_values(cpt)
-    map(sc -> _verify_imprecise_exhaustiveness(sc), sub_cpts)
-    return mapreduce(sc -> _verify_precise_exhaustiveness_and_normalize!(sc), vcat, sub_cpts)
-end
+states(node::DiscreteNode) = states(node.cpt, node.name)
 
-function _verify_parameters(cpt::DataFrame, parameters::Dict{Symbol,Vector{Parameter}}, name::Symbol)
-    if !isempty(parameters)
-        if !issetequal(_states(cpt, name), keys(parameters))
-            error("parameters keys $(keys(parameters)) must be coherent with states $(_states(cpt, name))")
-        end
-    end
-end
+scenarios(node::DiscreteNode) = scenarios(node.cpt, node.name)
 
-function _states(cpt::DataFrame, name::Symbol)
-    unique(cpt[!, name])
-end
-
-_states(node::DiscreteNode) = _states(node.cpt, node.name)
-
-function _scenarios(cpt::DataFrame, name::Symbol)
-    scenarios = copy.(eachrow(cpt[!, Not(name, :Π)]))
-    return unique(map(s -> Dict(pairs(s)), scenarios))
-end
-
-_scenarios(node::DiscreteNode) = _scenarios(node.cpt, node.name)
-
-function _scenarios_cpt(cpt::DataFrame, name::Symbol)
-    if ncol(cpt) == 2     ## Root Nodes
-        sub_cpts = [cpt]
-    else    ## Child Nodes
-        scenarios = unique!(map(s -> _by_row(s), _scenarios(cpt, name)))
-        sub_cpts = map(e -> subset(cpt, e), scenarios)
-    end
-    return sub_cpts
-end
+isprecise(node::DiscreteNode) = isprecise(node.cpt)
 
 _scenarios_cpt(node::DiscreteNode) = _scenarios_cpt(node.cpt, node.name)
 
-function _parameters_with_evidence(node::DiscreteNode, evidence::Evidence)
-    if node.name ∉ keys(evidence)
-        error("evidence $evidence does not contain the node $(node.name)")
-    else
-        return node.parameters[evidence[node.name]]
-    end
-end
 
-function _is_precise(node::DiscreteNode)
-    all(isa.(node.cpt[!, :Π], Real))
-end
-
-function _is_discrete_root(cpt::DataFrame)
-    ncol(cpt) == 2
-end
-
-_is_root(node::DiscreteNode) = _is_discrete_root(node.cpt)
+# function _parameters_with_evidence(node::DiscreteNode, evidence::Evidence)
+#     if node.name ∉ keys(evidence)
+#         error("evidence $evidence does not contain the node $(node.name)")
+#     else
+#         return node.parameters[evidence[node.name]]
+#     end
+# end
 
 function _extreme_points(node::DiscreteNode)
-    if _is_precise(node)
+    if isprecise(node)
         return [node]
     else
-        sub_cpts = _scenarios_cpt(node.cpt, node.name)
-        dfs = map(sc -> _extreme_points_dfs(sc), sub_cpts)
+        sub_cpts = EnhancedBayesianNetworks._scenarios_cpt(node.cpt, node.name)
+        dfs = map(sc -> EnhancedBayesianNetworks._extreme_points_dfs(sc), sub_cpts)
         dfsa = vec(collect(Iterators.product(dfs...)))
         res = map(df -> vcat(df...), dfsa)
-        return map(r -> DiscreteNode(node.name, r, node.parameters, node.additional_info), res)
+        cpts = map(r -> DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(r), res)
+        map(cp -> DiscreteNode(node.name, cp, node.parameters, node.additional_info), cpts)
     end
 end
 
@@ -117,7 +75,7 @@ function _extreme_points_dfs(sub_cpt::DataFrame)
 end
 
 function _extreme_points_probabilities(sub_cpt::DataFrame)
-    if all(isa.(sub_cpt[!, :Π], Vector))
+    if all(isa.(sub_cpt[!, :Π], Tuple))
         n = nrow(sub_cpt)
         A = zeros(2 * n, n)
         A[collect(1:2:2*n), :] = Matrix(-1.0I, n, n)

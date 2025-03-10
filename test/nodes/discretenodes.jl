@@ -1,329 +1,213 @@
 @testset "Discrete Nodes" begin
 
     @testset "Root Nodes" begin
+        name = :a
+        cpt0 = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(name)
+        cpt0[:a=>:yes] = -0.5
+        cpt0[:a=>:no] = 0.5
+        @test_throws ErrorException("probabilities must be non-negative: -0.5") DiscreteNode(name, cpt0)
 
-        @testset "cpt verification" begin
-            name = :a
-            cpt0 = DataFrame(:x => [:yes, :no], :P => [0.5, 0.5])
-            cpt1 = DataFrame(:x => [:yes, :no], :Π => [0.5, 0.5])
-            cpt2 = DataFrame(:x => [:yes, :no], :Π => [0.5, [0.4, 0.3]])
-            cpt3 = DataFrame(:x => [:yes, :no], :Π => [[0.3, 0.4], [0.6, 0.7]])
-            @test isnothing(EnhancedBayesianNetworks._verify_cpt_coherence(cpt1))
-            @test isnothing(EnhancedBayesianNetworks._verify_cpt_coherence(cpt3))
-            @test_throws ErrorException("Mixed precise and imprecise probabilities values $cpt2") isnothing(EnhancedBayesianNetworks._verify_cpt_coherence(cpt2))
-            @test_throws ErrorException("cpt must contain a column named :Π where probabilities are collected: $cpt0") EnhancedBayesianNetworks._verify_cpt_coherence(cpt0)
+        cpt1 = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(name)
+        cpt1[:a=>:yes] = 1.5
+        cpt1[:a=>:no] = 0.5
+        @test_throws ErrorException("probabilities must be lower or equal than 1: 1.5") DiscreteNode(name, cpt1)
 
-            cpt4 = DataFrame(:x => [:yes, :no], :Π => [-0.5, 0.5])
-            cpt5 = DataFrame(:x => [:yes, :no], :Π => [1.5, 0.5])
-            @test isnothing(EnhancedBayesianNetworks._verify_precise_probabilities_values(cpt1))
-            @test_throws ErrorException("probabilities must be non-negative: $cpt4") EnhancedBayesianNetworks._verify_precise_probabilities_values(cpt4)
-            @test_throws ErrorException("probabilities must be lower or equal than 1: $cpt5") EnhancedBayesianNetworks._verify_precise_probabilities_values(cpt5)
+        cpt2 = DiscreteConditionalProbabilityTable{ImpreciseDiscreteProbability}(name)
+        cpt2[:a=>:yes] = (-0.5, 0.1)
+        cpt2[:a=>:no] = (0.5, 0.9)
+        @test_throws ErrorException("probabilities must be non-negative: -0.5") DiscreteNode(name, cpt2)
 
-            cpt6 = DataFrame(:x => [:yes, :no], :Π => [[0.6, 0.4], [0.6, 0.7]])
-            cpt7 = DataFrame(:x => [:yes, :no], :Π => [[0.1, 0.4, 0.1], [0.6, 0.7]])
-            @test isnothing(EnhancedBayesianNetworks._verify_imprecise_probabilities_values(cpt3))
-            @test_throws ErrorException("interval probabilities must lower bound smaller than upper bound. $cpt6") EnhancedBayesianNetworks._verify_imprecise_probabilities_values(cpt6)
-            @test_throws ErrorException("interval probabilities must be defined with a 2-values vector. $cpt7") EnhancedBayesianNetworks._verify_imprecise_probabilities_values(cpt7)
+        cpt3 = DiscreteConditionalProbabilityTable{ImpreciseDiscreteProbability}(name)
+        cpt3[:a=>:yes] = (0.6, 1.5)
+        cpt3[:a=>:no] = (0.4, 0.5)
+        @test_throws ErrorException("probabilities must be lower or equal than 1: 1.5") DiscreteNode(name, cpt3)
 
-            cpt8 = DataFrame(:x => [:yes, :no], :Π => [[0.2, 0.4], [0.2, 0.3]])
-            cpt9 = DataFrame(:x => [:yes, :no], :Π => [[0.5, 0.6], [0.6, 0.7]])
-            @test_throws ErrorException("sum of intervals upper bounds is smaller than 1: $cpt8") EnhancedBayesianNetworks._verify_imprecise_exhaustiveness(cpt8)
-            @test_throws ErrorException("sum of intervals lower bounds is bigger than 1: $cpt9") EnhancedBayesianNetworks._verify_imprecise_exhaustiveness(cpt9)
+        cpt4 = DiscreteConditionalProbabilityTable{ImpreciseDiscreteProbability}(name)
+        cpt4[:a=>:yes] = (0.6, 0.8)
+        cpt4[:a=>:no] = (0.1, 0.15)
+        @test_throws ErrorException("sum of intervals upper bounds is smaller than 1: $(cpt4.data)") DiscreteNode(name, cpt4)
 
-            cpt10 = DataFrame(:x => [:yes, :no], :Π => [0.9, 0.5])
-            cpt11 = DataFrame(:x => [:yes, :no], :Π => [0.1, 0.5])
-            cpt12 = DataFrame(:x => [:yes, :no], :Π => [0.49, 0.49])
-            @test_throws ErrorException("states are not exhaustive and mutually exclusives for the following cpt: $cpt10") EnhancedBayesianNetworks._verify_precise_exhaustiveness_and_normalize!(cpt10)
-            @test_throws ErrorException("states are not exhaustive and mutually exclusives for the following cpt: $cpt11") EnhancedBayesianNetworks._verify_precise_exhaustiveness_and_normalize!(cpt11)
+        cpt5 = DiscreteConditionalProbabilityTable{ImpreciseDiscreteProbability}(name)
+        cpt5[:a=>:yes] = (0.6, 0.8)
+        cpt5[:a=>:no] = (0.5, 0.6)
+        @test_throws ErrorException("sum of intervals lower bounds is bigger than 1: $(cpt5.data)") DiscreteNode(name, cpt5)
 
-            @test_logs (:warn, "total probability should be one, but the evaluated value is 0.98, and will be normalized") EnhancedBayesianNetworks._verify_precise_exhaustiveness_and_normalize!(cpt12)
-            new_cpt = @suppress EnhancedBayesianNetworks._verify_precise_exhaustiveness_and_normalize!(cpt12)
-            @test new_cpt == DataFrame(:x => [:yes, :no], :Π => [0.5, 0.5])
+        cpt6 = DiscreteConditionalProbabilityTable{ImpreciseDiscreteProbability}(name)
+        cpt6[:a=>:yes] = (0.3, 0.5)
+        cpt6[:a=>:no] = (0.5, 0.7)
+        parameters = Dict(:y => [Parameter(1, :a)], :no => [Parameter(2, :a)])
+        @test_throws ErrorException("parameters keys [:y, :no] must be coherent with states [:yes, :no]") DiscreteNode(name, cpt6, parameters)
 
-            cpt12 = DataFrame(:x => [:yes, :no], :Π => [0.49, 0.49])
-            @test EnhancedBayesianNetworks._normalize!(cpt12) == [0.5, 0.5]
-        end
+        parameters = Dict(:yes => [Parameter(1, :a)], :no => [Parameter(2, :a)])
+        node = DiscreteNode(name, cpt6, parameters)
+        @test node.name == name
+        @test node.cpt == cpt6
+        @test node.parameters == parameters
+        @test node.additional_info == Dict{AbstractVector{Symbol},Dict}()
 
-        @testset "node verification" begin
-            name = :x
-            parameters = Dict(:yes => [Parameter(2, :d)], :no => [Parameter(0, :d)])
-            cpt = DataFrame(:x => [:yes, :no], :Π => [-0.5, 0.5])
-            @test_throws ErrorException("probabilities must be non-negative: $cpt") EnhancedBayesianNetworks._verify_cpt_and_normalize!(cpt, name)
+        @suppress @test_throws ErrorException("defined cpt does not contain a column refered to node name x: $cpt6") DiscreteNode(:x, cpt6)
 
-            cpt = DataFrame(:x => [:yes, :no], :Π => [0.5, 1.5])
-            @test_throws ErrorException("probabilities must be lower or equal than 1: $cpt") EnhancedBayesianNetworks._verify_cpt_and_normalize!(cpt, name)
+        node = DiscreteNode(name, cpt6)
+        @test node.name == name
+        @test node.cpt == cpt6
+        @test node.parameters == Dict{Symbol,Vector{Parameter}}()
+        @test node.additional_info == Dict{AbstractVector{Symbol},Dict}()
 
-            cpt = DataFrame(:x => [:yes, :no], :Π => [0.8, 0.8])
-            @test_throws ErrorException("states are not exhaustive and mutually exclusives for the following cpt: $cpt") EnhancedBayesianNetworks._verify_cpt_and_normalize!(cpt, name)
+        cpt7 = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(name)
+        cpt7[:a=>:yes] = 0.4999
+        cpt7[:a=>:no] = 0.5
+        @suppress node = DiscreteNode(name, cpt7)
+        @test all(isapprox.(node.cpt.data[:, :Π], [0.50005, 0.49995]))
 
-            cpt = DataFrame(:x => [:yes, :no], :Π => [0.49, 0.49])
-            @test_logs (:warn, "total probability should be one, but the evaluated value is 0.98, and will be normalized") EnhancedBayesianNetworks._verify_cpt_and_normalize!(cpt, name)
+        @testset "nodes functions" begin
+            node = DiscreteNode(name, cpt6, parameters)
 
-            cpt6 = DataFrame(:x => [:yes, :no], :Π => [[0.6, 0.4], [0.6, 0.7]])
-            cpt7 = DataFrame(:x => [:yes, :no], :Π => [[0.1, 0.4, 0.1], [0.6, 0.7]])
-            cpt8 = DataFrame(:x => [:yes, :no], :Π => [[0.2, 0.4], [0.2, 0.3]])
-            cpt9 = DataFrame(:x => [:yes, :no], :Π => [[0.5, 0.6], [0.6, 0.7]])
-
-            @test_throws ErrorException("interval probabilities must lower bound smaller than upper bound. $cpt6") EnhancedBayesianNetworks._verify_cpt_and_normalize!(cpt6, name)
-            @test_throws ErrorException("interval probabilities must be defined with a 2-values vector. $cpt7") EnhancedBayesianNetworks._verify_cpt_and_normalize!(cpt7, name)
-            @test_throws ErrorException("sum of intervals upper bounds is smaller than 1: $cpt8") EnhancedBayesianNetworks._verify_cpt_and_normalize!(cpt8, name)
-            @test_throws ErrorException("sum of intervals lower bounds is bigger than 1: $cpt9") EnhancedBayesianNetworks._verify_cpt_and_normalize!(cpt9, name)
-
-            cpt4 = DataFrame(:x => [:yes, :noo], :Π => [0.2, 0.8])
-            @test isnothing(EnhancedBayesianNetworks._verify_parameters(cpt, parameters, name))
-            @test_throws ErrorException("parameters keys [:yes, :no] must be coherent with states [:yes, :noo]") EnhancedBayesianNetworks._verify_parameters(cpt4, parameters, name)
-
-            name1 = :a
-            parameters = Dict(:yes => [Parameter(2, :d)], :no => [Parameter(0, :d)])
-            cpt = DataFrame(:x => [:yes, :no], :Π => [-0.5, 0.5])
-            @test_throws ErrorException("defined cpt does not contain a column refered to node name a: $cpt") DiscreteNode(name1, cpt, parameters)
-
-            cpt1 = DataFrame(:x => [:yes, :no], :Π => [0.2, 0.8])
-            cpt2 = DataFrame(:x => [:yes, :no], :Π => [[0.3, 0.4], [0.6, 0.7]])
-
-            node1 = DiscreteNode(name, cpt1, parameters)
-            node2 = DiscreteNode(name, cpt1)
-            node3 = DiscreteNode(name, cpt2, parameters)
-            node4 = DiscreteNode(name, cpt2)
-
-            @test node1.name == name
-            @test node1.parameters == parameters
-            @test node1.cpt == cpt1
-            @test node2.name == name
-            @test isempty(node2.parameters)
-            @test node2.cpt == cpt1
-            @test node3.name == name
-            @test node3.parameters == parameters
-            @test node3.cpt == cpt2
-            @test node4.name == name
-            @test isempty(node4.parameters)
-            @test node4.cpt == cpt2
-
-            name = :x
-            parameters = Dict(:yes => [Parameter(2, :d)], :no => [Parameter(0, :d)])
-            cpt = DataFrame(:x => [:yes, :no], :Π => [-0.5, 0.5])
-            @test_throws ErrorException("probabilities must be non-negative: $cpt") DiscreteNode(name, cpt, parameters)
-
-            cpt = DataFrame(:x => [:yes, :no], :Π => [0.5, 1.5])
-            @test_throws ErrorException("probabilities must be lower or equal than 1: $cpt") DiscreteNode(name, cpt, parameters)
-
-            cpt = DataFrame(:x => [:yes, :no], :Π => [0.8, 0.8])
-            @test_throws ErrorException("states are not exhaustive and mutually exclusives for the following cpt: $cpt") DiscreteNode(name, cpt, parameters)
-
-            cpt = DataFrame(:x => [:yes, :no], :Π => [0.49, 0.49])
-            @test_logs (:warn, "total probability should be one, but the evaluated value is 0.98, and will be normalized") DiscreteNode(name, cpt, parameters)
-
-            cpt6 = DataFrame(:x => [:yes, :no], :Π => [[0.6, 0.4], [0.6, 0.7]])
-            cpt7 = DataFrame(:x => [:yes, :no], :Π => [[0.1, 0.4, 0.1], [0.6, 0.7]])
-            cpt8 = DataFrame(:x => [:yes, :no], :Π => [[0.2, 0.4], [0.2, 0.3]])
-            cpt9 = DataFrame(:x => [:yes, :no], :Π => [[0.5, 0.6], [0.6, 0.7]])
-
-            @test_throws ErrorException("interval probabilities must lower bound smaller than upper bound. $cpt6") DiscreteNode(name, cpt6)
-            @test_throws ErrorException("interval probabilities must be defined with a 2-values vector. $cpt7") DiscreteNode(name, cpt7)
-            @test_throws ErrorException("sum of intervals upper bounds is smaller than 1: $cpt8") DiscreteNode(name, cpt8)
-            @test_throws ErrorException("sum of intervals lower bounds is bigger than 1: $cpt9") DiscreteNode(name, cpt9)
-        end
-
-        @testset "node functions" begin
-            name = :x
-            cpt = DataFrame(:x => [:yes, :no], :Π => [0.2, 0.8])
-            parameters = Dict(:yes => [Parameter(1, :X)], :no => [Parameter(2, :X)])
-            node = DiscreteNode(name, cpt, parameters)
-            @test issetequal(EnhancedBayesianNetworks._states(cpt, name), [:yes, :no])
-            @test issetequal(EnhancedBayesianNetworks._states(node), [:yes, :no])
-
-            @test isempty(EnhancedBayesianNetworks._scenarios(cpt, name))
-            @test isempty(EnhancedBayesianNetworks._scenarios(node))
-
-            evidence = Evidence(:a => :a1)
-            @test_throws ErrorException("evidence Dict(:a => :a1) does not contain the node x") EnhancedBayesianNetworks._parameters_with_evidence(node, evidence)
-            evidence = Evidence(:x => :yes)
-            @test EnhancedBayesianNetworks._parameters_with_evidence(node, evidence) == parameters[:yes]
-
-            @test EnhancedBayesianNetworks._is_precise(node)
-            cpt = DataFrame(:x => [:yes, :no], :Π => [[0.1, 0.2], [0.8, 0.9]])
-            node = DiscreteNode(name, cpt, parameters)
-            @test EnhancedBayesianNetworks._is_precise(node) == false
-            @test EnhancedBayesianNetworks._is_discrete_root(cpt)
-            @test EnhancedBayesianNetworks._is_root(node)
-
-            cpt1 = DataFrame(:x => [:yes, :no], :Π => [0.2, 0.8])
-            cpt2 = DataFrame(:x => [:yes, :no], :Π => [[0.1, 0.2], [0.8, 0.9]])
-
-            @test_throws ErrorException("Precise conditional probability table does not have extreme points: $cpt1") EnhancedBayesianNetworks._extreme_points_probabilities(cpt1)
-            extreme_point_probabilities = EnhancedBayesianNetworks._extreme_points_probabilities(cpt2)
-            @test all(isapprox.(extreme_point_probabilities[1], [0.099999, 0.9], atol=0.001))
-            @test all(isapprox.(extreme_point_probabilities[2], [0.19999, 0.8], atol=0.001))
-
-            extreme_point_dfs = EnhancedBayesianNetworks._extreme_points_dfs(cpt2)
-            @test isapprox(extreme_point_dfs[1][!, :Π][1], 0.1, atol=0.05)
-            @test isapprox(extreme_point_dfs[1][!, :Π][2], 0.9, atol=0.05)
-            @test isapprox(extreme_point_dfs[2][!, :Π][1], 0.2, atol=0.05)
-            @test isapprox(extreme_point_dfs[2][!, :Π][2], 0.8, atol=0.05)
-
-            node = DiscreteNode(:x, cpt2)
-            ext_nodes = EnhancedBayesianNetworks._extreme_points(node)
-            node1 = DiscreteNode(:x, extreme_point_dfs[2])
-            node2 = DiscreteNode(:x, extreme_point_dfs[1])
-            @test ext_nodes[1].name == node1.name
-            @test ext_nodes[1].cpt[!, :x] == node1.cpt[!, :x]
-            @test all(isapprox.(ext_nodes[1].cpt[!, :Π], node1.cpt[!, :Π]; atol=0.01))
-
-            @test ext_nodes[2].name == node2.name
-            @test ext_nodes[2].cpt[!, :x] == node2.cpt[!, :x]
-            @test all(isapprox.(ext_nodes[2].cpt[!, :Π], node2.cpt[!, :Π]; atol=0.01))
+            @test states(node) == [:no, :yes]
+            @test scenarios(node) == Any[]
+            @test EnhancedBayesianNetworks._scenarios_cpt(node) == [cpt6.data]
         end
     end
 
     @testset "Child Nodes" begin
+        cpt0 = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}([:x, :y])
+        cpt0[:x=>:yesx, :y=>:yesy] = -0.5
+        cpt0[:x=>:yesx, :y=>:noy] = 0.5
+        cpt0[:x=>:nox, :y=>:yesy] = 0.5
+        cpt0[:x=>:nox, :y=>:noy] = 0.5
 
-        @testset "node verification" begin
-            name = :x
-            parameters = Dict(:yes => [Parameter(2, :d)], :no => [Parameter(0, :d)])
-            cpt = DataFrame(:a => [:a1, :a1, :a2, :a2], :x => [:yes, :no, :yes, :no], :Π => [-0.5, 0.5, 0.6, 0.4])
-            @test_throws ErrorException("probabilities must be non-negative: $cpt") DiscreteNode(name, cpt)
+        @test_throws ErrorException("probabilities must be non-negative: -0.5") DiscreteNode(:y, cpt0)
 
-            cpt = DataFrame(:a => [:a1, :a1, :a2, :a2], :x => [:yes, :no, :yes, :no], :Π => [0.5, 1.5, 0.6, 0.4])
-            @test_throws ErrorException("probabilities must be lower or equal than 1: $cpt") DiscreteNode(name, cpt)
+        cpt1 = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}([:x, :y])
+        cpt1[:x=>:yesx, :y=>:yesy] = 1.5
+        cpt1[:x=>:yesx, :y=>:noy] = 0.5
+        cpt1[:x=>:nox, :y=>:yesy] = 0.5
+        cpt1[:x=>:nox, :y=>:noy] = 0.5
 
-            cpt = DataFrame(:a => [:a1, :a1, :a2, :a2], :x => [:yes, :no, :yes, :no], :Π => [0.2, 0.5, 0.6, 0.4])
-            error_cpt = DataFrame(:a => [:a1, :a1], :x => [:yes, :no], :Π => [0.2, 0.5])
-            @test_throws ErrorException("states are not exhaustive and mutually exclusives for the following cpt: $error_cpt") DiscreteNode(name, cpt)
+        @test_throws ErrorException("probabilities must be lower or equal than 1: 1.5") DiscreteNode(:y, cpt1)
 
-            cpt = DataFrame(:a => [:a1, :a1, :a2, :a2], :x => [:yes, :no, :yes, :no], :Π => [0.49, 0.5, 0.6, 0.4])
-            @test_logs (:warn, "total probability should be one, but the evaluated value is 0.99, and will be normalized") DiscreteNode(name, cpt)
+        cpt2 = DiscreteConditionalProbabilityTable{ImpreciseDiscreteProbability}([:x, :y])
+        cpt2[:x=>:yesx, :y=>:yesy] = (-0.5, 0.5)
+        cpt2[:x=>:yesx, :y=>:noy] = (0.3, 0.7)
+        cpt2[:x=>:nox, :y=>:yesy] = (0.5, 0.8)
+        cpt2[:x=>:nox, :y=>:noy] = (0.2, 0.5)
 
-            cpt6 = DataFrame(:a => [:a1, :a1, :a2, :a2], :x => [:yes, :no, :yes, :no], :Π => [[0.6, 0.4], [0.6, 0.7], [0.1, 0.2], [0.8, 0.9]])
-            cpt7 = DataFrame(:a => [:a1, :a1, :a2, :a2], :x => [:yes, :no, :yes, :no], :Π => [[0.2, 0.4, 0.1], [0.6, 0.7], [0.1, 0.2], [0.8, 0.9]])
-            cpt8 = DataFrame(:a => [:a1, :a1, :a2, :a2], :x => [:yes, :no, :yes, :no], :Π => [[0.6, 0.7], [0.6, 0.7], [0.1, 0.2], [0.8, 0.9]])
-            cpt9 = DataFrame(:a => [:a1, :a1, :a2, :a2], :x => [:yes, :no, :yes, :no], :Π => [[0.1, 0.2], [0.6, 0.7], [0.1, 0.2], [0.8, 0.9]])
+        @test_throws ErrorException("probabilities must be non-negative: -0.5") DiscreteNode(:y, cpt2)
 
-            @test_throws ErrorException("interval probabilities must lower bound smaller than upper bound. $cpt6") DiscreteNode(name, cpt6)
-            @test_throws ErrorException("interval probabilities must be defined with a 2-values vector. $cpt7") DiscreteNode(name, cpt7)
-            error_cpt = DataFrame(:a => [:a1, :a1], :x => [:yes, :no], :Π => [[0.6, 0.7], [0.6, 0.7]])
-            @test_throws ErrorException("sum of intervals lower bounds is bigger than 1: $error_cpt") DiscreteNode(name, cpt8)
-            error_cpt = DataFrame(:a => [:a1, :a1], :x => [:yes, :no], :Π => [[0.1, 0.2], [0.6, 0.7]])
-            @test_throws ErrorException("sum of intervals upper bounds is smaller than 1: $error_cpt") DiscreteNode(name, cpt9)
+        cpt3 = DiscreteConditionalProbabilityTable{ImpreciseDiscreteProbability}([:x, :y])
+        cpt3[:x=>:yesx, :y=>:yesy] = (0.5, 1.5)
+        cpt3[:x=>:yesx, :y=>:noy] = (0.3, 0.7)
+        cpt3[:x=>:nox, :y=>:yesy] = (0.5, 0.8)
+        cpt3[:x=>:nox, :y=>:noy] = (0.2, 0.5)
 
-            cpt4 = DataFrame(:a => [:a1, :a1, :a2, :a2], :x => [:yes, :no, :yes, :noo], :Π => [0.5, 0.5, 0.6, 0.4])
-            @test isnothing(EnhancedBayesianNetworks._verify_parameters(cpt, parameters, name))
-            @test_throws ErrorException("parameters keys [:yes, :no] must be coherent with states [:yes, :no, :noo]") EnhancedBayesianNetworks._verify_parameters(cpt4, parameters, name)
+        @test_throws ErrorException("probabilities must be lower or equal than 1: 1.5") DiscreteNode(:y, cpt3)
 
-            name1 = :a
-            parameters = Dict(:yes => [Parameter(2, :d)], :no => [Parameter(0, :d)])
-            cpt = DataFrame(:y => [:a1, :a1, :a2, :a2], :x => [:yes, :no, :yes, :no], :Π => [0.5, 0.5, 0.6, 0.4])
-            @test_throws ErrorException("defined cpt does not contain a column refered to node name a: $cpt") DiscreteNode(name1, cpt, parameters)
+        cpt4 = DiscreteConditionalProbabilityTable{ImpreciseDiscreteProbability}([:x, :y])
+        cpt4[:x=>:yesx, :y=>:yesy] = (0.5, 0.3)
+        cpt4[:x=>:yesx, :y=>:noy] = (0.3, 0.7)
+        cpt4[:x=>:nox, :y=>:yesy] = (0.5, 0.8)
+        cpt4[:x=>:nox, :y=>:noy] = (0.2, 0.5)
 
-            cpt1 = DataFrame(:y => [:a1, :a1, :a2, :a2], :x => [:yes, :no, :yes, :no], :Π => [0.5, 0.5, 0.6, 0.4])
-            cpt2 = DataFrame(:y => [:a1, :a1, :a2, :a2], :x => [:yes, :no, :yes, :no], :Π => [[0.2, 0.3], [0.7, 0.8], [0.4, 0.6], [0.4, 0.6]])
+        @test_throws ErrorException("interval probabilities must have a lower bound smaller than upper bound. $(cpt4.data)") DiscreteNode(:y, cpt4)
 
-            node1 = DiscreteNode(name, cpt1, parameters)
-            node2 = DiscreteNode(name, cpt1)
-            node3 = DiscreteNode(name, cpt2, parameters)
-            node4 = DiscreteNode(name, cpt2)
+        cpt5 = DiscreteConditionalProbabilityTable{ImpreciseDiscreteProbability}([:x, :y])
+        cpt5[:x=>:yesx, :y=>:yesy] = (0.2, 0.3)
+        cpt5[:x=>:yesx, :y=>:noy] = (0.3, 0.4)
+        cpt5[:x=>:nox, :y=>:yesy] = (0.5, 0.8)
+        cpt5[:x=>:nox, :y=>:noy] = (0.2, 0.5)
 
-            @test node1.name == name
-            @test node1.parameters == parameters
-            @test issetequal(node1.cpt[!, :y], cpt1[!, :y])
-            @test issetequal(node1.cpt[!, :x], cpt1[!, :x])
-            @test issetequal(node1.cpt[!, :Π], cpt1[!, :Π])
-            @test node2.name == name
-            @test isempty(node2.parameters)
-            @test issetequal(node2.cpt[!, :y], cpt1[!, :y])
-            @test issetequal(node2.cpt[!, :x], cpt1[!, :x])
-            @test issetequal(node2.cpt[!, :Π], cpt1[!, :Π])
-            @test node3.name == name
-            @test node3.parameters == parameters
-            @test issetequal(node3.cpt[!, :y], cpt2[!, :y])
-            @test issetequal(node3.cpt[!, :x], cpt2[!, :x])
-            @test issetequal(node3.cpt[!, :Π], cpt2[!, :Π])
-            @test node4.name == name
-            @test isempty(node4.parameters)
-            @test issetequal(node4.cpt[!, :y], cpt2[!, :y])
-            @test issetequal(node4.cpt[!, :x], cpt2[!, :x])
-            @test issetequal(node4.cpt[!, :Π], cpt2[!, :Π])
-        end
+        res = EnhancedBayesianNetworks._scenarios_cpt(cpt5, :y)[1]
+        @test_throws ErrorException("sum of intervals upper bounds is smaller than 1: $res") DiscreteNode(:y, cpt5)
 
-        @testset "node functions" begin
-            name = :x
-            cpt = DataFrame(:a => [:a1, :a1, :a2, :a2], :x => [:yes, :no, :yes, :no], :Π => [[0.2, 0.3], [0.7, 0.8], [0.4, 0.6], [0.4, 0.6]])
-            parameters = Dict(:yes => [Parameter(1, :X)], :no => [Parameter(2, :X)])
-            node = DiscreteNode(name, cpt, parameters)
-            @test issetequal(EnhancedBayesianNetworks._states(cpt, name), [:yes, :no])
-            @test issetequal(EnhancedBayesianNetworks._states(node), [:yes, :no])
+        cpt6 = DiscreteConditionalProbabilityTable{ImpreciseDiscreteProbability}([:x, :y])
+        cpt6[:x=>:yesx, :y=>:yesy] = (0.8, 0.9)
+        cpt6[:x=>:yesx, :y=>:noy] = (0.3, 0.4)
+        cpt6[:x=>:nox, :y=>:yesy] = (0.5, 0.8)
+        cpt6[:x=>:nox, :y=>:noy] = (0.2, 0.5)
 
-            scenarios = [Dict(:a => :a1), Dict(:a => :a2)]
-            @test EnhancedBayesianNetworks._scenarios(cpt, name) == scenarios
-            @test EnhancedBayesianNetworks._scenarios(node) == scenarios
+        res = EnhancedBayesianNetworks._scenarios_cpt(cpt6, :y)[1]
+        @test_throws ErrorException("sum of intervals lower bounds is bigger than 1: $res") DiscreteNode(:y, cpt6)
 
-            cpt = DataFrame(:a => [:a1, :a1, :a2, :a2], :x => [:no, :yes, :no, :yes], :Π => [0.8, 0.2, 0.8, 0.2])
+        cpt7 = DiscreteConditionalProbabilityTable{ImpreciseDiscreteProbability}([:x, :y])
+        cpt7[:x=>:yesx, :y=>:yesy] = (0.3, 0.5)
+        cpt7[:x=>:yesx, :y=>:noy] = (0.5, 0.7)
+        cpt7[:x=>:nox, :y=>:yesy] = (0.5, 0.8)
+        cpt7[:x=>:nox, :y=>:noy] = (0.2, 0.5)
+        parameters = Dict(:yes => [Parameter(1, :a)], :no => [Parameter(2, :a)])
 
-            evidence = Evidence(:a => :a1)
-            @test_throws ErrorException("evidence Dict(:a => :a1) does not contain the node x") EnhancedBayesianNetworks._parameters_with_evidence(node, evidence)
-            evidence = Evidence(:a => :a1, :x => :yes)
-            @test EnhancedBayesianNetworks._parameters_with_evidence(node, evidence) == parameters[:yes]
+        @test_throws ErrorException("parameters keys [:yes, :no] must be coherent with states [:yesy, :noy]") DiscreteNode(:y, cpt7, parameters)
 
-            @test EnhancedBayesianNetworks._is_precise(node) == false
-            node2 = DiscreteNode(name, cpt)
-            @test EnhancedBayesianNetworks._is_discrete_root(cpt) == false
-            @test EnhancedBayesianNetworks._is_root(node2) == false
+        parameters = Dict(:yesy => [Parameter(1, :a)], :noy => [Parameter(2, :a)])
+        node = DiscreteNode(:y, cpt7, parameters)
+        @test node.name == :y
+        @test node.cpt == cpt7
+        @test node.parameters == parameters
+        @test node.additional_info == Dict{AbstractVector{Symbol},Dict}()
 
-            cpt1 = DataFrame(:a => [:a1, :a1, :a2, :a2], :x => [:no, :yes, :no, :yes], :Π => [0.8, 0.2, 0.8, 0.2])
-            cpt2 = DataFrame(:a => [:a1, :a1, :a2, :a2], :x => [:yes, :no, :yes, :no], :Π => [[0.2, 0.3], [0.7, 0.8], [0.4, 0.6], [0.4, 0.6]])
-            node = DiscreteNode(:x, cpt2)
+        node = DiscreteNode(:y, cpt7)
+        @test node.name == :y
+        @test node.cpt == cpt7
+        @test node.parameters == Dict{Symbol,Vector{Parameter}}()
+        @test node.additional_info == Dict{AbstractVector{Symbol},Dict}()
 
-            sub_cpts = EnhancedBayesianNetworks._scenarios_cpt(node.cpt, node.name)
-            res = map(sc -> EnhancedBayesianNetworks._extreme_points_dfs(sc), sub_cpts)
+        cpt8 = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}([:x, :y])
+        cpt8[:x=>:yesx, :y=>:yesy] = 0.49999
+        cpt8[:x=>:yesx, :y=>:noy] = 0.5
+        cpt8[:x=>:nox, :y=>:yesy] = 0.8
+        cpt8[:x=>:nox, :y=>:noy] = 0.2
+        @suppress node = DiscreteNode(:y, cpt8)
+        @test all(isapprox.(node.cpt.data[:, :Π], [0.2, 0.8, 0.500005, 0.499995]))
 
-            @test isapprox(res[1][1][!, :Π][1], 0.7, atol=0.05)
-            @test isapprox(res[1][1][!, :Π][2], 0.3, atol=0.05)
-            @test isapprox(res[1][2][!, :Π][1], 0.8, atol=0.05)
-            @test isapprox(res[1][2][!, :Π][2], 0.2, atol=0.05)
+        @testset "nodes functions" begin
+            node = DiscreteNode(:y, cpt7, parameters)
 
-            @test isapprox(res[2][1][!, :Π][1], 0.4, atol=0.05)
-            @test isapprox(res[2][1][!, :Π][2], 0.6, atol=0.05)
-            @test isapprox(res[2][2][!, :Π][1], 0.6, atol=0.05)
-            @test isapprox(res[2][2][!, :Π][2], 0.4, atol=0.05)
+            @test issetequal(states(node), [:noy, :yesy])
+            @test issetequal(scenarios(node), [Dict(:x => :yesx), Dict(:x => :nox)])
+            @test issetequal(EnhancedBayesianNetworks._scenarios_cpt(node), EnhancedBayesianNetworks._scenarios_cpt(cpt7, :y))
 
-            extreme_point_dfs = EnhancedBayesianNetworks._extreme_points(node)
-            df1 = vcat(res[1][1], res[2][1])
-            df2 = vcat(res[1][1], res[2][2])
-            df3 = vcat(res[1][2], res[2][1])
-            df4 = vcat(res[1][2], res[2][2])
-            node1 = DiscreteNode(:x, df1)
-            node2 = DiscreteNode(:x, df2)
-            node3 = DiscreteNode(:x, df3)
-            node4 = DiscreteNode(:x, df4)
-
-            @test issetequal(extreme_point_dfs, [node1, node2, node3, node4])
-
-            cpt3 = DataFrame(:b => [:b1, :b1, :b1, :b1, :b2, :b2, :b2, :b2], :a => [:a1, :a1, :a2, :a2, :a1, :a1, :a2, :a2], :x => [:yes, :no, :yes, :no, :yes, :no, :yes, :no], :Π => [[0.2, 0.3], [0.7, 0.8], [0.4, 0.6], [0.4, 0.6], [0.2, 0.3], [0.7, 0.8], [0.4, 0.6], [0.4, 0.6]])
-            node = DiscreteNode(:x, cpt3)
-            sub_cpts = EnhancedBayesianNetworks._scenarios_cpt(node.cpt, node.name)
-            res = map(sc -> EnhancedBayesianNetworks._extreme_points_dfs(sc), sub_cpts)
-
-            @test isapprox(res[1][1][!, :Π][1], 0.7, atol=0.05)
-            @test isapprox(res[1][1][!, :Π][2], 0.3, atol=0.05)
-            @test isapprox(res[1][2][!, :Π][1], 0.8, atol=0.05)
-            @test isapprox(res[1][2][!, :Π][2], 0.2, atol=0.05)
-
-            @test isapprox(res[2][1][!, :Π][1], 0.4, atol=0.05)
-            @test isapprox(res[2][1][!, :Π][2], 0.6, atol=0.05)
-            @test isapprox(res[2][2][!, :Π][1], 0.6, atol=0.05)
-            @test isapprox(res[2][2][!, :Π][2], 0.4, atol=0.05)
-
-            @test isapprox(res[3][1][!, :Π][1], 0.7, atol=0.05)
-            @test isapprox(res[3][1][!, :Π][2], 0.3, atol=0.05)
-            @test isapprox(res[3][2][!, :Π][1], 0.8, atol=0.05)
-            @test isapprox(res[3][2][!, :Π][2], 0.2, atol=0.05)
-
-            @test isapprox(res[4][1][!, :Π][1], 0.4, atol=0.05)
-            @test isapprox(res[4][1][!, :Π][2], 0.6, atol=0.05)
-            @test isapprox(res[4][2][!, :Π][1], 0.6, atol=0.05)
-            @test isapprox(res[4][2][!, :Π][2], 0.4, atol=0.05)
-
-            extreme_point_dfs = EnhancedBayesianNetworks._extreme_points(node)
-            @test length(extreme_point_dfs) == 16
+            @test isprecise(node) == false
+            node2 = DiscreteNode(:y, cpt8, parameters)
+            @test isprecise(node2)
         end
     end
+
+    @testset "Extreme Points Root" begin
+
+        cpt1 = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(:x)
+        cpt1[:x=>:yesx] = 0.2
+        cpt1[:x=>:nox] = 0.8
+        node1 = DiscreteNode(:x, cpt1)
+
+        cpt2 = DiscreteConditionalProbabilityTable{ImpreciseDiscreteProbability}(:x)
+        cpt2[:x=>:yesx] = (0.1, 0.2)
+        cpt2[:x=>:nox] = (0.8, 0.9)
+        node2 = DiscreteNode(:x, cpt2)
+
+        @test_throws ErrorException("Precise conditional probability table does not have extreme points: $(cpt1.data)") EnhancedBayesianNetworks._extreme_points_probabilities(cpt1.data)
+
+        extreme_point_probabilities = EnhancedBayesianNetworks._extreme_points_probabilities(cpt2.data)
+        @test all(isapprox.(extreme_point_probabilities[1], [0.8, 0.2], atol=0.001))
+        @test all(isapprox.(extreme_point_probabilities[2], [0.9, 0.1], atol=0.001))
+
+        extreme_point_dfs = EnhancedBayesianNetworks._extreme_points_dfs(cpt2.data)
+        @test isapprox(extreme_point_dfs[1][!, :Π][1], 0.8, atol=0.05)
+        @test isapprox(extreme_point_dfs[1][!, :Π][2], 0.2, atol=0.05)
+        @test isapprox(extreme_point_dfs[2][!, :Π][1], 0.9, atol=0.05)
+        @test isapprox(extreme_point_dfs[2][!, :Π][2], 0.1, atol=0.05)
+
+        node = DiscreteNode(:x, cpt2)
+        ext_nodes = EnhancedBayesianNetworks._extreme_points(node)
+
+        node1 = DiscreteNode(:x, DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(extreme_point_dfs[1]))
+        node2 = DiscreteNode(:x, DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(extreme_point_dfs[2]))
+        @test ext_nodes[1].name == node1.name
+        @test ext_nodes[1].cpt.data[!, :x] == node1.cpt.data[!, :x]
+        @test all(isapprox.(ext_nodes[1].cpt.data[!, :Π], node1.cpt.data[!, :Π]; atol=0.01))
+
+        @test ext_nodes[2].name == node2.name
+        @test ext_nodes[2].cpt.data[!, :x] == node2.cpt.data[!, :x]
+        @test all(isapprox.(ext_nodes[2].cpt.data[!, :Π], node2.cpt.data[!, :Π]; atol=0.01))
+    end
+
+    @testset "Extreme Points Child" begin end
+
 end
