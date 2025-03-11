@@ -70,6 +70,18 @@
             cpt_child[:x=>:nox, :y=>:noy] = 0.5
             @test issetequal(states(cpt_child, :y), [:yesy, :noy])
             @test issetequal(scenarios(cpt_child, :y), [Dict(:x => :yesx), Dict(:x => :nox)])
+            cpt_root1 = ContinuousConditionalProbabilityTable{PreciseContinuousInput}()
+            cpt_root1[] = Normal()
+            @test distributions(cpt_root1) == [Normal()]
+            @test scenarios(cpt_root1) == Any[]
+
+            cpt_child2 = ContinuousConditionalProbabilityTable{PreciseContinuousInput}([:g, :s])
+            cpt_child2[:g=>:g1, :s=>:s1] = Normal()
+            cpt_child2[:g=>:g1, :s=>:s2] = Normal(2, 2)
+            cpt_child2[:g=>:g2, :s=>:s1] = Normal(1, 2)
+            cpt_child2[:g=>:g2, :s=>:s2] = Normal(2, 1)
+            @test issetequal(distributions(cpt_child2), [Normal(), Normal(2, 2), Normal(1, 2), Normal(2, 1)])
+            @test issetequal(scenarios(cpt_child2), [Dict(:s => :s1, :g => :g1), Dict(:s => :s1, :g => :g2), Dict(:s => :s2, :g => :g1), Dict(:s => :s2, :g => :g2)])
 
             cpt_root2 = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(:x)
             cpt_root2[:x=>:yesx] = 0.5

@@ -10,7 +10,7 @@ include("nodes/cpts.jl")
 include("utils/verify_discrete.jl")
 include("nodes/discretenodes.jl")
 include("utils/verify_continuous.jl")
-# include("nodes/continuousnode.jl")
+include("nodes/continuousnode.jl")
 
 # include("nodes/functional.jl")
 # include("networks/ebn/enhancedbn.jl")
