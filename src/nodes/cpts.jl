@@ -25,6 +25,29 @@ function DiscreteConditionalProbabilityTable{P}(data::DataFrame) where {P<:Discr
     return cpt
 end
 
+function isroot(cpt::DiscreteConditionalProbabilityTable)
+    length(names(cpt.data)) == 2
+end
+
+function states(cpt::DiscreteConditionalProbabilityTable, name::Symbol)
+    unique(cpt.data[!, name])
+end
+
+function scenarios(cpt::DiscreteConditionalProbabilityTable, name::Symbol)
+    scenario = copy.(eachrow(cpt.data[!, Not(name, :Π)]))
+    return unique(map(s -> Dict(pairs(s)), scenario))
+end
+
+function _scenarios_cpt(cpt::DiscreteConditionalProbabilityTable, name::Symbol)
+    if ncol(cpt.data) <= 2     ## Root Nodes
+        sub_cpts = [cpt.data]
+    else    ## Child Nodes
+        scenario = unique!(map(s -> _by_row(s), scenarios(cpt, name)))
+        sub_cpts = map(e -> subset(cpt.data, e), scenario)
+    end
+    return sub_cpts
+end
+
 @auto_hash_equals struct ContinuousConditionalProbabilityTable{P<:ContinuousInput} <: AbstractConditionalProbabilityTable
     data::DataFrame
     function ContinuousConditionalProbabilityTable{P}(names::Union{Symbol,Vector{Symbol}}) where {P<:ContinuousInput}
@@ -41,6 +64,19 @@ function ContinuousConditionalProbabilityTable{P}(data::DataFrame) where {P<:Con
     cpt = ContinuousConditionalProbabilityTable{P}(Symbol.(names(data[!, Not(:Π)])))
     append!(cpt.data, data)
     return cpt
+end
+
+function isroot(cpt::ContinuousConditionalProbabilityTable)
+    length(names(cpt.data)) == 1
+end
+
+function distributions(cpt::ContinuousConditionalProbabilityTable)
+    cpt.data[!, :Π]
+end
+
+function scenarios(cpt::ContinuousConditionalProbabilityTable)
+    scenario = copy.(eachrow(cpt.data[!, Not(:Π)]))
+    return unique(map(s -> Dict(pairs(s)), scenario))
 end
 
 function Base.setindex!(cpt::AbstractConditionalProbabilityTable, value, key...)
@@ -76,33 +112,7 @@ function isprecise(cpt::AbstractConditionalProbabilityTable)
     isa(cpt, ContinuousConditionalProbabilityTable{PreciseContinuousInput}) | isa(cpt, DiscreteConditionalProbabilityTable{PreciseDiscreteProbability})
 end
 
-function isroot(cpt::DiscreteConditionalProbabilityTable)
-    length(names(cpt.data)) == 2
-end
-
-function isroot(cpt::ContinuousConditionalProbabilityTable)
-    length(names(cpt.data)) == 1
-end
-
-function states(cpt::AbstractConditionalProbabilityTable, name::Symbol)
-    unique(cpt.data[!, name])
-end
-
 #! figure out a better way to return scenarios other than a Vector of Ditionaries
-function scenarios(cpt::AbstractConditionalProbabilityTable, name::Symbol)
-    scenario = copy.(eachrow(cpt.data[!, Not(name, :Π)]))
-    return unique(map(s -> Dict(pairs(s)), scenario))
-end
-
-function _scenarios_cpt(cpt::AbstractConditionalProbabilityTable, name::Symbol)
-    if ncol(cpt.data) <= 2     ## Root Nodes
-        sub_cpts = [cpt.data]
-    else    ## Child Nodes
-        scenario = unique!(map(s -> _by_row(s), scenarios(cpt, name)))
-        sub_cpts = map(e -> subset(cpt.data, e), scenario)
-    end
-    return sub_cpts
-end
 
 function _by_row(evidence::Dict{Symbol,Symbol})
     k = collect(keys(evidence))
