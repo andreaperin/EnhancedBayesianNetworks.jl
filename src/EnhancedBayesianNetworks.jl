@@ -66,6 +66,7 @@ export factorize
 export gplot
 export infer
 export isprecise
+export isroot
 export markov_blanket
 export markov_envelope
 export order!

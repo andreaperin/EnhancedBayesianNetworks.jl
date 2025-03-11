@@ -3,6 +3,7 @@ const PreciseContinuousInput = UnivariateDistribution
 const ImpreciseContinuousInput = Union{Tuple{<:Real,<:Real},UnamedProbabilityBox}
 const PreciseDiscreteProbability = Real
 const ImpreciseDiscreteProbability = Tuple{<:Real,<:Real}
+
 const DiscreteProbability = Union{PreciseDiscreteProbability,ImpreciseDiscreteProbability}
 const ContinuousInput = Union{PreciseContinuousInput,ImpreciseContinuousInput}
 
@@ -73,6 +74,14 @@ end
 
 function isprecise(cpt::AbstractConditionalProbabilityTable)
     isa(cpt, ContinuousConditionalProbabilityTable{PreciseContinuousInput}) | isa(cpt, DiscreteConditionalProbabilityTable{PreciseDiscreteProbability})
+end
+
+function isroot(cpt::DiscreteConditionalProbabilityTable)
+    length(names(cpt.data)) == 2
+end
+
+function isroot(cpt::ContinuousConditionalProbabilityTable)
+    length(names(cpt.data)) == 1
 end
 
 function states(cpt::AbstractConditionalProbabilityTable, name::Symbol)
