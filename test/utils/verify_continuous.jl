@@ -9,7 +9,7 @@
     cpt2[:x=>:nox] = Normal(1, 2)
     discretization2 = ExactDiscretization([-1, 0, 1])
 
-    @test_throws ErrorException("Child node must have ExactDiscretization as discretization structure, provided discretization is $discretization2 and node cpt is $cpt2") EnhancedBayesianNetworks._verify_discretization(cpt2, discretization2)
+    @test_throws ErrorException("Child node must have ApproximatedDiscretization as discretization structure, provided discretization is $discretization2 and node cpt is $cpt2") EnhancedBayesianNetworks._verify_discretization(cpt2, discretization2)
     @test isnothing(EnhancedBayesianNetworks._verify_discretization(cpt1, discretization2)
     )
     @test isnothing(EnhancedBayesianNetworks._verify_discretization(cpt2, discretization1)
