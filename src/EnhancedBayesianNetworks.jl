@@ -60,6 +60,7 @@ export add_child!
 export children
 export discrete_ancestors
 export dispatch
+export distributions
 export evaluate!
 export evaluate_with_envelopes
 export factorize
