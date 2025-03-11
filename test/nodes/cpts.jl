@@ -14,6 +14,9 @@
         cpt5 = DataFrame(:x => [:yesx, :yesx, :nox, :nox], :y => [:yesy, :noy, :yesy, :noy], :Π => [0.1, 0.9, 0.2, 0.8])
         cpt = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(cpt5)
         @test cpt.data == cpt5
+
+        @test isroot(cpt1)
+        @test !isroot(cpt)
     end
     @testset "Continuous CPT" begin
         cpt1 = ContinuousConditionalProbabilityTable{PreciseContinuousInput}([:x])
@@ -32,6 +35,11 @@
         cpt5 = DataFrame(:x => [:yesx, :nox], :Π => [Normal(), Normal(2, 1)])
         cpt = ContinuousConditionalProbabilityTable{PreciseContinuousInput}(cpt5)
         @test cpt.data == cpt5
+
+        cpt1 = ContinuousConditionalProbabilityTable{PreciseContinuousInput}()
+        cpt1[] = Normal()
+        @test isroot(cpt1)
+        @test !isroot(cpt)
     end
 
     @testset "CPT functions" begin
