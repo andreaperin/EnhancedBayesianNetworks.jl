@@ -275,4 +275,28 @@
         extreme_point_dfs = EnhancedBayesianNetworks._extreme_points(node)
         @test length(extreme_point_dfs) == 16
     end
+
+    @testset "uq inputs" begin
+        root_cpt = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(:x)
+        root_cpt[:x=>:x1] = 0.2
+        root_cpt[:x=>:x2] = 0.8
+        parameters1 = Dict(:x1 => [Parameter(1, :x)], :x2 => [Parameter(2, :x)])
+        rootnode = DiscreteNode(:x, root_cpt, parameters1)
+
+        child_cpt = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}([:x, :y])
+        child_cpt[:x=>:x1, :y=>:y1] = 0.2
+        child_cpt[:x=>:x1, :y=>:y2] = 0.8
+        child_cpt[:x=>:x2, :y=>:y1] = 0.3
+        child_cpt[:x=>:x2, :y=>:y2] = 0.7
+        parameters2 = Dict(:y1 => [Parameter(1, :y)], :y2 => [Parameter(2, :y)])
+        childnode = DiscreteNode(:y, child_cpt, parameters2)
+
+        evidence1 = Evidence(:x => :x1, :y => :y1)
+        evidence2 = Evidence(:a => :a1)
+
+        @test EnhancedBayesianNetworks._uq_inputs(rootnode, evidence1) == [Parameter(1, :x)]
+        @test_throws ErrorException("evidence Dict(:a => :a1) does not contain the node x") EnhancedBayesianNetworks._uq_inputs(rootnode, evidence2)
+        @test EnhancedBayesianNetworks._uq_inputs(childnode, evidence1) == [Parameter(1, :y)]
+        @test_throws ErrorException("evidence Dict(:a => :a1) does not contain the node y") EnhancedBayesianNetworks._uq_inputs(childnode, evidence2)
+    end
 end
