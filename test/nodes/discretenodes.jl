@@ -208,6 +208,68 @@
         @test all(isapprox.(ext_nodes[2].cpt.data[!, :Π], node2.cpt.data[!, :Π]; atol=0.01))
     end
 
-    @testset "Extreme Points Child" begin end
+    @testset "Extreme Points Child" begin
 
+        cpt1 = DataFrame(:a => [:a1, :a1, :a2, :a2], :x => [:no, :yes, :no, :yes], :Π => [0.8, 0.2, 0.8, 0.2])
+        cpt1 = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(cpt1)
+
+        cpt2 = DataFrame(:a => [:a1, :a1, :a2, :a2], :x => [:yes, :no, :yes, :no], :Π => [(0.2, 0.3), (0.7, 0.8), (0.4, 0.6), (0.4, 0.6)])
+        cpt2 = DiscreteConditionalProbabilityTable{ImpreciseDiscreteProbability}(cpt2)
+
+        node = DiscreteNode(:x, cpt2)
+
+        sub_cpts = EnhancedBayesianNetworks._scenarios_cpt(node.cpt, node.name)
+        res = map(sc -> EnhancedBayesianNetworks._extreme_points_dfs(sc), sub_cpts)
+
+        @test isapprox(res[1][1][!, :Π][1], 0.7, atol=0.05)
+        @test isapprox(res[1][1][!, :Π][2], 0.3, atol=0.05)
+        @test isapprox(res[1][2][!, :Π][1], 0.8, atol=0.05)
+        @test isapprox(res[1][2][!, :Π][2], 0.2, atol=0.05)
+
+        @test isapprox(res[2][1][!, :Π][1], 0.4, atol=0.05)
+        @test isapprox(res[2][1][!, :Π][2], 0.6, atol=0.05)
+        @test isapprox(res[2][2][!, :Π][1], 0.6, atol=0.05)
+        @test isapprox(res[2][2][!, :Π][2], 0.4, atol=0.05)
+
+        extreme_point_dfs = EnhancedBayesianNetworks._extreme_points(node)
+        df1 = vcat(res[1][1], res[2][1])
+        df2 = vcat(res[1][1], res[2][2])
+        df3 = vcat(res[1][2], res[2][1])
+        df4 = vcat(res[1][2], res[2][2])
+        node1 = DiscreteNode(:x, DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(df1))
+        node2 = DiscreteNode(:x, DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(df2))
+        node3 = DiscreteNode(:x, DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(df3))
+        node4 = DiscreteNode(:x, DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(df4))
+
+        @test issetequal(extreme_point_dfs, [node1, node2, node3, node4])
+
+        cpt3 = DataFrame(:b => [:b1, :b1, :b1, :b1, :b2, :b2, :b2, :b2], :a => [:a1, :a1, :a2, :a2, :a1, :a1, :a2, :a2], :x => [:yes, :no, :yes, :no, :yes, :no, :yes, :no], :Π => [(0.2, 0.3), (0.7, 0.8), (0.4, 0.6), (0.4, 0.6), (0.2, 0.3), (0.7, 0.8), (0.4, 0.6), (0.4, 0.6)])
+        cpt3 = DiscreteConditionalProbabilityTable{ImpreciseDiscreteProbability}(cpt3)
+        node = DiscreteNode(:x, cpt3)
+        sub_cpts = EnhancedBayesianNetworks._scenarios_cpt(node.cpt, node.name)
+        res = map(sc -> EnhancedBayesianNetworks._extreme_points_dfs(sc), sub_cpts)
+
+        @test isapprox(res[1][1][!, :Π][1], 0.7, atol=0.05)
+        @test isapprox(res[1][1][!, :Π][2], 0.3, atol=0.05)
+        @test isapprox(res[1][2][!, :Π][1], 0.8, atol=0.05)
+        @test isapprox(res[1][2][!, :Π][2], 0.2, atol=0.05)
+
+        @test isapprox(res[2][1][!, :Π][1], 0.4, atol=0.05)
+        @test isapprox(res[2][1][!, :Π][2], 0.6, atol=0.05)
+        @test isapprox(res[2][2][!, :Π][1], 0.6, atol=0.05)
+        @test isapprox(res[2][2][!, :Π][2], 0.4, atol=0.05)
+
+        @test isapprox(res[3][1][!, :Π][1], 0.7, atol=0.05)
+        @test isapprox(res[3][1][!, :Π][2], 0.3, atol=0.05)
+        @test isapprox(res[3][2][!, :Π][1], 0.8, atol=0.05)
+        @test isapprox(res[3][2][!, :Π][2], 0.2, atol=0.05)
+
+        @test isapprox(res[4][1][!, :Π][1], 0.4, atol=0.05)
+        @test isapprox(res[4][1][!, :Π][2], 0.6, atol=0.05)
+        @test isapprox(res[4][2][!, :Π][1], 0.6, atol=0.05)
+        @test isapprox(res[4][2][!, :Π][2], 0.4, atol=0.05)
+
+        extreme_point_dfs = EnhancedBayesianNetworks._extreme_points(node)
+        @test length(extreme_point_dfs) == 16
+    end
 end
