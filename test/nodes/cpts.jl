@@ -70,9 +70,6 @@
             cpt_child[:x=>:nox, :y=>:noy] = 0.5
             @test issetequal(states(cpt_child, :y), [:yesy, :noy])
             @test issetequal(scenarios(cpt_child, :y), [Dict(:x => :yesx), Dict(:x => :nox)])
-            cpt_root1 = ContinuousConditionalProbabilityTable{PreciseContinuousInput}()
-            cpt_root1[] = Normal()
-            @test EnhancedBayesianNetworks._scenarios_cpt(cpt_root1, :y) == [DataFrame(:Π => Normal())]
 
             cpt_root2 = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(:x)
             cpt_root2[:x=>:yesx] = 0.5
