@@ -64,6 +64,7 @@
 
             @test states(node) == [:no, :yes]
             @test scenarios(node) == Any[]
+            @test isroot(node)
             @test EnhancedBayesianNetworks._scenarios_cpt(node) == [cpt6.data]
         end
     end
@@ -164,7 +165,9 @@
             @test issetequal(scenarios(node), [Dict(:x => :yesx), Dict(:x => :nox)])
             @test issetequal(EnhancedBayesianNetworks._scenarios_cpt(node), EnhancedBayesianNetworks._scenarios_cpt(cpt7, :y))
 
-            @test isprecise(node) == false
+            @test !isprecise(node)
+            @test !isroot(node)
+
             node2 = DiscreteNode(:y, cpt8, parameters)
             @test isprecise(node2)
         end

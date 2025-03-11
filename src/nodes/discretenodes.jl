@@ -36,6 +36,8 @@ scenarios(node::DiscreteNode) = scenarios(node.cpt, node.name)
 
 isprecise(node::DiscreteNode) = isprecise(node.cpt)
 
+isroot(node::DiscreteNode) = isroot(node.cpt)
+
 _scenarios_cpt(node::DiscreteNode) = _scenarios_cpt(node.cpt, node.name)
 
 
