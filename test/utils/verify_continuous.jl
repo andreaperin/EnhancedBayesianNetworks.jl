@@ -1,6 +1,6 @@
 @testset "Verify Continuous" begin
-    cpt1[] = Normal()
     cpt1 = ContinuousConditionalProbabilityTable{PreciseContinuousInput}()
+    cpt1[] = Normal()
     discretization1 = ApproximatedDiscretization([-1, 0, 1], 2)
     @test_throws ErrorException("Root node must have ExactDiscretization as discretization structure, provided discretization is $discretization1 and node cpt is $cpt1") EnhancedBayesianNetworks._verify_discretization(cpt1, discretization1)
 
