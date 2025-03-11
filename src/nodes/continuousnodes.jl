@@ -51,37 +51,6 @@ end
 
 _uq_inputs(node::ContinuousNode) = _uq_inputs(node, Evidence())
 
-
-# function _continuous_node_input_type(x::ContinuousInput)
-#     if isa(x, UnivariateDistribution)
-#         return UnivariateDistribution
-#     elseif isa(x, Tuple{Real,Real})
-#         return Tuple{Real,Real}
-#     elseif isa(x, UnamedProbabilityBox)
-#         return UnamedProbabilityBox
-#     end
-# end
-
-
-# function _continuous_input(node::ContinuousNode{UnivariateDistribution}, evidence::Evidence)
-#     new_evidence = filter(((k, v),) -> k ∈ Symbol.(names(node.cpt)), evidence)
-#     df_row = subset(node.cpt, _by_row(new_evidence))
-#     return map(dist -> RandomVariable(dist, node.name), df_row[!, :Π])
-# end
-
-# function _continuous_input(node::ContinuousNode{Tuple{Real,Real}}, evidence::Evidence)
-#     new_evidence = filter(((k, v),) -> k ∈ Symbol.(names(node.cpt)), evidence)
-#     df_row = subset(node.cpt, _by_row(new_evidence))
-#     return map(tup -> Interval(tup..., node.name), df_row[!, :Π])
-# end
-
-# function _continuous_input(node::ContinuousNode{UnamedProbabilityBox}, evidence::Evidence)
-#     new_evidence = filter(((k, v),) -> k ∈ Symbol.(names(node.cpt)), evidence)
-#     df_row = subset(node.cpt, _by_row(new_evidence))
-#     dists = map(r -> first(typeof(r).parameters), df_row[!, :Π])
-#     return map((upb, dist) -> ProbabilityBox{dist}(upb.parameters, node.name, upb.lb, upb.ub), df_row[!, :Π], dists)
-# end
-
 # function _distribution_bounds(dist::UnivariateDistribution)
 #     return [support(dist).lb, support(dist).ub]
 # end
