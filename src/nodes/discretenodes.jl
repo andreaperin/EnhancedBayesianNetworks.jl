@@ -40,14 +40,13 @@ isroot(node::DiscreteNode) = isroot(node.cpt)
 
 _scenarios_cpt(node::DiscreteNode) = _scenarios_cpt(node.cpt, node.name)
 
-
-# function _parameters_with_evidence(node::DiscreteNode, evidence::Evidence)
-#     if node.name ∉ keys(evidence)
-#         error("evidence $evidence does not contain the node $(node.name)")
-#     else
-#         return node.parameters[evidence[node.name]]
-#     end
-# end
+function _uq_inputs(node::DiscreteNode, evidence::Evidence)
+    if node.name ∉ keys(evidence)
+        error("evidence $evidence does not contain the node $(node.name)")
+    else
+        return node.parameters[evidence[node.name]]
+    end
+end
 
 function _extreme_points(node::DiscreteNode)
     if isprecise(node)
