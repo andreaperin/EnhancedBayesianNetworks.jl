@@ -10,6 +10,10 @@
         @test typeof(cpt3).parameters[1] == ImpreciseDiscreteProbability
         cpt4 = DiscreteConditionalProbabilityTable{ImpreciseDiscreteProbability}(:x)
         @test cpt3 == cpt4
+
+        cpt5 = DataFrame(:x => [:yesx, :yesx, :nox, :nox], :y => [:yesy, :noy, :yesy, :noy], :Π => [0.1, 0.9, 0.2, 0.8])
+        cpt = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(cpt5)
+        @test cpt.data == cpt5
     end
     @testset "Continuous CPT" begin
         cpt1 = ContinuousConditionalProbabilityTable{PreciseContinuousInput}([:x])
@@ -24,7 +28,12 @@
         @test cpt3 == cpt4
         cpt_root = ContinuousConditionalProbabilityTable{PreciseContinuousInput}()
         @test names(cpt_root.data) == ["Π"]
+
+        cpt5 = DataFrame(:x => [:yesx, :nox], :Π => [Normal(), Normal(2, 1)])
+        cpt = ContinuousConditionalProbabilityTable{PreciseContinuousInput}(cpt5)
+        @test cpt.data == cpt5
     end
+
     @testset "CPT functions" begin
         @testset "setindex" begin
             cpt = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}([:x, :y])

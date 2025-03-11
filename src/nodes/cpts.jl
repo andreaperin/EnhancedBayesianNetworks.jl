@@ -36,6 +36,12 @@ end
 
 ContinuousConditionalProbabilityTable{P}() where {P<:ContinuousInput} = ContinuousConditionalProbabilityTable{P}(Vector{Symbol}())
 
+function ContinuousConditionalProbabilityTable{P}(data::DataFrame) where {P<:ContinuousInput}
+    cpt = ContinuousConditionalProbabilityTable{P}(Symbol.(names(data[!, Not(:Π)])))
+    append!(cpt.data, data)
+    return cpt
+end
+
 function Base.setindex!(cpt::AbstractConditionalProbabilityTable, value, key...)
     selector = map((p) -> p[1] => ByRow(x -> x == p[2]), collect(key))
     evidence_nodes = collect(map(p -> p[1], key))
