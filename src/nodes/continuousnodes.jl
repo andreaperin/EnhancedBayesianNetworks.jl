@@ -28,6 +28,30 @@ function ContinuousNode(name::Symbol, cpt::ContinuousConditionalProbabilityTable
     ContinuousNode(name, cpt, discretization, Dict{Vector{Symbol},Dict}())
 end
 
+distributions(node::ContinuousNode) = distributions(node.cpt)
+
+scenarios(node::ContinuousNode) = scenarios(node.cpt)
+
+isprecise(node::ContinuousNode) = isprecise(node.cpt)
+
+isroot(node::ContinuousNode) = isroot(node.cpt)
+
+function _uq_inputs(node::ContinuousNode, evidence::Evidence)
+    new_evidence = filter(((k, v),) -> k ∈ Symbol.(names(node.cpt.data)), evidence)
+    df_row = subset(node.cpt.data, _by_row(new_evidence))
+    if typeof(node.cpt).parameters[1] == PreciseContinuousInput
+        return map(dist -> RandomVariable(dist, node.name), df_row[!, :Π])
+    elseif typeof(node.cpt).parameters[1] == Tuple{<:Real,<:Real} || isa(node.cpt.data.Π[1], Tuple{<:Real,<:Real})
+        return map(tup -> Interval(tup..., node.name), df_row[!, :Π])
+    elseif typeof(node.cpt).parameters[1] == UnamedProbabilityBox || isa(node.cpt.data.Π[1], UnamedProbabilityBox)
+        dists = map(r -> first(typeof(r).parameters), df_row[!, :Π])
+        return map((upb, dist) -> ProbabilityBox{dist}(upb.parameters, node.name, upb.lb, upb.ub), df_row[!, :Π], dists)
+    end
+end
+
+_uq_inputs(node::ContinuousNode) = _uq_inputs(node, Evidence())
+
+
 # function _continuous_node_input_type(x::ContinuousInput)
 #     if isa(x, UnivariateDistribution)
 #         return UnivariateDistribution
@@ -38,19 +62,6 @@ end
 #     end
 # end
 
-
-function _distributions(cpt::DataFrame)
-    unique(cpt[!, :Π])
-end
-
-_distributions(node::ContinuousNode) = _distributions(node.cpt)
-
-function _scenarios(cpt::DataFrame)
-    scenarios = copy.(eachrow(cpt[!, Not(:Π)]))
-    return unique(map(s -> Dict(pairs(s)), scenarios))
-end
-
-_scenarios(node::ContinuousNode) = _scenarios(node.cpt)
 
 # function _continuous_input(node::ContinuousNode{UnivariateDistribution}, evidence::Evidence)
 #     new_evidence = filter(((k, v),) -> k ∈ Symbol.(names(node.cpt)), evidence)
@@ -70,8 +81,6 @@ _scenarios(node::ContinuousNode) = _scenarios(node.cpt)
 #     dists = map(r -> first(typeof(r).parameters), df_row[!, :Π])
 #     return map((upb, dist) -> ProbabilityBox{dist}(upb.parameters, node.name, upb.lb, upb.ub), df_row[!, :Π], dists)
 # end
-
-# _continuous_input(node::ContinuousNode) = _continuous_input(node, Evidence())
 
 # function _distribution_bounds(dist::UnivariateDistribution)
 #     return [support(dist).lb, support(dist).ub]
@@ -101,13 +110,3 @@ _scenarios(node::ContinuousNode) = _scenarios(node.cpt)
 # function _truncate(dist::UnamedProbabilityBox, i::AbstractVector)
 #     return UnamedProbabilityBox{first(typeof(dist).parameters)}(dist.parameters, i[1], i[2])
 # end
-
-# function _is_precise(node::ContinuousNode)
-#     all(isa.(node.cpt[!, :Π], UnivariateDistribution))
-# end
-
-# function _is_continuous_root(cpt::DataFrame)
-#     ncol(cpt) == 1
-# end
-
-# _is_root(node::ContinuousNode) = _is_continuous_root(node.cpt)
