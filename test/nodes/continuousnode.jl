@@ -144,4 +144,40 @@
         @test issetequal(EnhancedBayesianNetworks._uq_inputs(node3), [Interval(1, 2, :a), Interval(2, 3, :a), Interval(1, 2, :a), Interval(1, 4, :a)])
     end
 
+    @testset "distributions bounds" begin
+        dist1 = Normal()
+        dist2 = (1, 5)
+        dist3 = UnamedProbabilityBox{Normal}([Interval(-0.5, 0.5, :μ), Interval(1, 2, :σ)])
+
+        cpt_node1 = ContinuousConditionalProbabilityTable{PreciseContinuousInput}()
+        cpt_node1[] = dist1
+        node1 = ContinuousNode(:m, cpt_node1)
+
+        cpt_node2 = ContinuousConditionalProbabilityTable{Tuple{<:Real,<:Real}}()
+        cpt_node2[] = dist2
+        node2 = ContinuousNode(:m, cpt_node2)
+
+        cpt_node3 = ContinuousConditionalProbabilityTable{UnamedProbabilityBox}()
+        cpt_node3[] = dist3
+        node3 = ContinuousNode(:m, cpt_node3)
+
+        cpt_node4 = ContinuousConditionalProbabilityTable{PreciseContinuousInput}(:x)
+        cpt_node4[:x=>:x1] = truncated(Normal(1, 1), 0, 1)
+        cpt_node4[:x=>:x2] = truncated(Normal(1, 2), 0.5, 1.5)
+        node4 = ContinuousNode(:m, cpt_node4)
+
+        @test EnhancedBayesianNetworks._distribution_bounds(dist1) == [-Inf, Inf]
+        @test EnhancedBayesianNetworks._distribution_bounds(dist2) == [1, 5]
+        @test EnhancedBayesianNetworks._distribution_bounds(dist3) == [-Inf, Inf]
+
+        @test EnhancedBayesianNetworks._distribution_bounds(node1) == [-Inf, Inf]
+        @test EnhancedBayesianNetworks._distribution_bounds(node2) == [1, 5]
+        @test EnhancedBayesianNetworks._distribution_bounds(node3) == [-Inf, Inf]
+        @test EnhancedBayesianNetworks._distribution_bounds(node4) == [0, 1.5]
+
+        @test EnhancedBayesianNetworks._truncate(dist1, [-1, 1]) == truncated(Normal(), -1, 1)
+        @test EnhancedBayesianNetworks._truncate(dist2, [-1, 1]) == (-1, 1)
+        @test EnhancedBayesianNetworks._truncate(dist3, [-1, 1]).lb == -1
+        @test EnhancedBayesianNetworks._truncate(dist3, [-1, 1]).ub == 1
+    end
 end
