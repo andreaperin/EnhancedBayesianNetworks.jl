@@ -1,4 +1,3 @@
-
 const PreciseContinuousInput = UnivariateDistribution
 const ImpreciseContinuousInput = Union{Tuple{<:Real,<:Real},UnamedProbabilityBox}
 const PreciseDiscreteProbability = Real
