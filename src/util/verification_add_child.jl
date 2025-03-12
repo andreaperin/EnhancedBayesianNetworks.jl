@@ -6,18 +6,18 @@ function _verify_no_recursion(par::AbstractNode, ch::AbstractNode)
 end
 ## Root Nodes cannot be childrens
 function _verify_root(_::AbstractNode, ch::AbstractNode)
-    if _is_root(ch)
+    if isroot(ch)
         error("node '$(ch.name)' is a root node and cannot have parents")
     end
 end
 ## Check parents is in the scenarios with all its states
 function _verify_child(par::AbstractNode, ch::AbstractNode)
     if !isa(ch, FunctionalNode) && !isa(par, FunctionalNode)
-        if string(par.name) ∉ names(ch.cpt)
+        if string(par.name) ∉ names(ch.cpt.data)
             error("trying to set node '$(ch.name)' as child of node '$(par.name)', but '$(ch.name)' has a cpt that does not contains '$(par.name)' in the scenarios: $(ch.cpt)")
         end
-        par_states = _states(par)
-        scenario2check = unique(ch.cpt[!, par.name])
+        par_states = states(par)
+        scenario2check = unique(ch.cpt.data[!, par.name])
         if any(par_states .∉ [scenario2check])
             error("child node '$(ch.name)' has scenarios $scenario2check, that is not coherent with its parent node '$(par.name)' with states $par_states")
         end

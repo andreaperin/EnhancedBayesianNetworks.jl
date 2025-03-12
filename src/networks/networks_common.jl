@@ -48,7 +48,7 @@ function _theoretical_scenarios(net::AbstractNetwork, node::AbstractNode)
     par = discrete_ancestors(net, node)
     discrete_parents = filter(x -> isa(x, AbstractDiscreteNode), par)
     function f(par)
-        return map(st -> (par.name => st), _states(par))
+        return map(st -> (par.name => st), states(par))
     end
     discrete_parents_combination = Iterators.product(f.(discrete_parents)...)
     discrete_parents_combination = map(t -> [t...], discrete_parents_combination)
@@ -180,13 +180,13 @@ function _verify_functional_node(net::AbstractNetwork, node::FunctionalNode)
 end
 
 function _verify_child_node(net::AbstractNetwork, node::DiscreteNode)
-    if !_is_root(node)
-        th_parents_names = Symbol.(names(node.cpt[!, Not(node.name, :Π)]))
+    if !isroot(node)
+        th_parents_names = Symbol.(names(node.cpt.data[!, Not(node.name, :Π)]))
         if !issetequal(th_parents_names, parents(net, node)[2])
             error("node '$(node.name)''s cpt requires exctly the nodes '$th_parents_names' to be its parents, but provided parents are '$(parents(net, node)[2])'")
         end
         th_scenarios = _theoretical_scenarios(net, node)
-        cpt_scenarios = _scenarios(node)
+        cpt_scenarios = scenarios(node)
         if !issetequal(cpt_scenarios, th_scenarios)
             error("node '$(node.name)' has defined cpt scenarios $(node.cpt) not coherent with the theoretical one $th_scenarios")
         end
@@ -195,13 +195,13 @@ function _verify_child_node(net::AbstractNetwork, node::DiscreteNode)
 end
 
 function _verify_child_node(net::AbstractNetwork, node::ContinuousNode)
-    if !_is_root(node)
-        th_parents_names = Symbol.(names(node.cpt[!, Not(:Π)]))
+    if !isroot(node)
+        th_parents_names = Symbol.(names(node.cpt.data[!, Not(:Π)]))
         if !issetequal(th_parents_names, parents(net, node)[2])
             error("node '$(node.name)''s cpt requires exctly the nodes '$th_parents_names' to be its parents, but provided parents are '$(parents(net, node)[2])'")
         end
         th_scenarios = _theoretical_scenarios(net, node)
-        cpt_scenarios = _scenarios(node)
+        cpt_scenarios = scenarios(node)
         if !issetequal(cpt_scenarios, th_scenarios)
             error("node '$(node.name)' has defined cpt scenarios $(node.cpt) not coherent with the theoretical one $th_scenarios")
         end
