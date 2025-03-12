@@ -51,31 +51,31 @@ end
 
 _uq_inputs(node::ContinuousNode) = _uq_inputs(node, Evidence())
 
-# function _distribution_bounds(dist::UnivariateDistribution)
-#     return [support(dist).lb, support(dist).ub]
-# end
+function _distribution_bounds(dist::UnivariateDistribution)
+    return [support(dist).lb, support(dist).ub]
+end
 
-# function _distribution_bounds(dist::Tuple{T,T}) where {T<:Real}
-#     return [dist[1], dist[2]]
-# end
+function _distribution_bounds(dist::Tuple{T,T}) where {T<:Real}
+    return [dist[1], dist[2]]
+end
 
-# function _distribution_bounds(dist::UnamedProbabilityBox)
-#     return [minimum(vcat(map(x -> x.lb, dist.parameters), dist.lb)), maximum(vcat(map(x -> x.ub, dist.parameters), dist.ub))]
-# end
+function _distribution_bounds(dist::UnamedProbabilityBox)
+    return [minimum(vcat(map(x -> x.lb, dist.parameters), dist.lb)), maximum(vcat(map(x -> x.ub, dist.parameters), dist.ub))]
+end
 
-# function _distribution_bounds(node::ContinuousNode)
-#     bounds = mapreduce(dist -> _distribution_bounds(dist), hcat, node.cpt[!, :Π])
-#     return [minimum(bounds[1, :]), maximum(bounds[2, :])]
-# end
+function _distribution_bounds(node::ContinuousNode)
+    bounds = mapreduce(dist -> _distribution_bounds(dist), hcat, node.cpt.data[!, :Π])
+    return [minimum(bounds[1, :]), maximum(bounds[2, :])]
+end
 
-# function _truncate(dist::UnivariateDistribution, i::AbstractVector)
-#     return truncated(dist, i[1], i[2])
-# end
+function _truncate(dist::UnivariateDistribution, i::AbstractVector)
+    return truncated(dist, i[1], i[2])
+end
 
-# function _truncate(_::Tuple{T,T}, i::AbstractVector) where {T<:Real}
-#     return (i[1], i[2])
-# end
+function _truncate(_::Tuple{T,T}, i::AbstractVector) where {T<:Real}
+    return (i[1], i[2])
+end
 
-# function _truncate(dist::UnamedProbabilityBox, i::AbstractVector)
-#     return UnamedProbabilityBox{first(typeof(dist).parameters)}(dist.parameters, i[1], i[2])
-# end
+function _truncate(dist::UnamedProbabilityBox, i::AbstractVector)
+    return UnamedProbabilityBox{first(typeof(dist).parameters)}(dist.parameters, i[1], i[2])
+end
