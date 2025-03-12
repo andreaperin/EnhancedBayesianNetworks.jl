@@ -9,7 +9,7 @@
 
         node = ContinuousFunctionalNode(name, models, simulation)
         @test ContinuousFunctionalNode(name, models, simulation, discretization) == node
-        @test EnhancedBayesianNetworks._is_root(node) == false
+        @test isroot(node) == false
     end
 
     @testset "DiscreteFunctionalNode" begin
@@ -23,7 +23,7 @@
 
         node = DiscreteFunctionalNode(name, models, performances, simulation, parameters)
         @test DiscreteFunctionalNode(name, models, performances, simulation) == node
-        @test EnhancedBayesianNetworks._is_root(node) == false
+        @test isroot(node) == false
     end
 
     @testset "Wrap Model" begin
