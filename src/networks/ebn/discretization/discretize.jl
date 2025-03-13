@@ -34,25 +34,32 @@ function _discretize(node::ContinuousNode)
     intervals = _format_interval(node)
     states_symbols = Symbol.(intervals)
     n = length(states_symbols)
-    if isempty(_scenarios(node))
+    if isempty(scenarios(node))
         m = 1
     else
-        m = length(_scenarios(node))
+        m = length(scenarios(node))
     end
     name_discrete = Symbol(string(node.name) * "_d")
-    new_cpt_disc = repeat(node.cpt[!, Not(:Π)], inner=n)
+    new_cpt_disc = repeat(node.cpt.data[!, Not(:Π)], inner=n)
     new_cpt_disc[!, name_discrete] = repeat(states_symbols, m)
-    probs = map(dist -> _discretize(dist, intervals), node.cpt[!, :Π])
+    probs = map(dist -> _discretize(dist, intervals), node.cpt.data[!, :Π])
     new_cpt_disc[!, :Π] = collect(Iterators.flatten(probs))
-    discrete_node = DiscreteNode(name_discrete, new_cpt_disc)
-    if _is_root(node)
-        distribution = mapreduce(dist -> EnhancedBayesianNetworks._truncate.(Ref(dist), intervals), vcat, node.cpt[!, :Π])
+    if typeof(node.cpt).parameters[1] == UnivariateDistribution
+        cpt_disc = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(new_cpt_disc)
+    else
+        cpt_disc = DiscreteConditionalProbabilityTable{ImpreciseDiscreteProbability}(new_cpt_disc)
+    end
+    discrete_node = DiscreteNode(name_discrete, cpt_disc)
+    if isroot(node)
+        distribution = mapreduce(dist -> _truncate.(Ref(dist), intervals), vcat, node.cpt.data[!, :Π])
         new_cpt_cont = DataFrame(name_discrete => states_symbols, :Π => distribution)
-        continuous_node = ContinuousNode{typeof(node).parameters[1]}(node.name, new_cpt_cont)
+        cpt_cont = ContinuousConditionalProbabilityTable{typeof(node.cpt).parameters[1]}(new_cpt_cont)
+        continuous_node = ContinuousNode(node.name, cpt_cont)
     else
         distribution = _approximate.(intervals, node.discretization.sigma)
         new_cpt_cont = DataFrame(name_discrete => states_symbols, :Π => distribution)
-        continuous_node = ContinuousNode{UnivariateDistribution}(node.name, new_cpt_cont)
+        cpt_cont = ContinuousConditionalProbabilityTable{PreciseContinuousInput}(new_cpt_cont)
+        continuous_node = ContinuousNode(node.name, cpt_cont)
     end
     return [discrete_node, continuous_node]
 end
@@ -66,11 +73,11 @@ function _discretize(dist::UnamedProbabilityBox, intervals::Vector)
     p_box = ProbabilityBox{first(typeof(dist).parameters)}(dist.parameters, :temp)
     right_bounds = cdf.(Ref(p_box), getindex.(intervals, 2))
     left_bounds = cdf.(Ref(p_box), getindex.(intervals, 1))
-    map((r, l) -> [minimum([r.lb - l.lb, r.ub - l.ub]), maximum([r.lb - l.lb, r.ub - l.ub])], right_bounds, left_bounds)
+    map((r, l) -> (minimum([r.lb - l.lb, r.ub - l.ub]), maximum([r.lb - l.lb, r.ub - l.ub])), right_bounds, left_bounds)
 end
 
 function _discretize(_::Tuple{T,T}, intervals::Vector) where {T<:Real}
-    repeat([[0, 1]], length(intervals))
+    repeat([(0, 1)], length(intervals))
 end
 
 function _approximate(i::AbstractVector{<:Real}, λ::Real)
