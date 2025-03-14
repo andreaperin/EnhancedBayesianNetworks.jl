@@ -1,7 +1,18 @@
 @testset "Network Reduction" begin
-    root1 = DiscreteNode(:x, DataFrame(:x => [:x1, :x2], :Π => [0.3, 0.7]), Dict(:x1 => [Parameter(0.5, :x)], :x2 => [Parameter(0.7, :x)]))
-    root2 = ContinuousNode{UnivariateDistribution}(:y, DataFrame(:Π => Normal()))
-    root3 = DiscreteNode(:z, DataFrame(:z => [:z1, :z2], :Π => [0.3, 0.7]), Dict(:z1 => [Parameter(0.5, :z)], :z2 => [Parameter(0.7, :z)]))
+
+    cpt_root1 = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(:x)
+    cpt_root1[:x=>:x1] = 0.3
+    cpt_root1[:x=>:x2] = 0.7
+    root1 = DiscreteNode(:x, cpt_root1, Dict(:x1 => [Parameter(0.5, :x)], :x2 => [Parameter(0.7, :x)]))
+
+    cpt_root2 = ContinuousConditionalProbabilityTable{PreciseContinuousInput}()
+    cpt_root2[] = Normal()
+    root2 = ContinuousNode(:y, cpt_root2)
+
+    cpt_root3 = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(:z)
+    cpt_root3[:z=>:z1] = 0.3
+    cpt_root3[:z=>:z2] = 0.7
+    root3 = DiscreteNode(:z, cpt_root3, Dict(:z1 => [Parameter(0.5, :z)], :z2 => [Parameter(0.7, :z)]))
 
     model1 = Model(df -> df.x .^ 2 .- 0.7 .+ df.y, :c1)
     cont_functional1 = ContinuousFunctionalNode(:cf1, [model1], MonteCarlo(300))
