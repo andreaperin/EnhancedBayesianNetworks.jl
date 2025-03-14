@@ -30,6 +30,10 @@ function factorize(cpt::DataFrame)
     return Factor(node_names, potentials, sts)
 end
 
+function factorize(cpt::AbstractConditionalProbabilityTable)
+    factorize(cpt.data)
+end
+
 function _check_dims_valid(dims::Vector{Symbol}, ϕ::Factor)
     isempty(dims) && return
     dim = first(dims)
@@ -51,7 +55,7 @@ end
 
 # reduce the dimension and then squeeze them out
 Base.sum(ϕ::Factor, dims::Union{Symbol,Vector{Symbol}}) = _reducedim(+, ϕ, dims)
-Base.convert(::Type{Factor}, cpt::DataFrame) = factorize(cpt)
+Base.convert(::Type{Factor}, cpt::T) where {T<:AbstractConditionalProbabilityTable} = factorize(cpt)
 Base.size(ϕ::Factor) = size(ϕ.potential)
 Base.size(ϕ::Factor, dim::Symbol) = size(ϕ.potential, indexin(dim, ϕ))
 Base.names(ϕ::Factor) = ϕ.dimensions
