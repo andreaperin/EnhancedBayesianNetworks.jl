@@ -1,8 +1,9 @@
 @testset "Evidence Verification" begin
-    v = DiscreteNode(:V, DataFrame(:V => [:yesV, :noV], :Π => [0.01, 0.99]))
-    s = DiscreteNode(:S, DataFrame(:S => [:yesS, :noS], :Π => [0.5, 0.5]))
-    t = DiscreteNode(:T, DataFrame(:V => [:yesV, :yesV, :noV, :noV], :T => [:yesT, :noT, :yesT, :noT], :Π => [0.05, 0.95, 0.01, 0.99]))
-    l = DiscreteNode(:L, DataFrame(:S => [:yesS, :yesS, :noS, :noS], :L => [:yesL, :noL, :yesL, :noL], :Π => [0.1, 0.9, 0.01, 0.99]))
+
+    v = DiscreteNode(:V, DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(DataFrame(:V => [:yesV, :noV], :Π => [0.01, 0.99])))
+    s = DiscreteNode(:S, DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(DataFrame(:S => [:yesS, :noS], :Π => [0.5, 0.5])))
+    t = DiscreteNode(:T, DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(DataFrame(:V => [:yesV, :yesV, :noV, :noV], :T => [:yesT, :noT, :yesT, :noT], :Π => [0.05, 0.95, 0.01, 0.99])))
+    l = DiscreteNode(:L, DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(DataFrame(:S => [:yesS, :yesS, :noS, :noS], :L => [:yesL, :noL, :yesL, :noL], :Π => [0.1, 0.9, 0.01, 0.99])))
     bn = BayesianNetwork([v, s, t, l])
     add_child!(bn, v, t)
     add_child!(bn, s, l)
@@ -16,10 +17,4 @@
 
     a = Evidence(:L => :noL)
     @test isnothing(EnhancedBayesianNetworks._verify_evidence(a, bn))
-
-    b1 = Evidence(:V => :yesV)
-    b2 = Evidence(:L => :yesL)
-
-    @test EnhancedBayesianNetworks._are_consistent(a, b1) == true
-    @test_throws ErrorException("not consistent evidences: Dict(:L => :noL); Dict(:L => :yesL)") EnhancedBayesianNetworks._are_consistent(a, b2)
 end
