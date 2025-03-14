@@ -17,7 +17,7 @@ function evaluate!(net::EnhancedBayesianNetwork, check::Bool=true)
                 error("node $(first_node.name) has as simulation $(first_node.simulation), but its imprecise parents will be discretized and approximated with Uniform and Exponential assumption, therefore are no longer imprecise. A prices simulation technique must be selected!")
             else
                 pars = parents(net, first_node)[3]
-                imprecise_parents = pars[map(!, _is_precise.(pars))]
+                imprecise_parents = pars[map(!, isprecise.(pars))]
                 names = [i.name for i in imprecise_parents]
                 error("node $(getproperty(first_node, :name)) has $(getproperty(first_node, :simulation)) as simulation technique, but have $names as imprecise parent/s. DoubleLoop or RandomSlicing technique must be employeed instead")
             end

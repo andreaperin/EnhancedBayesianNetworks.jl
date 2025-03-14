@@ -1,10 +1,19 @@
 @testset "Evaluation Net" begin
 
     @testset "Main Functions" begin
+        cpt_root1 = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(:x)
+        cpt_root1[:x=>:x1] = 0.3
+        cpt_root1[:x=>:x2] = 0.7
+        root1 = DiscreteNode(:x, cpt_root1, Dict(:x1 => [Parameter(0.5, :x)], :x2 => [Parameter(0.7, :x)]))
 
-        root1 = DiscreteNode(:x, DataFrame(:x => [:x1, :x2], :Π => [0.3, 0.7]), Dict(:x1 => [Parameter(0.5, :x)], :x2 => [Parameter(0.7, :x)]))
-        root2 = ContinuousNode{UnivariateDistribution}(:y, DataFrame(:Π => Normal()))
-        root3 = DiscreteNode(:z, DataFrame(:z => [:z1, :z2], :Π => [0.3, 0.7]), Dict(:z1 => [Parameter(0.5, :z)], :z2 => [Parameter(0.7, :z)]))
+        cpt_root2 = ContinuousConditionalProbabilityTable{PreciseContinuousInput}()
+        cpt_root2[] = Normal()
+        root2 = ContinuousNode(:y, cpt_root2)
+
+        cpt_root3 = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(:z)
+        cpt_root3[:z=>:z1] = 0.3
+        cpt_root3[:z=>:z2] = 0.7
+        root3 = DiscreteNode(:z, cpt_root3, Dict(:z1 => [Parameter(0.5, :z)], :z2 => [Parameter(0.7, :z)]))
 
         model1 = Model(df -> df.x .^ 2 .- 0.7 .+ df.y, :c1)
         cont_functional1 = ContinuousFunctionalNode(:cf1, [model1], MonteCarlo(300))
@@ -43,14 +52,24 @@
         @test ebn.adj_matrix == sparse([0.0 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0 1.0; 0.0 0.0 0.0 1.0 1.0; 0.0 0.0 0.0 0.0 1.0; 0.0 0.0 0.0 0.0 0.0])
         @test ebn.topology_dict == Dict(:y => 2, :fd => 5, :fd1 => 4, :z => 3, :x => 1)
         @test isa(ebn.nodes[4], DiscreteNode)
-        @test EnhancedBayesianNetworks._is_root(ebn.nodes[4]) == false
+        @test isroot(ebn.nodes[4]) == false
         @test isa(ebn.nodes[5], DiscreteNode)
-        @test EnhancedBayesianNetworks._is_root(ebn.nodes[5]) == false
+        @test isroot(ebn.nodes[5]) == false
 
         interval = (1.10, 1.30)
-        root1 = DiscreteNode(:A, DataFrame(:A => [:a1, :a2], :Π => [0.5, 0.5]), Dict(:a1 => [Parameter(1, :A)], :a2 => [Parameter(2, :A)]))
-        root2 = ContinuousNode{Tuple{<:Real,<:Real}}(:B, DataFrame(:Π => interval))
-        root3 = ContinuousNode{UnivariateDistribution}(:P, DataFrame(:Π => Uniform(-10, 10)))
+        cpt_root1 = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(:A)
+        cpt_root1[:A=>:a1] = 0.5
+        cpt_root1[:A=>:a2] = 0.5
+        root1 = DiscreteNode(:A, cpt_root1, Dict(:a1 => [Parameter(1, :A)], :a2 => [Parameter(2, :A)]))
+
+        cpt_root2 = ContinuousConditionalProbabilityTable{Tuple{Real,Real}}()
+        cpt_root2[] = interval
+        root2 = ContinuousNode(:B, cpt_root2)
+
+        cpt_root3 = ContinuousConditionalProbabilityTable{PreciseContinuousInput}()
+        cpt_root3[] = Uniform(-10, 10)
+        root3 = ContinuousNode(:P, cpt_root3)
+
         model = Model(df -> df.A .+ df.B .+ df.P, :C)
         sim = DoubleLoop(MonteCarlo(100_000))
         performance = df -> 2 .- df.C
@@ -66,24 +85,37 @@
 
         evaluate!(ebn)
 
-        @test EnhancedBayesianNetworks._is_precise(ebn.nodes[end]) == false
-
+        @test isprecise(ebn.nodes[end]) == false
     end
 
     @testset "Evaluate with envelopes" begin
         n = 10^6
         using .MathConstants: γ
-        Uᵣ = ContinuousNode{UnivariateDistribution}(:Uᵣ, DataFrame(:Π => Normal()))
+
+        cpt_Uᵣ = ContinuousConditionalProbabilityTable{PreciseContinuousInput}()
+        cpt_Uᵣ[] = Normal()
+        Uᵣ = ContinuousNode(:Uᵣ, cpt_Uᵣ)
+
+        cpt_M = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(:M)
+        cpt_M[:M=>:new] = 0.5
+        cpt_M[:M=>:old] = 0.5
+        M = DiscreteNode(:M, cpt_M)
+
         μ_gamma = 60
         cov_gamma = 0.2
-        M = DiscreteNode(:M, DataFrame(:M => [:new, :old], :Π => [0.5, 0.5]))
         α, θ = distribution_parameters(μ_gamma, μ_gamma * cov_gamma, Gamma)
-        V = ContinuousNode{UnivariateDistribution}(:V, DataFrame(:M => [:new, :old], :Π => [Gamma(α, θ), Gamma(α - 1, 2.4)]))
+        cpt_V = ContinuousConditionalProbabilityTable{PreciseContinuousInput}(:M)
+        cpt_V[:M=>:new] = Gamma(α, θ)
+        cpt_V[:M=>:old] = Gamma(α - 1, 2.4)
+        V = ContinuousNode(:V, cpt_V)
 
         μ_gumbel = 50
         cov_gumbel = 0.4
         μ_loc, β = distribution_parameters(μ_gumbel, cov_gumbel * μ_gumbel, Gumbel)
-        H = ContinuousNode{UnivariateDistribution}(:H, DataFrame(:Π => Gumbel(μ_loc, β)))
+        cpt_H = ContinuousConditionalProbabilityTable{PreciseContinuousInput}()
+        cpt_H[] = Gumbel(μ_loc, β)
+        H = ContinuousNode(:H, cpt_H)
+
         function plastic_moment_capacities(uᵣ)
             ρ = 0.5477
             μ = 150
@@ -93,6 +125,7 @@
             normal_std = sqrt((1 - ρ^2) * ζ^2)
             exp(rand(Normal(normal_μ, normal_std)))
         end
+
         model1 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r1)
         model2 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r2)
         model3 = Model(df -> plastic_moment_capacities.(df.Uᵣ), :r3)
@@ -114,11 +147,18 @@
         simulation = MonteCarlo(n)
 
         frame = DiscreteFunctionalNode(:E, [model], performance, simulation)
-        L = DiscreteNode(:L, DataFrame(:M => [:new, :new, :old, :old], :L => [:yesL, :noL, :yesL, :noL], :Π => [0.2, 0.8, 0.5, 0.5]), Dict(:noL => [Parameter(1, :L)], :yesL => [Parameter(2, :L)]))
-        r9 = ContinuousNode{UnivariateDistribution}(:R9, DataFrame(:Π => Normal()))
+
+        L = DiscreteNode(:L, DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(DataFrame(:M => [:new, :new, :old, :old], :L => [:yesL, :noL, :yesL, :noL], :Π => [0.2, 0.8, 0.5, 0.5])), Dict(:noL => [Parameter(1, :L)], :yesL => [Parameter(2, :L)]))
+
+        cpt_r9 = ContinuousConditionalProbabilityTable{PreciseContinuousInput}()
+        cpt_r9[] = Normal()
+        r9 = ContinuousNode(:R9, cpt_r9)
+
         model2 = Model(df -> df.L .^ 2 .* df.R9, :P)
         frame2 = DiscreteFunctionalNode(:E2, [model2], df -> df.P, simulation)
+
         nodes = [Uᵣ, M, V, H, R1, R2, R3, R4, R5, r9, frame, L, frame2]
+
         ebn = EnhancedBayesianNetwork(nodes)
         add_child!(ebn, M, V)
         add_child!(ebn, Uᵣ, R1)
@@ -174,7 +214,10 @@
     end
 
     @testset "No Ancestors case" begin
-        root2 = ContinuousNode{UnivariateDistribution}(:B, DataFrame(:Π => Normal()))
+        cpt_root2 = ContinuousConditionalProbabilityTable{PreciseContinuousInput}()
+        cpt_root2[] = Normal()
+        root2 = ContinuousNode(:B, cpt_root2)
+
         model = Model(df -> df.B .+ 1, :C)
         sim = MonteCarlo(100_000)
         performance = df -> 2 .- df.C
@@ -186,7 +229,7 @@
         evaluate!(ebn)
 
         @test isa(ebn.nodes[end], ContinuousNode)
-        @test EnhancedBayesianNetworks._is_root(ebn.nodes[end])
+        @test isroot(ebn.nodes[end])
 
         disc_functional = DiscreteFunctionalNode(:C, [model], performance, sim)
         ebn = EnhancedBayesianNetwork([root2, disc_functional])
@@ -195,12 +238,20 @@
         evaluate!(ebn)
 
         @test isa(ebn.nodes[end], DiscreteNode)
-        @test EnhancedBayesianNetworks._is_root(ebn.nodes[end])
+        @test isroot(ebn.nodes[end])
     end
 
     @testset "Imprecise Node with discretization" begin
-        root1 = DiscreteNode(:A, DataFrame(:A => [:y, :n], :Π => [0.5, 0.5]))
-        root2 = ContinuousNode{UnamedProbabilityBox}(:B, DataFrame(:A => [:y, :n], :Π => [UnamedProbabilityBox{Normal}([Interval(-0.5, 0.5, :μ), Interval(1, 2, :σ)]), UnamedProbabilityBox{Normal}([Interval(1, 2, :μ), Interval(1, 2, :σ)])]), ApproximatedDiscretization([-1, 0, 1], 2))
+        cpt_root1 = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(:A)
+        cpt_root1[:A=>:y] = 0.5
+        cpt_root1[:A=>:n] = 0.5
+        root1 = DiscreteNode(:A, cpt_root1)
+
+        cpt_root2 = ContinuousConditionalProbabilityTable{UnamedProbabilityBox}(:A)
+        cpt_root2[:A=>:y] = UnamedProbabilityBox{Normal}([Interval(-0.5, 0.5, :μ), Interval(1, 2, :σ)])
+        cpt_root2[:A=>:n] = UnamedProbabilityBox{Normal}([Interval(1, 2, :μ), Interval(1, 2, :σ)])
+        root2 = ContinuousNode(:B, cpt_root2, ApproximatedDiscretization([-1, 0, 1], 2))
+
         model = Model(df -> df.B .+ 1, :C)
         sim = DoubleLoop(MonteCarlo(100_000))
         performance = df -> 2 .- df.C
@@ -212,7 +263,9 @@
 
         @test_throws ErrorException("node C has as simulation DoubleLoop(MonteCarlo(100000)), but its imprecise parents will be discretized and approximated with Uniform and Exponential assumption, therefore are no longer imprecise. A prices simulation technique must be selected!") @suppress evaluate!(ebn)
 
-        root2 = ContinuousNode{Tuple{<:Real,<:Real}}(:B, DataFrame(:Π => (-1, 1)))
+        cpt_root2 = ContinuousConditionalProbabilityTable{Tuple{Real,Real}}()
+        cpt_root2[] = (-1, 1)
+        root2 = ContinuousNode(:B, cpt_root2)
         model = Model(df -> df.B .+ 1, :C)
         sim = MonteCarlo(100_000)
         performance = df -> 2 .- df.C
@@ -226,9 +279,19 @@
     end
 
     @testset "Auxiliary functions" begin
-        root1 = DiscreteNode(:x, DataFrame(:x => [:x1, :x2], :Π => [0.3, 0.7]), Dict(:x1 => [Parameter(0.5, :x)], :x2 => [Parameter(0.7, :x)]))
-        root2 = ContinuousNode{UnivariateDistribution}(:y, DataFrame(:Π => Normal()))
-        root3 = DiscreteNode(:z, DataFrame(:z => [:z1, :z2], :Π => [0.3, 0.7]), Dict(:z1 => [Parameter(0.5, :z)], :z2 => [Parameter(0.7, :z)]))
+        cpt_root1 = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(:x)
+        cpt_root1[:x=>:x1] = 0.3
+        cpt_root1[:x=>:x2] = 0.7
+        root1 = DiscreteNode(:x, cpt_root1, Dict(:x1 => [Parameter(0.5, :x)], :x2 => [Parameter(0.7, :x)]))
+
+        cpt_root2 = ContinuousConditionalProbabilityTable{PreciseContinuousInput}()
+        cpt_root2[] = Normal()
+        root2 = ContinuousNode(:y, cpt_root2)
+
+        cpt_root3 = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(:z)
+        cpt_root3[:z=>:z1] = 0.3
+        cpt_root3[:z=>:z2] = 0.7
+        root3 = DiscreteNode(:z, cpt_root3, Dict(:z1 => [Parameter(0.5, :z)], :z2 => [Parameter(0.7, :z)]))
 
         model1 = Model(df -> df.x .^ 2 .- 0.7 .+ df.y, :c1)
         cont_functional1 = ContinuousFunctionalNode(:cf1, [model1], MonteCarlo(300))
