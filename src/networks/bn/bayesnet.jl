@@ -10,7 +10,7 @@
         end
         discrete_nodes = filter(x -> isa(x, DiscreteNode), nodes)
         if !isempty(discrete_nodes)
-            states_list = mapreduce(i -> _states(i), vcat, discrete_nodes)
+            states_list = mapreduce(i -> states(i), vcat, discrete_nodes)
             if !allunique(states_list)
                 error("network nodes states must be unique")
             end
@@ -25,7 +25,7 @@
         if !isempty(continuous_nodes)
             error("node/s $continuous_nodes_names are continuous. Use EnhancedBayesianNetwork structure!")
         end
-        imprecise_nodes = nodes[map(!, _is_precise.(nodes))]
+        imprecise_nodes = nodes[map(!, isprecise.(nodes))]
         imprecise_nodes_names = [i.name for i in imprecise_nodes]
         if !isempty(imprecise_nodes)
             error("node/s $imprecise_nodes_names are imprecise. Use CrealNetwork structure!")
