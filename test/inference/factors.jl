@@ -8,10 +8,10 @@
         @test_throws ErrorException("Having a dimension called potential will cause problems") Factor([:V, :potential], potential, states_mapping)
         @test_throws ErrorException("states mapping keys have to be coherent with defined dimensions") Factor([:V, :L], potential, states_mapping)
 
-        v = DiscreteNode(:V, DataFrame(:V => [:yesV, :noV, :maybe], :Π => [0.01, 0.90, 0.09]))
-        s = DiscreteNode(:S, DataFrame(:S => [:yesS, :noS], :Π => [0.5, 0.5]))
-        t = DiscreteNode(:T, DataFrame(:V => [:yesV, :yesV, :noV, :noV, :maybe, :maybe], :T => [:yesT, :noT, :yesT, :noT, :yesT, :noT], :Π => [0.05, 0.95, 0.01, 0.99, 0.01, 0.99]))
-        l = DiscreteNode(:L, DataFrame(:S => [:noS, :noS, :noS, :noS, :noS, :noS, :yesS, :yesS, :yesS, :yesS, :yesS, :yesS], :V => [:maybe, :maybe, :noV, :noV, :yesV, :yesV, :maybe, :maybe, :noV, :noV, :yesV, :yesV], :L => [:noL, :yesL, :noL, :yesL, :noL, :yesL, :noL, :yesL, :noL, :yesL, :noL, :yesL], :Π => [0.7, 0.3, 0.99, 0.01, 0.5, 0.5, 0.6, 0.4, 0.2, 0.8, 0.9, 0.1]))
+        v = DiscreteNode(:V, DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(DataFrame(:V => [:yesV, :noV, :maybe], :Π => [0.01, 0.90, 0.09])))
+        s = DiscreteNode(:S, DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(DataFrame(:S => [:yesS, :noS], :Π => [0.5, 0.5])))
+        t = DiscreteNode(:T, DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(DataFrame(:V => [:yesV, :yesV, :noV, :noV, :maybe, :maybe], :T => [:yesT, :noT, :yesT, :noT, :yesT, :noT], :Π => [0.05, 0.95, 0.01, 0.99, 0.01, 0.99])))
+        l = DiscreteNode(:L, DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(DataFrame(:S => [:noS, :noS, :noS, :noS, :noS, :noS, :yesS, :yesS, :yesS, :yesS, :yesS, :yesS], :V => [:maybe, :maybe, :noV, :noV, :yesV, :yesV, :maybe, :maybe, :noV, :noV, :yesV, :yesV], :L => [:noL, :yesL, :noL, :yesL, :noL, :yesL, :noL, :yesL, :noL, :yesL, :noL, :yesL], :Π => [0.7, 0.3, 0.99, 0.01, 0.5, 0.5, 0.6, 0.4, 0.2, 0.8, 0.9, 0.1])))
 
         bn = BayesianNetwork([v, s, t, l])
         add_child!(bn, v, t)
@@ -24,7 +24,6 @@
         pot[:, :, 1] = [0.7 0.6; 0.3 0.4]
         pot[:, :, 2] = [0.99 0.2; 0.01 0.8]
         pot[:, :, 3] = [0.5 0.9; 0.5 0.1]
-
 
         states_mapping = Dict(
             :L => Dict(:noL => 1, :yesL => 2),
