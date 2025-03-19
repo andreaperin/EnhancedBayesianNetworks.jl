@@ -1,20 +1,19 @@
 function gplot(net::AbstractNetwork;
     auto_node_size=false,
-    nodesizefactor=0.1,
-    arrowlengthfrac=0.1,
-    discretization_thickness=0.2,
+    NODESIZEFACTOR=0.1,
+    ARROWLENGTH=0.1,
+    NODELABELSIZE=4.0,
+    EDGELINEWIDTH=1.0 / sqrt(length(net.nodes)), discretization_thickness=0.2,
     title="",
     title_color="black",
     title_size=4.0,
     font_family="Helvetica",
     nodelabelc="black",
     nodelabelsize=1.0,
-    NODELABELSIZE=4.0,
     nodelabeldist=0.0,
     nodelabelangleoffset=π / 4.0,
     edgestrokec="black",
     edgelinewidth=1.0,
-    EDGELINEWIDTH=1.0 / sqrt(length(net.nodes)),
     arrowangleoffset=π / 9,
     background_color=nothing,
     plot_size=(15, 15),
@@ -52,7 +51,7 @@ function gplot(net::AbstractNetwork;
         nodesize = map(n -> length(String(n.name)), node_list)
         nodesize = normalize(nodesize) .* 3
     else
-        nodesize = fill(nodesizefactor, length(locs_x))
+        nodesize = fill(NODESIZEFACTOR, length(locs_x))
     end
     nodecircle = map((x, y) -> x * y, nodecircle, nodesize)
     nodes = circle(locs_x, locs_y, nodecircle)
@@ -69,7 +68,7 @@ function gplot(net::AbstractNetwork;
     nodelabelsize *= max_nodelabelsize
 
     edges_list = _get_edges(net.adj_matrix)
-    lines, larrows = _build_straight_edges(edges_list, locs_x, locs_y, nodesize, arrowlengthfrac, arrowangleoffset)
+    lines, larrows = _build_straight_edges(edges_list, locs_x, locs_y, nodesize, ARROWLENGTH, arrowangleoffset)
 
     function _is2discretize(n)
         if isa(n, ContinuousNode)
@@ -128,9 +127,9 @@ function _get_edges(adj_matrix::SparseMatrixCSC)
     return edge_list
 end
 
-function _build_straight_edges(edge_list, locs_x, locs_y, nodesize, arrowlengthfrac, arrowangleoffset)
-    if arrowlengthfrac > 0.0
-        lines_cord, arrows_cord = _graphline(edge_list, locs_x, locs_y, nodesize, arrowlengthfrac, arrowangleoffset)
+function _build_straight_edges(edge_list, locs_x, locs_y, nodesize, ARROWLENGTH, arrowangleoffset)
+    if ARROWLENGTH > 0.0
+        lines_cord, arrows_cord = _graphline(edge_list, locs_x, locs_y, nodesize, ARROWLENGTH, arrowangleoffset)
         lines = line(lines_cord)
         larrows = polygon(arrows_cord)
     else
@@ -194,13 +193,13 @@ function _node_color(n::AbstractNode)
             return "red1"
         end
     elseif isa(n, ContinuousNode)
-        if !_is_precise(n)
+        if !isprecise(n)
             return "cyan1"
         else
             return "paleturquoise"
         end
     elseif isa(n, DiscreteNode)
-        if !_is_precise(n)
+        if !isprecise(n)
             return "green1"
         else
             return "palegreen"
