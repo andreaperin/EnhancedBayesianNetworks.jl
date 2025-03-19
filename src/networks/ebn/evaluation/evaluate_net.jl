@@ -1,4 +1,4 @@
-function evaluate!(net::EnhancedBayesianNetwork, check::Bool=true)
+function evaluate!(net::EnhancedBayesianNetwork, check::Bool=true, collect_samples::Bool=true)
     _discretize!(net)
     _transfer_continuous!(net)
     functional_nodes = filter(x -> isa(x, FunctionalNode), net.nodes)
@@ -11,7 +11,7 @@ function evaluate!(net::EnhancedBayesianNetwork, check::Bool=true)
             error("nodes elimnation algorithm will lead to a cyclic network when elimnating node/s $names")
         end
         try
-            global evaluated_node = _evaluate_node(net, first_node)
+            global evaluated_node = _evaluate_node(net, first_node, collect_samples)
         catch e
             if isa(e, AssertionError)
                 error("node $(first_node.name) has as simulation $(first_node.simulation), but its imprecise parents will be discretized and approximated with Uniform and Exponential assumption, therefore are no longer imprecise. A prices simulation technique must be selected!")
