@@ -82,6 +82,6 @@ include("nodes/nodes.jl")
 include("networks/networks.jl")
 include("inference/inference.jl")
 
-# include("util/base_show.jl")
+include("util/base_show.jl")
 include("util/plots.jl")
 end

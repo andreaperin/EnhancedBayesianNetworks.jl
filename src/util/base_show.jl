@@ -12,12 +12,12 @@ function print_object(io::IO, obj::DiscreteNode; multiline::Bool)
         print(io, summary(obj))
         print(io, "\n  ")
         print(io, "name: $(obj.name)")
-        _is_root(obj) ? r = "Root" : r = "Child"
-        _is_precise(obj) ? tp = "Precise" : tp = "Imprecise"
+        isroot(obj) ? r = "Root" : r = "Child"
+        isprecise(obj) ? tp = "Precise" : tp = "Imprecise"
         print(io, "\n  ")
         print(io, "nature: $r $tp ")
         print(io, "\n  ")
-        st = _states(obj)
+        st = states(obj)
         print(io, "\r  states: $st")
         print(io, "\n  ")
         isempty(obj.parameters) ? param = DataFrame() : param = DataFrame(obj.parameters)
@@ -38,8 +38,8 @@ function print_object(io::IO, obj::ContinuousNode; multiline::Bool)
         print(io, summary(obj))
         print(io, "\n  ")
         print(io, "name: $(obj.name)")
-        _is_root(obj) ? r = "Root" : r = "Child"
-        _is_precise(obj) ? tp = "Precise" : tp = "Imprecise"
+        isroot(obj) ? r = "Root" : r = "Child"
+        isprecise(obj) ? tp = "Precise" : tp = "Imprecise"
         print(io, "\n  ")
         print(io, "nature: $r $tp")
         print(io, "\n  ")
@@ -63,7 +63,8 @@ function print_object(io::IO, obj::DiscreteFunctionalNode; multiline::Bool)
         print(io, "\n  ")
         print(io, "simulation: $(obj.simulation)")
         print(io, "\n  ")
-        print(io, "models: $(obj.models)")
+        model_names = [i.name for i in obj.models]
+        print(io, "models: $model_names")
         print(io, "\n  ")
         print(io, "performance: $(obj.performance)")
     else
@@ -82,9 +83,9 @@ function print_object(io::IO, obj::ContinuousFunctionalNode; multiline::Bool)
         print(io, "\n  ")
         print(io, "simulation: $(obj.simulation)")
         print(io, "\n  ")
-        print(io, "models: $(obj.models)")
+        model_names = [i.name for i in obj.models]
+        print(io, "models: $model_names")
         print(io, "\n  ")
-
     else
         Base.show_default(io, obj)
     end
@@ -107,11 +108,11 @@ function print_object(io::IO, obj::AbstractVector{<:AbstractNode}; multiline::Bo
             if isa(n, FunctionalNode)
                 return "Functional"
             else
-                _is_precise(n) ? "Precise" : "Imprecise"
+                isprecise(n) ? "Precise" : "Imprecise"
             end
         end
         function l(n)
-            if _is_root(n)
+            if isroot(n)
                 return "Root"
             else
                 return "Child"
@@ -127,16 +128,16 @@ function print_object(io::IO, obj::AbstractVector{<:AbstractNode}; multiline::Bo
     end
 end
 
-function Base.show(io::IO, obj::EnhancedBayesianNetwork)
+function Base.show(io::IO, obj::AbstractNetwork)
     print_object(io, obj, multiline=false)
 end
 
-function Base.show(io::IO, mime::MIME"text/plain", obj::EnhancedBayesianNetwork)
+function Base.show(io::IO, mime::MIME"text/plain", obj::AbstractNetwork)
     multiline = get(io, :multiline, true)
     print_object(io, obj, multiline=multiline)
 end
 
-function print_object(io::IO, obj::EnhancedBayesianNetwork; multiline::Bool)
+function print_object(io::IO, obj::AbstractNetwork; multiline::Bool)
     if multiline
         print(io, summary(obj))
         print(io, "\n  ")
@@ -144,11 +145,11 @@ function print_object(io::IO, obj::EnhancedBayesianNetwork; multiline::Bool)
             if isa(n, FunctionalNode)
                 return "Functional"
             else
-                _is_precise(n) ? "Precise" : "Imprecise"
+                isprecise(n) ? "Precise" : "Imprecise"
             end
         end
         function l(n)
-            if _is_root(n)
+            if isroot(n)
                 return "Root"
             else
                 return "Child"
@@ -170,36 +171,35 @@ function print_object(io::IO, obj::EnhancedBayesianNetwork; multiline::Bool)
     display(obj.topology_dict)
 end
 
-# # function Base.show(io::IO, obj::Factor)
-# #     print_object(io, obj, multiline=false)
-# # end
+function Base.show(io::IO, obj::Factor)
+    print_object(io, obj, multiline=false)
+end
 
-# # function Base.show(io::IO, mime::MIME"text/plain", obj::Factor)
-# #     multiline = get(io, :multiline, true)
-# #     print_object(io, obj, multiline=multiline)
-# # end
+function Base.show(io::IO, mime::MIME"text/plain", obj::Factor)
+    multiline = get(io, :multiline, true)
+    print_object(io, obj, multiline=multiline)
+end
 
-
-# # function print_object(io::IO, obj::Factor; multiline::Bool)
-# #     if multiline
-# #         print(io, summary(obj))
-# #         print(io, "\n  ")
-# #         print(io, "dimensions:")
-# #         print(io, "\n  ")
-# #         for (i, name) in enumerate(obj.dimensions)
-# #             print(io, "\r $i => $name \n")
-# #         end
-# #         print(io, "\r \r  mapping:")
-# #         for i in keys(obj.states_mapping)
-# #             single = (i, obj.states_mapping[i])
-# #             print(io, "\n $single")
-# #         end
-# #         print(io, "\n  ")
-# #         print(io, "\n  ")
-# #         print(io, "potentials:")
-# #         print(io, "\n  ")
-# #         display(obj.potential)
-# #     else
-# #         Base.show_default(io, obj)
-# #     end
-# # end
+function print_object(io::IO, obj::Factor; multiline::Bool)
+    if multiline
+        print(io, summary(obj))
+        print(io, "\n  ")
+        print(io, "dimensions:")
+        print(io, "\n  ")
+        for (i, name) in enumerate(obj.dimensions)
+            print(io, "\r $i => $name \n")
+        end
+        print(io, "\r \r  mapping:")
+        for i in keys(obj.states_mapping)
+            single = (i, obj.states_mapping[i])
+            print(io, "\n $single")
+        end
+        print(io, "\n  ")
+        print(io, "\n  ")
+        print(io, "potentials:")
+        print(io, "\n  ")
+        display(obj.potential)
+    else
+        Base.show_default(io, obj)
+    end
+end
