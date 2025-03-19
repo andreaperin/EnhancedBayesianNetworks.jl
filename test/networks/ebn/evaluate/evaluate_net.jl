@@ -56,6 +56,9 @@
         @test isa(ebn.nodes[5], DiscreteNode)
         @test isroot(ebn.nodes[5]) == false
 
+        evaluate!(net1, true, false)
+        @test isempty(net1.nodes[end].additional_info)
+
         interval = (1.10, 1.30)
         cpt_root1 = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(:A)
         cpt_root1[:A=>:a1] = 0.5
@@ -81,7 +84,6 @@
         add_child!(ebn, root2, disc_functional)
         add_child!(ebn, root3, disc_functional)
         order!(ebn)
-        net2 = deepcopy(ebn)
 
         evaluate!(ebn)
 

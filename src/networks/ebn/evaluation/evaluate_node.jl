@@ -1,4 +1,4 @@
-function _evaluate_node(net::EnhancedBayesianNetwork, node::ContinuousFunctionalNode)
+function _evaluate_node(net::EnhancedBayesianNetwork, node::ContinuousFunctionalNode, collect_samples::Bool=true)
     if all(isprecise.(parents(net, node)[3]))
         discrete_parents = filter(x -> isa(x, DiscreteNode), parents(net, node)[3])
         continuous_parents = filter(x -> isa(x, ContinuousNode), parents(net, node)[3])
@@ -24,7 +24,9 @@ function _evaluate_node(net::EnhancedBayesianNetwork, node::ContinuousFunctional
             UncertaintyQuantification.evaluate!(node.models, df)
             pdf = EmpiricalDistribution(df[:, node.models[end].name])
             push!(dists, pdf)
-            add_info[collect(values(evidence))] = Dict(:samples => df)
+            if collect_samples
+                add_info[collect(values(evidence))] = Dict(:samples => df)
+            end
         end
 
         new_cpt[!, :Π] = dists
@@ -35,7 +37,7 @@ function _evaluate_node(net::EnhancedBayesianNetwork, node::ContinuousFunctional
     end
 end
 
-function _evaluate_node(net::EnhancedBayesianNetwork, node::DiscreteFunctionalNode)
+function _evaluate_node(net::EnhancedBayesianNetwork, node::DiscreteFunctionalNode, collect_samples::Bool=true)
     discrete_parents = filter(x -> isa(x, DiscreteNode), parents(net, node)[3])
     continuous_parents = filter(x -> isa(x, ContinuousNode), parents(net, node)[3])
     ancestors = discrete_ancestors(net, node)
@@ -65,21 +67,29 @@ function _evaluate_node(net::EnhancedBayesianNetwork, node::DiscreteFunctionalNo
         if isa(node.simulation, Union{AbstractMonteCarlo,LineSampling,ImportanceSampling,UncertaintyQuantification.AbstractSubSetSimulation})
             push!(probs, res[1])
             push!(probs, 1 - res[1])
-            additional_info[collect(values(evidence))] = Dict(:cov => res[2], :samples => res[3])
+            if collect_samples
+                additional_info[collect(values(evidence))] = Dict(:cov => res[2], :samples => res[3])
+            end
         elseif isa(node.simulation, DoubleLoop)
             !isa(res, Interval) ? res = Interval(res, res, :pf) : nothing
             push!(probs, (res.lb, res.ub))
             push!(probs, (1 - res.ub, 1 - res.lb))
-            additional_info[collect(values(evidence))] = Dict()
+            if collect_samples
+                additional_info[collect(values(evidence))] = Dict()
+            end
         elseif isa(node.simulation, RandomSlicing)
             !isa(res[1], Interval) ? res[1] = Interval(res[1], res[1], :pf) : nothing
             push!(probs, (res[1].lb, res[1].ub))
             push!(probs, (1 - res[1].ub, 1 - res[1].lb))
-            additional_info[collect(values(evidence))] = Dict(:lb => res[2], :ub => res[3])
+            if collect_samples
+                additional_info[collect(values(evidence))] = Dict(:lb => res[2], :ub => res[3])
+            end
         elseif isa(node.simulation, FORM)
             push!(probs, res[1])
             push!(probs, 1 - res[1])
-            additional_info[collect(values(evidence))] = Dict(:β => res[2], :design_point => res[3], :α => res[4])
+            if collect_samples
+                additional_info[collect(values(evidence))] = Dict(:β => res[2], :design_point => res[3], :α => res[4])
+            end
         end
     end
     new_cpt[!, :Π] = probs

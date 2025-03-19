@@ -59,6 +59,9 @@
         @test typeof.(evaluated.cpt.data[!, :Π]) == [EmpiricalDistribution]
         @test evaluated.discretization == ExactDiscretization(cont_functional.discretization.intervals)
 
+        evaluated2 = EnhancedBayesianNetworks._evaluate_node(net, cont_functional, false)
+        @test isempty(evaluated2.additional_info)
+
         @testset "Imprecise Parents" begin
             ### ROOT
             cpt_r1 = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(:A)
@@ -153,6 +156,10 @@
         @test evaluated.cpt.data[!, :C] == [:C_fail, :C_safe]
         @test isapprox(evaluated.cpt.data[!, :Π], [0.1587, 0.8413]; atol=0.1)
         @test evaluated.parameters == disc_functional.parameters
+
+        evaluated2 = EnhancedBayesianNetworks._evaluate_node(net, disc_functional, false)
+
+        @test isempty(evaluated2.additional_info)
 
         @testset "Imprecise Parents" begin
             ### ROOT
