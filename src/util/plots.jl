@@ -187,7 +187,7 @@ end
 
 function _node_color(n::AbstractNode)
     if isa(n, FunctionalNode)
-        if isa(n, DiscreteNode)
+        if isa(n, DiscreteFunctionalNode)
             return "lightsalmon"
         else
             return "red1"
