@@ -72,7 +72,7 @@ function gplot(net::AbstractNetwork;
     lines, larrows = _build_straight_edges(edges_list, locs_x, locs_y, nodesize, ARROWLENGTH, arrowangleoffset)
 
     function _is2discretize(n)
-        if isa(n, ContinuousNode)
+        if isa(n, AbstractContinuousNode)
             if !isempty(n.discretization.intervals)
                 return true
             else
