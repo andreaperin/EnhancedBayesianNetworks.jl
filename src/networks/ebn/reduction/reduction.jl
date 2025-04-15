@@ -1,7 +1,7 @@
 
-function reduce!(net::EnhancedBayesianNetwork)
+function reduce!(net::EnhancedBayesianNetwork, check::Bool=true, collect_samples::Bool=true)
     if !isempty(filter(x -> isa(x, FunctionalNode), net.nodes))
-        evaluate!(net)
+        evaluate!(net, check, collect_samples)
     end
     cont_nodes = filter(x -> isa(x, ContinuousNode), net.nodes)
     map(x -> _eliminate_continuous_node!(net, x), cont_nodes)
