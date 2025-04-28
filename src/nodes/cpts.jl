@@ -96,6 +96,11 @@ function Base.setindex!(cpt::AbstractConditionalProbabilityTable, value, key...)
     return nothing
 end
 
+function Base.setindex!(cpt::AbstractConditionalProbabilityTable, value, evidence::Dict)
+    key = keys(evidence) .=> values(evidence)
+    setindex!(cpt, value, key...)
+end
+
 function Base.getindex(cpt::AbstractConditionalProbabilityTable, key...)
     selector = map((p) -> p[1] => ByRow(x -> x == p[2]), collect(key))
     cp = subset(cpt.data, selector, view=true)
