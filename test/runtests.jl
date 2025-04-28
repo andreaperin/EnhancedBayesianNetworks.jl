@@ -1,7 +1,6 @@
 using Test
 
 using EnhancedBayesianNetworks
-using Graphs
 using Suppressor
 
 include("utils/wrap.jl")
