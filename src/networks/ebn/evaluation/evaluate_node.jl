@@ -55,7 +55,10 @@ function _evaluate_node(net::EnhancedBayesianNetwork, node::DiscreteFunctionalNo
     ancestors_combination = sort(vec(collect(Iterators.product(states.(ancestors)...))))
     evidences = map(ac -> Evidence(_get_evidence_from_state.(ac)), ancestors_combination)
 
-    if all(isprecise.(parents(net, node)[3]))
+    imprecise_parents = filter(x -> !isprecise(x), parents(net, node)[3])
+    simulation_imprecise_nodes = filter(x -> isa(x, ContinuousNode), imprecise_parents)
+    simulation_imprecise_nodes = filter(x -> isempty(x.discretization.intervals), simulation_imprecise_nodes)
+    if isempty(simulation_imprecise_nodes)
         if isempty(ancestors_combination[1])
             cpt = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(node.name)
             evidences = [Evidence()]
