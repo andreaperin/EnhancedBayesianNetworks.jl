@@ -1,36 +1,37 @@
 function _evaluate_node(net::EnhancedBayesianNetwork, node::ContinuousFunctionalNode, collect_samples::Bool=true)
-    if all(isprecise.(parents(net, node)[3]))
-        discrete_parents = filter(x -> isa(x, DiscreteNode), parents(net, node)[3])
-        continuous_parents = filter(x -> isa(x, ContinuousNode), parents(net, node)[3])
-        ancestors = discrete_ancestors(net, node)
 
+    function _get_evidence_from_state(s::Symbol)
+        return filter(n -> s ∈ states(n), filter(x -> isa(x, DiscreteNode), net.nodes))[1].name, s
+    end
+
+    if all(isprecise.(parents(net, node)[3]))
+        ancestors = discrete_ancestors(net, node)
         ancestors_combination = sort(vec(collect(Iterators.product(states.(ancestors)...))))
+        evidences = map(ac -> Evidence(_get_evidence_from_state.(ac)), ancestors_combination)
+
         if isempty(ancestors_combination[1])
-            new_cpt = DataFrame()
-            evidences = [Evidence()]
+            cpt = ContinuousConditionalProbabilityTable{PreciseContinuousInput}()
             discretization = ExactDiscretization(node.discretization.intervals)
         else
-            new_cpt = DataFrame(ancestors_combination, [i.name for i in ancestors])
-            evidences = map(x -> Dict(pairs(new_cpt[x, :])), range(1, nrow(new_cpt)))
+            cpt = ContinuousConditionalProbabilityTable{PreciseContinuousInput}([i.name for i in ancestors])
             discretization = node.discretization
         end
 
-        dists = []
         add_info = Dict{Vector{Symbol},Dict}()
+
         for evidence in evidences
-            parameters = mapreduce(p -> _uq_inputs(p, evidence), vcat, discrete_parents; init=UQInput[])
-            randomvariables = mapreduce(p -> _uq_inputs(p, evidence), vcat, continuous_parents; init=UQInput[])
-            df = UncertaintyQuantification.sample([parameters..., randomvariables...], node.simulation)
+            inputs_uq = mapreduce(p -> _uq_inputs(p, evidence), vcat, parents(net, node)[3]; init=UQInput[])
+            df = UncertaintyQuantification.sample(inputs_uq, node.simulation)
             UncertaintyQuantification.evaluate!(node.models, df)
             pdf = EmpiricalDistribution(df[:, node.models[end].name])
-            push!(dists, pdf)
+
+            cpt[evidence] = pdf
+
             if collect_samples
                 add_info[collect(values(evidence))] = Dict(:samples => df)
             end
         end
 
-        new_cpt[!, :Π] = dists
-        cpt = ContinuousConditionalProbabilityTable{PreciseContinuousInput}(new_cpt)
         return ContinuousNode(node.name, cpt, discretization, add_info)
     else
         error("node $(node.name) is a continuousfunctionalnode with at least one parent with Interval or p-boxes in its distributions. No method for extracting failure probability p-box have been implemented yet")
@@ -38,66 +39,80 @@ function _evaluate_node(net::EnhancedBayesianNetwork, node::ContinuousFunctional
 end
 
 function _evaluate_node(net::EnhancedBayesianNetwork, node::DiscreteFunctionalNode, collect_samples::Bool=true)
-    discrete_parents = filter(x -> isa(x, DiscreteNode), parents(net, node)[3])
-    continuous_parents = filter(x -> isa(x, ContinuousNode), parents(net, node)[3])
+
+    function _get_evidence_from_state(s::Symbol)
+        node_names = filter(n -> s ∈ states(n), ancestors)
+        if !isempty(node_names)
+            return node_names[1].name, s
+        else
+            return node.name, s
+        end
+    end
+
     ancestors = discrete_ancestors(net, node)
 
+    ancestors = discrete_ancestors(net, node)
     ancestors_combination = sort(vec(collect(Iterators.product(states.(ancestors)...))))
-    node_states = [Symbol(string(node.name) * "_fail"), Symbol(string(node.name) * "_safe")]
+    evidences = map(ac -> Evidence(_get_evidence_from_state.(ac)), ancestors_combination)
 
-    if isempty(ancestors_combination[1])
-        new_cpt = DataFrame()
-        evidences = [Evidence()]
-        new_cpt[!, node.name] = node_states
+    if all(isprecise.(parents(net, node)[3]))
+        if isempty(ancestors_combination[1])
+            cpt = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(node.name)
+            evidences = [Evidence()]
+        else
+            cpt = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(vcat([i.name for i in ancestors], node.name))
+        end
     else
-        new_cpt = DataFrame(ancestors_combination, [i.name for i in ancestors])
-        evidences = map(x -> Dict(pairs(new_cpt[x, :])), range(1, nrow(new_cpt)))
-        node_states = repeat([Symbol(string(node.name) * "_fail"), Symbol(string(node.name) * "_safe")], nrow(new_cpt))
-        new_cpt = repeat(new_cpt, inner=2)
-        new_cpt[!, node.name] = node_states
+        if isempty(ancestors_combination[1])
+            cpt = DiscreteConditionalProbabilityTable{ImpreciseDiscreteProbability}(node.name)
+            evidences = [Evidence()]
+        else
+            cpt = DiscreteConditionalProbabilityTable{ImpreciseDiscreteProbability}(vcat([i.name for i in ancestors], node.name))
+        end
     end
 
     additional_info = Dict{AbstractVector{Symbol},Dict}()
-    probs = []
+
     for evidence in evidences
-        parameters = mapreduce(p -> EnhancedBayesianNetworks._uq_inputs(p, evidence), vcat, discrete_parents; init=UQInput[])
-        randomvariables = mapreduce(p -> EnhancedBayesianNetworks._uq_inputs(p, evidence), vcat, continuous_parents; init=UQInput[])
-        res = probability_of_failure(node.models, node.performance, [parameters..., randomvariables...], node.simulation)
+
+        input_uq = mapreduce(p -> _uq_inputs(p, evidence), vcat, parents(net, node)[3]; init=UQInput[])
+
+        res = probability_of_failure(node.models, node.performance, input_uq, node.simulation)
+
+        fail_ev = deepcopy(evidence)
+        fail_ev[node.name] = Symbol(string(node.name) * "_fail")
+        safe_ev = deepcopy(evidence)
+        safe_ev[node.name] = Symbol(string(node.name) * "_safe")
 
         if isa(node.simulation, Union{AbstractMonteCarlo,LineSampling,ImportanceSampling,UncertaintyQuantification.AbstractSubSetSimulation})
-            push!(probs, res[1])
-            push!(probs, 1 - res[1])
+            cpt[fail_ev] = res[1]
+            cpt[safe_ev] = 1 - res[1]
             if collect_samples
                 additional_info[collect(values(evidence))] = Dict(:cov => res[2], :samples => res[3])
             end
+
+        elseif isa(node.simulation, FORM)
+            cpt[fail_ev] = res[1]
+            cpt[safe_ev] = 1 - res[1]
+            if collect_samples
+                additional_info[collect(values(evidence))] = Dict(:β => res[2], :design_point => res[3], :α => res[4])
+            end
+
         elseif isa(node.simulation, DoubleLoop)
             !isa(res, Interval) ? res = Interval(res, res, :pf) : nothing
-            push!(probs, (res.lb, res.ub))
-            push!(probs, (1 - res.ub, 1 - res.lb))
+            cpt[fail_ev] = (res.lb, res.ub)
+            cpt[safe_ev] = (1 - res.ub, 1 - res.lb)
             if collect_samples
                 additional_info[collect(values(evidence))] = Dict()
             end
         elseif isa(node.simulation, RandomSlicing)
             !isa(res[1], Interval) ? res[1] = Interval(res[1], res[1], :pf) : nothing
-            push!(probs, (res[1].lb, res[1].ub))
-            push!(probs, (1 - res[1].ub, 1 - res[1].lb))
+            cpt[fail_ev] = (res[1].lb, res[1].ub)
+            cpt[safe_ev] = (1 - res[1].ub, 1 - res[1].lb)
             if collect_samples
                 additional_info[collect(values(evidence))] = Dict(:lb => res[2], :ub => res[3])
             end
-        elseif isa(node.simulation, FORM)
-            push!(probs, res[1])
-            push!(probs, 1 - res[1])
-            if collect_samples
-                additional_info[collect(values(evidence))] = Dict(:β => res[2], :design_point => res[3], :α => res[4])
-            end
         end
-    end
-    new_cpt[!, :Π] = probs
-
-    if all(isa.(probs, Real))
-        cpt = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(new_cpt)
-    else
-        cpt = DiscreteConditionalProbabilityTable{ImpreciseDiscreteProbability}(new_cpt)
     end
 
     return DiscreteNode(node.name, cpt, node.parameters, additional_info)
