@@ -5,6 +5,8 @@ function gplot(net::AbstractNetwork;
     NODELABELSIZE=4.0,
     EDGELINEWIDTH=1.0 / sqrt(length(net.nodes)),
     DISCRETIZATION_THICKNESS=1.4,
+    STROKELENGTH=2mm,
+    STROKEDISTANCE=2mm,
     title="",
     title_color="black",
     title_size=4.0,
@@ -87,7 +89,7 @@ function gplot(net::AbstractNetwork;
         if _is2discretize(node)
             return (DISCRETIZATION_THICKNESS, "black", [])
         elseif !isa(node, FunctionalNode) && !isprecise(node)
-            return (DISCRETIZATION_THICKNESS, "black", [2mm, 2mm])
+            return (DISCRETIZATION_THICKNESS, "black", [STROKELENGTH, STROKEDISTANCE])
         else
             return (4.0, nothing, [])
         end
