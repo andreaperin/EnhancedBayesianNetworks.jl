@@ -83,8 +83,19 @@ function gplot(net::AbstractNetwork;
         end
     end
 
-    nodestrokelw = map(n -> _is2discretize(n) ? DISCRETIZATION_THICKNESS : 4.0, node_list)
-    nodestrokec = map(n -> _is2discretize(n) ? "black" : nothing, node_list)
+    function _get_stroke(node)
+        if _is2discretize(node)
+            return (DISCRETIZATION_THICKNESS, "black", [])
+        elseif !isa(node, FunctionalNode) && !isprecise(node)
+            return (DISCRETIZATION_THICKNESS, "black", [2mm, 2mm])
+        else
+            return (4.0, nothing, [])
+        end
+    end
+
+    nodestrokelw = map(n -> _get_stroke(n)[1], node_list)
+    nodestrokec = map(n -> _get_stroke(n)[2], node_list)
+    nodestroked = map(n -> _get_stroke(n)[3], node_list)
 
     colors = _node_color.(node_list)
 
@@ -100,15 +111,15 @@ function gplot(net::AbstractNetwork;
         context(units=UnitBox(plot_area...; leftpad, rightpad, toppad, bottompad)),
         compose(context(), title, fill(title_color), fontsize(title_size), Compose.font(font_family)),
         compose(context(), texts, fill(nodelabelc), fontsize(nodelabelsize), Compose.font(font_family)),
-        compose(context(), nodes, fill(colors), Compose.stroke(nodestrokec), linewidth(nodestrokelw)),
-        # compose(context(), edgetexts, fill(edgelabelc), fontsize(edgelabelsize)),
+        compose(context(), nodes, fill(colors), Compose.stroke(nodestrokec), linewidth(nodestrokelw), strokedash(nodestroked)),
         compose(context(), larrows, fill(edgestrokec)),
-        # compose(context(), carrows, fill(edgestrokec)),
         compose(context(), lines, Compose.stroke(edgestrokec), linewidth(edgelinewidth)),
-        # compose(context(), curves, stroke(edgestrokec), linewidth(edgelinewidth)),
         compose(context(units=UnitBox(plot_area...)), rectangle(plot_area...), fill(background_color))
     )
 end
+
+compose(context(), circle(0.5, 0.5, 0.4), fill("red"), Compose.stroke("black"), linewidth(4), strokedash([]))
+
 
 function _get_position(adj_matrix::SparseMatrixCSC)
     pos = spring(adj_matrix; iterations=1000)
