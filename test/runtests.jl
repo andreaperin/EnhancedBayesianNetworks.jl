@@ -2,6 +2,7 @@ using Test
 
 using EnhancedBayesianNetworks
 using Suppressor
+using CSV
 
 include("utils/wrap.jl")
 include("nodes/nodes.jl")
@@ -19,9 +20,13 @@ include("networks/ebn/evaluate/evaluate_node.jl")
 include("networks/ebn/evaluate/evaluate_net.jl")
 include("networks/ebn/reduction/reduction.jl")
 include("networks/bn/bayesnet.jl")
+include("networks/bn/bayesnet2be.jl")
 include("networks/cn/credalnet.jl")
 include("networks/dispatch.jl")
 include("utils/verify_evidence.jl")
 include("inference/inferencestate.jl")
 include("inference/factors.jl")
 include("inference/variableselimination.jl")
+include("learning/parameters_learning/mle.jl")
+include("learning/parameters_learning/em.jl")
+

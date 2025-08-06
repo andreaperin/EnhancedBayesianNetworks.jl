@@ -27,6 +27,8 @@ Manifest.toml
 .vscode/*
 coverage/*
 .DS_Store
+.venv/*
+.python-version
 
 old/*
 # Local
@@ -40,3 +42,4 @@ demo/Diegos_tower/Fire_modelCN_fix.m
 demo/Diegos_tower/Thesis_HDEL_corrections.pdf
 demo/Hydrogen_new/ebn
 demo/papers_fig.jl
+demo/learning_csv/*

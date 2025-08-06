@@ -29,6 +29,7 @@ export AbstractNetwork
 export AbstractNode
 export ApproximatedDiscretization
 export BayesianNetwork
+export BayesianNetwork2be
 export ContinuousFunctionalNode
 export ContinuousInput
 export ContinuousNode
@@ -68,6 +69,9 @@ export gplot
 export infer
 export isprecise
 export isroot
+export joint_probability
+export learn_parameters_EM
+export learn_parameters_MLE
 export markov_blanket
 export markov_envelope
 export order!
@@ -81,6 +85,7 @@ include("util/wrap.jl")
 include("nodes/nodes.jl")
 include("networks/networks.jl")
 include("inference/inference.jl")
+include("learning/learning.jl")
 
 include("util/base_show.jl")
 include("util/plots.jl")

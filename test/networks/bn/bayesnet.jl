@@ -90,5 +90,60 @@
     bn2 = BayesianNetwork(ebn)
 
     @test bn2 == bn
+
+    @testset "joint probability" begin
+        weather_cpt = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(:W)
+        weather_cpt[:W=>:Cloudy] = 0.5
+        weather_cpt[:W=>:Sunny] = 0.5
+        weather = DiscreteNode(:W, weather_cpt)
+
+        rain_cpt = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}([:W, :R])
+        rain_cpt[:W=>:Cloudy, :R=>:Yes] = 0.8
+        rain_cpt[:W=>:Cloudy, :R=>:No] = 0.2
+        rain_cpt[:W=>:Sunny, :R=>:Yes] = 0.1
+        rain_cpt[:W=>:Sunny, :R=>:No] = 0.9
+        rain = DiscreteNode(:R, rain_cpt)
+
+        sprinkler_cpt = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}([:W, :S])
+        sprinkler_cpt[:W=>:Cloudy, :S=>:On] = 0.4
+        sprinkler_cpt[:W=>:Cloudy, :S=>:Off] = 0.6
+        sprinkler_cpt[:W=>:Sunny, :S=>:On] = 0.7
+        sprinkler_cpt[:W=>:Sunny, :S=>:Off] = 0.3
+        sprinkler = DiscreteNode(:S, sprinkler_cpt)
+
+        grass_cpt = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}([:R, :S, :G])
+        grass_cpt[:R=>:Yes, :S=>:On, :G=>:Wet] = 0.99
+        grass_cpt[:R=>:Yes, :S=>:On, :G=>:Dry] = 0.01
+        grass_cpt[:R=>:Yes, :S=>:Off, :G=>:Wet] = 0.9
+        grass_cpt[:R=>:Yes, :S=>:Off, :G=>:Dry] = 0.1
+        grass_cpt[:R=>:No, :S=>:On, :G=>:Wet] = 0.9
+        grass_cpt[:R=>:No, :S=>:On, :G=>:Dry] = 0.1
+        grass_cpt[:R=>:No, :S=>:Off, :G=>:Wet] = 0.1
+        grass_cpt[:R=>:No, :S=>:Off, :G=>:Dry] = 0.9
+        grass = DiscreteNode(:G, grass_cpt)
+
+        nodes = [weather, rain, sprinkler, grass]
+        bn = BayesianNetwork(nodes)
+        add_child!(bn, :W, :R)
+        add_child!(bn, :W, :S)
+        add_child!(bn, :R, :G)
+        add_child!(bn, :S, :G)
+        order!(bn)
+
+        scenario1 = Evidence(:W => :Cloudy, :G => :Wet)
+        @test_throws ErrorException("Not all the BN's nodes [:W, :R, :S, :G] have a specidied states in Dict(:G => :Wet, :W => :Cloudy). Use Inference!") joint_probability(bn, scenario1)
+
+        scenario2 = Evidence(:W => :Cloudy, :G => :Mild, :R => :Yes, :S => :On)
+        @test_throws ErrorException("node G has a defined scenario state Mild that is not among its possible states [:Dry, :Wet]") joint_probability(bn, scenario2)
+
+        scenario3 = Evidence(:W => :Cloudy, :G => :Wet, :R => :Yes, :S => :On, :N => :nothing)
+        @test_logs (:warn, "nodes N is not part of the BN, therefore is useless for the scenario probability evaluation") joint_probability(bn, scenario3)
+
+        scenario4 = Evidence(:W => :Cloudy, :G => :Wet, :R => :Yes, :S => :On)
+        @test isapprox(joint_probability(bn, scenario4), 0.1584)
+
+        scenario5 = Evidence(:W => :Cloudy, :G => :Dry, :R => :Yes, :S => :On)
+        @test isapprox(joint_probability(bn, scenario5), 0.0016)
+    end
 end
 

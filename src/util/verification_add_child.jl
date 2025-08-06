@@ -29,3 +29,11 @@ function _verify_functional_node(par::AbstractNode, ch::AbstractNode)
         error("functional node '$(par.name)' can have only functional children. '$(ch.name)' is not a functional node")
     end
 end
+
+## For BayesianNetwork2be
+## No recursion in BayesianNetworks
+function _verify_no_recursion(par::Symbol, ch::Symbol)
+    if par == ch
+        error("Recursion on the same node '$(par)' is not allowed in BayesianNetworks")
+    end
+end

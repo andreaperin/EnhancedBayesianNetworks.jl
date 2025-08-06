@@ -1,4 +1,4 @@
-@testset "EnhancedBayesianNetwork" begin
+@testset "Common Networks Operations" begin
 
     weather_cpt = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(:w)
     weather_cpt[:w=>:sunny] = 0.5
