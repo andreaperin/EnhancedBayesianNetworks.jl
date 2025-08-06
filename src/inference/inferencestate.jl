@@ -5,7 +5,7 @@
 
     function PreciseInferenceState(bn::BayesianNetwork, query::Vector{Symbol}, evidence::Evidence)
         _ensure_query_nodes_in_bn_and_not_in_evidence(query, bn.nodes, evidence)
-        verify_evidence(evidence, bn)
+        _verify_evidence(evidence, bn)
         return new(bn, query, evidence)
     end
 end

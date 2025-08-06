@@ -1,15 +1,33 @@
 @testset "Inference State" begin
-    v = DiscreteRootNode(:V, Dict(:yesV => 0.01, :noV => 0.99))
-    s = DiscreteRootNode(:S, Dict(:yesS => 0.5, :noS => 0.5))
-    t = DiscreteChildNode(:T, [v], Dict(
-        [:yesV] => Dict(:yesT => 0.05, :noT => 0.95),
-        [:noV] => Dict(:yesT => 0.01, :noT => 0.99))
-    )
-    l = DiscreteChildNode(:L, [s], Dict(
-        [:yesS] => Dict(:yesL => 0.1, :noL => 0.9),
-        [:noS] => Dict(:yesL => 0.01, :noL => 0.99))
-    )
+
+    cpt_v = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(:V)
+    cpt_v[:V=>:yesV] = 0.01
+    cpt_v[:V=>:noV] = 0.99
+    v = DiscreteNode(:V, cpt_v)
+
+    cpt_s = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(:S)
+    cpt_s[:S=>:yesS] = 0.5
+    cpt_s[:S=>:noS] = 0.5
+    s = DiscreteNode(:S, cpt_s)
+
+    cpt_t = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}([:V, :T])
+    cpt_t[:V=>:yesV, :T=>:yesT] = 0.05
+    cpt_t[:V=>:yesV, :T=>:noT] = 0.95
+    cpt_t[:V=>:noV, :T=>:yesT] = 0.01
+    cpt_t[:V=>:noV, :T=>:noT] = 0.99
+    t = DiscreteNode(:T, cpt_t)
+
+    cpt_l = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}([:S, :L])
+    cpt_l[:S=>:yesS, :L=>:yesL] = 0.1
+    cpt_l[:S=>:yesS, :L=>:noL] = 0.9
+    cpt_l[:S=>:noS, :L=>:yesL] = 0.01
+    cpt_l[:S=>:noS, :L=>:noL] = 0.99
+    l = DiscreteNode(:L, cpt_l)
+
     bn = BayesianNetwork([v, s, t, l])
+    add_child!(bn, v, t)
+    add_child!(bn, s, l)
+    order!(bn)
 
     @test_throws ErrorException("Query O is not in reduced bayesian network") PreciseInferenceState(bn, :O, Evidence())
 
@@ -23,28 +41,50 @@
     @test PreciseInferenceState(bn, :V, Evidence()).query == PreciseInferenceState(bn, [:V], Evidence()).query
     @test PreciseInferenceState(bn, :V, Evidence()).evidence == PreciseInferenceState(bn, [:V], Evidence()).evidence
 
-    F = DiscreteRootNode(:F, Dict(:Ft => [0.4, 0.5], :Ff => [0.5, 0.6]))
+    cpt_f = DiscreteConditionalProbabilityTable{ImpreciseDiscreteProbability}(:F)
+    cpt_f[:F=>:Ft] = (0.4, 0.5)
+    cpt_f[:F=>:Ff] = (0.5, 0.6)
+    F = DiscreteNode(:F, cpt_f)
 
-    B = DiscreteRootNode(:B, Dict(:Bt => 0.5, :Bf => 0.5))
+    cpt_b = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}(:B)
+    cpt_b[:B=>:Bt] = 0.5
+    cpt_b[:B=>:Bf] = 0.5
+    B = DiscreteNode(:B, cpt_b)
 
-    L = DiscreteChildNode(:L, [F], Dict(
-        [:Ft] => Dict(:Lt => 0.3, :Lf => 0.4, :L2 => 0.3),
-        [:Ff] => Dict(:Lt => 0.05, :Lf => 0.85, :L2 => 0.1)
-    ))
+    cpt_l = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}([:F, :L])
+    cpt_l[:F=>:Ft, :L=>:Lt] = 0.3
+    cpt_l[:F=>:Ft, :L=>:Lf] = 0.4
+    cpt_l[:F=>:Ft, :L=>:L2] = 0.3
+    cpt_l[:F=>:Ff, :L=>:Lt] = 0.05
+    cpt_l[:F=>:Ff, :L=>:Lf] = 0.85
+    cpt_l[:F=>:Ff, :L=>:L2] = 0.1
+    L = DiscreteNode(:L, cpt_l)
 
-    D = DiscreteChildNode(:D, [F, B], Dict(
-        [:Ft, :Bt] => Dict(:Dt => 0.8, :Df => 0.2),
-        [:Ft, :Bf] => Dict(:Dt => 0.1, :Df => 0.9),
-        [:Ff, :Bt] => Dict(:Dt => 0.1, :Df => 0.9),
-        [:Ff, :Bf] => Dict(:Dt => 0.7, :Df => 0.3)
-    ))
+    cpt_d = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}([:F, :B, :D])
+    cpt_d[:F=>:Ft, :B=>:Bt, :D=>:Dt] = 0.8
+    cpt_d[:F=>:Ft, :B=>:Bt, :D=>:Df] = 0.2
+    cpt_d[:F=>:Ft, :B=>:Bf, :D=>:Dt] = 0.1
+    cpt_d[:F=>:Ft, :B=>:Bf, :D=>:Df] = 0.9
+    cpt_d[:F=>:Ff, :B=>:Bt, :D=>:Dt] = 0.1
+    cpt_d[:F=>:Ff, :B=>:Bt, :D=>:Df] = 0.9
+    cpt_d[:F=>:Ff, :B=>:Bf, :D=>:Dt] = 0.7
+    cpt_d[:F=>:Ff, :B=>:Bf, :D=>:Df] = 0.3
+    D = DiscreteNode(:D, cpt_d)
 
-    H = DiscreteChildNode(:H, [D], Dict(
-        [:Dt] => Dict(:Ht => 0.6, :Hf => 0.4),
-        [:Df] => Dict(:Ht => 0.3, :Hf => 0.7)
-    ))
+    cpt_h = DiscreteConditionalProbabilityTable{PreciseDiscreteProbability}([:D, :H])
+    cpt_h[:D=>:Dt, :H=>:Ht] = 0.6
+    cpt_h[:D=>:Dt, :H=>:Hf] = 0.4
+    cpt_h[:D=>:Df, :H=>:Ht] = 0.3
+    cpt_h[:D=>:Df, :H=>:Hf] = 0.7
+    H = DiscreteNode(:H, cpt_h)
 
     cn = CredalNetwork([F, B, L, D, H])
+
+    add_child!(cn, F, L)
+    add_child!(cn, F, D)
+    add_child!(cn, B, D)
+    add_child!(cn, D, H)
+    order!(cn)
 
     a = ImpreciseInferenceState(cn, :D, Evidence())
     @test a.cn == cn

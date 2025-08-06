@@ -1,34 +1,32 @@
 using Test
 
 using EnhancedBayesianNetworks
-using Graphs
 using Suppressor
+using CSV
 
+include("utils/wrap.jl")
 include("nodes/nodes.jl")
-include("nodes/root.jl")
-include("nodes/child.jl")
-include("nodes/functional.jl")
-include("nodes/common.jl")
-
-include("ebn/enhancedbn.jl")
-include("ebn/reduction.jl")
-include("ebn/discretization/discretize_node.jl")
-include("ebn/discretization/discretize_net.jl")
-include("ebn/trasmission/trasmission_node.jl")
-include("ebn/trasmission/trasmission_net.jl")
-include("ebn/evaluate/evaluate_node.jl")
-include("ebn/evaluate/evaluate_net.jl")
-include("ebn/bayesnet.jl")
-include("ebn/credalnet.jl")
-include("ebn/cpd/conditionalprobabilitydistribution.jl")
-
+include("nodes/cpts.jl")
+include("utils/verify_discrete.jl")
+include("nodes/discretenodes.jl")
+include("utils/verify_continuous.jl")
+include("nodes/continuousnode.jl")
+include("nodes/functionalnodes.jl")
+include("networks/networks_common.jl")
+include("networks/ebn/enhancedbn.jl")
+include("networks/ebn/transmission/transmission.jl")
+include("networks/ebn/discretization/discretize.jl")
+include("networks/ebn/evaluate/evaluate_node.jl")
+include("networks/ebn/evaluate/evaluate_net.jl")
+include("networks/ebn/reduction/reduction.jl")
+include("networks/bn/bayesnet.jl")
+include("networks/bn/bayesnet2be.jl")
+include("networks/cn/credalnet.jl")
+include("networks/dispatch.jl")
+include("utils/verify_evidence.jl")
 include("inference/inferencestate.jl")
 include("inference/factors.jl")
-include("inference/factor_methods.jl")
-include("inference/factor_algebra.jl")
 include("inference/variableselimination.jl")
+include("learning/parameters_learning/mle.jl")
+include("learning/parameters_learning/em.jl")
 
-include("utils/evidence_verification.jl")
-include("utils/node_verification.jl")
-include("utils/plots.jl")
-include("utils/wrap.jl")
