@@ -63,8 +63,19 @@ function print_object(io::IO, obj::DiscreteFunctionalNode; multiline::Bool)
         print(io, "\n  ")
         print(io, "simulation: $(obj.simulation)")
         print(io, "\n  ")
-        model_names = [i.name for i in obj.models]
-        print(io, "models: $model_names")
+        model_infos = String[]
+        for m in obj.models
+            if isa(m, Model)
+                push!(model_infos, "Model(name=$(m.name))")
+            elseif isa(m, ExternalModel)
+                push!(model_infos,
+                      "ExternalModel(sourcedir=$(m.sourcedir), sources=$(m.sources), " *
+                      "extractors=$(m.extractors), solver=$(m.solver), workdir=$(m.workdir))")
+            else
+                push!(model_infos, string(m)) # fallback
+            end
+        end
+        print(io, "models: $model_infos")
         print(io, "\n  ")
         print(io, "performance: $(obj.performance)")
     else
@@ -83,9 +94,19 @@ function print_object(io::IO, obj::ContinuousFunctionalNode; multiline::Bool)
         print(io, "\n  ")
         print(io, "simulation: $(obj.simulation)")
         print(io, "\n  ")
-        model_names = [i.name for i in obj.models]
-        print(io, "models: $model_names")
-        print(io, "\n  ")
+        model_infos = String[]
+        for m in obj.models
+            if isa(m, Model)
+                push!(model_infos, "Model(name=$(m.name))")
+            elseif isa(m, ExternalModel)
+                push!(model_infos,
+                      "ExternalModel(sourcedir=$(m.sourcedir), sources=$(m.sources), " *
+                      "extractors=$(m.extractors), solver=$(m.solver), workdir=$(m.workdir))")
+            else
+                push!(model_infos, string(m)) # fallback
+            end
+        end
+        print(io, "models: $model_infos")
     else
         Base.show_default(io, obj)
     end
