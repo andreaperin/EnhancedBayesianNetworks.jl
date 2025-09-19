@@ -60,8 +60,8 @@ end
 ApproximatedDiscretization() = ApproximatedDiscretization(Vector{Real}(), 0)
 
 include("cpts.jl")
-include("discretenodes.jl")
-include("../util/verify_discrete.jl")
-include("continuousnodes.jl")
-include("../util/verify_continuous.jl")
-include("functionalnodes.jl")
+# include("discretenodes.jl")
+# include("../util/verify_discrete.jl")
+# include("continuousnodes.jl")
+# include("../util/verify_continuous.jl")
+# include("functionalnodes.jl")
