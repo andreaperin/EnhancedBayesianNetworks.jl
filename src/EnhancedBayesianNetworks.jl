@@ -20,7 +20,6 @@ using Polyhedra: HalfSpace, doubledescription
 import Base: *, sum, reduce
 
 # Types
-export AbstractContinuousInput
 export AbstractContinuousNode
 export AbstractDiscreteNode
 export AbstractDiscretization
@@ -39,18 +38,16 @@ export DiscreteConditionalProbabilityTable
 export DiscreteFunctionalNode
 export DiscreteNode
 export DiscreteProbability
+export ContinuousProbability
 export ExactDiscretization
 export EnhancedBayesianNetwork
 export Evidence
 export Factor
 export FunctionalNode
 export ImpreciseInferenceState
-export ImpreciseContinuousInput
-export ImpreciseDiscreteProbability
-export PreciseContinuousInput
-export PreciseDiscreteProbability
 export PreciseInferenceState
-export UnamedProbabilityBox
+
+export ConditionalProbabilityTable
 # export Factor
 
 ## Constants
@@ -83,10 +80,10 @@ export states
 
 include("util/wrap.jl")
 include("nodes/nodes.jl")
-include("networks/networks.jl")
-include("inference/inference.jl")
-include("learning/learning.jl")
+# include("networks/networks.jl")
+# include("inference/inference.jl")
+# include("learning/learning.jl")
 
-include("util/base_show.jl")
-include("util/plots.jl")
+# include("util/base_show.jl")
+# include("util/plots.jl")
 end
