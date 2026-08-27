@@ -9,6 +9,7 @@ EnhancedBayesianNetworks = "886a9665-f0d4-4b74-bc12-f95153dc1848"
 Fontconfig = "186bb1d3-e1f7-5a2c-a377-96d770f13627"
 Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
 LiveServer = "16fef848-5104-11e9-1b77-fb7a48bbb589"
+SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 
 [compat]
 Cairo = "1"
