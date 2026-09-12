@@ -92,7 +92,8 @@ function _sort_nodes(ig::InteractionGraph, ns::NetworkSchema, scorefun)
     return order
 end
 
-# The remaining node with the smallest `scorefun` value (ties broken by whatever the score encodes).
+# The remaining node with the smallest `scorefun` value, ties broken by node id so the result does
+# not depend on `Set` iteration order (which is an unspecified Julia implementation detail).
 function _best_node(ig::InteractionGraph, ns::NetworkSchema, remaining::Set{Int}, scorefun)
     best = minimum(remaining)
     best_score = scorefun(ig, ns, best)
@@ -101,7 +102,7 @@ function _best_node(ig::InteractionGraph, ns::NetworkSchema, remaining::Set{Int}
             continue
         end
         score = scorefun(ig, ns, node)
-        if score < best_score
+        if score < best_score || (score == best_score && node < best)
             best_score = score
             best = node
         end

@@ -476,7 +476,7 @@ end
             Set([6])
         ]
     )
-    @test EnhancedBayesianNetworks._sort_nodes(ig, ns, EnhancedBayesianNetworks.fill_score) == [1, 7, 8, 3, 2, 4, 5, 6]
+    @test EnhancedBayesianNetworks._sort_nodes(ig, ns, EnhancedBayesianNetworks.fill_score) == [1, 3, 7, 8, 2, 4, 5, 6]
 
     idx_to_node = [:V, :S, :T, :L, :B, :E, :D, :X]
     idx_to_state = [
